@@ -86,10 +86,10 @@ export default function LandingPage() {
           o maior elemento como "pintado", inflando o LCP medido. */}
       <section className="mt-16 flex flex-col items-center text-center">
         <span className="mb-4 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
-          Sua equipe de QA, automatizada por IA
+          Sua equipe de QA, elevada por IA
         </span>
         <h1 className="max-w-3xl text-balance text-5xl font-bold leading-tight">
-          Analise qualquer site como uma{" "}
+          Eleve qualquer site ao nível de uma{" "}
           <span className="bg-gradient-to-r from-primary to-sky-400 bg-clip-text text-transparent">
             equipe profissional de QA
           </span>
@@ -97,7 +97,7 @@ export default function LandingPage() {
         <p className="mt-4 max-w-xl text-muted-foreground">
           Digite uma URL. A IA navega, explora, testa fluxos e entrega um
           relatório completo de UI, UX, performance, SEO, acessibilidade e
-          segurança.
+          segurança — pronto pra você elevar o que precisar.
         </p>
 
         <div className="mt-8 flex w-full max-w-xl flex-col gap-2 sm:flex-row">
