@@ -28,7 +28,7 @@ export function generateAnalysisReportPdf(
 ): PDFKit.PDFDocument {
   const doc = new PDFDocument({ size: "A4", margin: 50 });
 
-  doc.fontSize(20).text("Relatório de Qualidade — QA AI", { align: "left" });
+  doc.fontSize(20).text("Relatório de Qualidade — Elevate QA", { align: "left" });
   doc.moveDown(0.3);
   doc.fontSize(10).fillColor("#666").text(siteUrl);
   doc

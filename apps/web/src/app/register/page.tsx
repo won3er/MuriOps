@@ -83,9 +83,9 @@ export default function RegisterPage() {
       <nav aria-label="Principal" className="fixed left-0 top-0 p-6">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-            Q
+            E
           </span>
-          QA AI
+          Elevate QA
         </Link>
       </nav>
       <Suspense fallback={null}>

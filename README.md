@@ -1,4 +1,4 @@
-# QA AI — Análise inteligente de qualidade web
+# Elevate QA — Análise inteligente de qualidade web
 
 Plataforma SaaS que analisa automaticamente qualquer site simulando uma **equipe
 profissional de QA**: navega, explora, testa fluxos, coleta evidências e entrega

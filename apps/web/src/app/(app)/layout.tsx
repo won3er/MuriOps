@@ -49,9 +49,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const brand = (
     <Link href="/" className="flex items-center gap-2 px-2 font-semibold">
       <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-        Q
+        E
       </span>
-      QA AI
+      Elevate QA
     </Link>
   );
 

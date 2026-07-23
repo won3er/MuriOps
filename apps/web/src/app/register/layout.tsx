@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Criar conta",
-  description: "Crie sua conta gratuita no QA AI e analise qualquer site.",
+  description: "Crie sua conta gratuita no Elevate QA e analise qualquer site.",
   alternates: {
     canonical: "/register",
   },

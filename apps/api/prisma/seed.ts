@@ -19,7 +19,7 @@ async function main(): Promise<void> {
 
   const org = await prisma.organization.create({
     data: {
-      name: "QA AI Demo",
+      name: "Elevate QA Demo",
       plan: "PRO",
       subscription: { create: { plan: "PRO", maxPagesPerAnalysis: 50 } },
     },
@@ -37,7 +37,7 @@ async function main(): Promise<void> {
   await prisma.project.create({
     data: {
       name: "Site de Exemplo",
-      description: "Projeto demo para testar o QA AI",
+      description: "Projeto demo para testar o Elevate QA",
       url: "https://example.com",
       organizationId: org.id,
       createdById: "seed",

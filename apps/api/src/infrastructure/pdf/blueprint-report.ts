@@ -6,7 +6,7 @@ export function generateBlueprintReportPdf(bp: Blueprint): PDFKit.PDFDocument {
   const doc = new PDFDocument({ size: "A4", margin: 50 });
   const r = bp.result;
 
-  doc.fontSize(20).text("Blueprint de Projeto — QA AI", { align: "left" });
+  doc.fontSize(20).text("Blueprint de Projeto — Elevate QA", { align: "left" });
   doc.moveDown(0.3);
   doc.fontSize(10).fillColor("#666").text(bp.title);
   doc.text(`IA: ${bp.provider} · gerado em ${new Date().toLocaleString("pt-BR")}`);

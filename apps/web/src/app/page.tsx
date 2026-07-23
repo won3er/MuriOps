@@ -57,9 +57,9 @@ export default function LandingPage() {
       <header className="flex w-full items-center justify-between py-6">
         <div className="flex items-center gap-2 text-lg font-semibold">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-            Q
+            E
           </span>
-          QA AI
+          Elevate QA
         </div>
         <nav className="flex items-center gap-3 text-sm">
           {loading ? null : user ? (
@@ -139,7 +139,7 @@ export default function LandingPage() {
       </section>
 
       <footer className="mt-24 py-8 text-sm text-muted-foreground">
-        QA AI — plataforma de análise automática de qualidade web.
+        Elevate QA — eleve a qualidade do seu site com análise automática por IA.
       </footer>
     </main>
   );

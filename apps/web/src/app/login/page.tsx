@@ -32,13 +32,13 @@ export default function LoginPage() {
       <nav aria-label="Principal" className="fixed left-0 top-0 p-6">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-            Q
+            E
           </span>
-          QA AI
+          Elevate QA
         </Link>
       </nav>
       <Card className="w-full max-w-sm p-6">
-        <h1 className="text-xl font-semibold">Entrar no QA AI</h1>
+        <h1 className="text-xl font-semibold">Entrar no Elevate QA</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Use a conta demo ou a sua.
         </p>
