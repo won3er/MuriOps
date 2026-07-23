@@ -6,6 +6,12 @@ import { z } from "zod";
 config({ path: resolve(process.cwd(), "../../.env") });
 config();
 
+// Plataformas de hospedagem (Render, Railway, Heroku...) injetam a porta via
+// PORT — usa como fallback quando API_PORT não foi definida explicitamente.
+if (!process.env.API_PORT && process.env.PORT) {
+  process.env.API_PORT = process.env.PORT;
+}
+
 /** Validação e tipagem das variáveis de ambiente. Falha cedo se algo faltar. */
 const schema = z
   .object({
