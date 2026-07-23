@@ -192,10 +192,13 @@ async function launchWithRetry(
   for (let i = 0; i < attempts; i++) {
     try {
       const browser = await chromium.launch({ headless: true });
+      // Sem userAgent customizado: usa o Chromium real do Playwright. Um UA
+      // que se anuncia como bot (ex.: "QA-AI-Bot/0.1") é bloqueado por
+      // proteções anti-bot de hosts como Vercel/Cloudflare — o que gera
+      // falsos "site fora do ar" nos relatórios, além de não refletir a
+      // experiência de um usuário real (o próprio objetivo do crawler).
       const context = await browser.newContext({
         viewport: { width: 1366, height: 900 },
-        userAgent:
-          "Mozilla/5.0 (compatible; QA-AI-Bot/0.1; +https://qa-ai.local/bot)",
       });
       return { browser, context };
     } catch (err) {

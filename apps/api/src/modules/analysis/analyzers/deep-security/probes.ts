@@ -12,7 +12,14 @@ export async function probeGet(
     const res = await fetch(url, {
       signal: controller.signal,
       redirect: "manual",
-      headers: { "user-agent": "QA-AI-Bot/0.1 (+security-audit)" },
+      // UA de navegador real: um UA que se identifica como bot (usado antes)
+      // é bloqueado por proteções anti-bot de hosts como Vercel/Cloudflare,
+      // gerando falsos-positivos de "arquivo ausente" em robots.txt,
+      // sitemap.xml e security.txt.
+      headers: {
+        "user-agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
     });
     clearTimeout(t);
     const text = await res.text().catch(() => "");
