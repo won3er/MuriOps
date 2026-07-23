@@ -22,6 +22,7 @@ RUN pnpm --filter @qa-ai/shared build \
 RUN pnpm --filter @qa-ai/api exec playwright install --with-deps chromium
 
 WORKDIR /repo/apps/api
+RUN mkdir -p storage
 ENV NODE_ENV=production
 EXPOSE 3333
 CMD ["sh", "-c", "pnpm exec prisma migrate deploy --schema prisma/schema.prisma && node dist/main.js"]
