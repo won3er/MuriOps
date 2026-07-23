@@ -1,0 +1,97 @@
+import type {
+  CreateProjectRequest,
+  Project,
+  ProjectWithStats,
+} from "@qa-ai/shared";
+import { prisma } from "../infrastructure/database/prisma.js";
+import { NotFoundError } from "./analysis.service.js";
+
+function normalizeUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!/^https?:\/\//i.test(trimmed)) return `https://${trimmed}`;
+  return trimmed;
+}
+
+export const projectService = {
+  async create(
+    organizationId: string,
+    userId: string,
+    input: CreateProjectRequest,
+  ): Promise<Project> {
+    const project = await prisma.project.create({
+      data: {
+        name: input.name,
+        description: input.description ?? null,
+        url: normalizeUrl(input.url),
+        organizationId,
+        createdById: userId,
+      },
+    });
+    return toDto(project);
+  },
+
+  async list(organizationId: string): Promise<ProjectWithStats[]> {
+    const projects = await prisma.project.findMany({
+      where: { organizationId },
+      orderBy: { updatedAt: "desc" },
+      include: {
+        analyses: {
+          where: { status: "COMPLETED" },
+          orderBy: { version: "desc" },
+          take: 1,
+        },
+        _count: { select: { analyses: true } },
+      },
+    });
+
+    return projects.map((p) => {
+      const last = p.analyses[0];
+      const score =
+        (last?.score as unknown as { overall?: number } | null)?.overall ??
+        null;
+      return {
+        ...toDto(p),
+        analysisCount: p._count.analyses,
+        lastScore: score,
+        lastAnalysisAt: last?.finishedAt?.toISOString() ?? null,
+      };
+    });
+  },
+
+  async getById(organizationId: string, id: string): Promise<Project | null> {
+    const project = await prisma.project.findFirst({
+      where: { id, organizationId },
+    });
+    return project ? toDto(project) : null;
+  },
+
+  /** Remove o projeto e todas as análises/problemas/evidências em cascata. */
+  async remove(organizationId: string, id: string): Promise<void> {
+    const project = await prisma.project.findFirst({
+      where: { id, organizationId },
+      select: { id: true },
+    });
+    if (!project) throw new NotFoundError("Projeto não encontrado");
+    await prisma.project.delete({ where: { id } });
+  },
+};
+
+function toDto(p: {
+  id: string;
+  name: string;
+  description: string | null;
+  url: string;
+  organizationId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}): Project {
+  return {
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    url: p.url,
+    ownerId: p.organizationId,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+  };
+}

@@ -1,0 +1,98 @@
+import { resolve } from "node:path";
+import fastifyCors from "@fastify/cors";
+import fastifyHelmet from "@fastify/helmet";
+import fastifyRateLimit from "@fastify/rate-limit";
+import fastifyStatic from "@fastify/static";
+import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
+import { ZodError } from "zod";
+import { env } from "../config/env.js";
+import { authPlugin } from "./plugins/auth.plugin.js";
+import { analysisRoutes } from "./routes/analysis.routes.js";
+import { authRoutes } from "./routes/auth.routes.js";
+import { blueprintRoutes } from "./routes/blueprint.routes.js";
+import { dashboardRoutes } from "./routes/dashboard.routes.js";
+import { projectRoutes } from "./routes/project.routes.js";
+import { settingsRoutes } from "./routes/settings.routes.js";
+
+export async function buildApp(): Promise<FastifyInstance> {
+  const app = Fastify({
+    logger: {
+      transport:
+        process.env.NODE_ENV === "development"
+          ? { target: "pino-pretty" }
+          : undefined,
+      level: "info",
+    },
+  });
+
+  await app.register(fastifyCors, {
+    origin: env.CORS_ORIGIN.split(",").map((o) => o.trim()),
+    credentials: true,
+  });
+
+  // Headers de segurança (CSP, HSTS, X-Frame-Options, X-Content-Type-Options,
+  // Referrer-Policy, Permissions-Policy, COOP, CORP) — a mesma checklist que
+  // o módulo de Segurança Avançada cobra dos sites analisados.
+  await app.register(fastifyHelmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+      },
+    },
+    crossOriginResourcePolicy: { policy: "same-site" },
+  });
+
+  // Rate limit global — mitiga scraping/DoS básico. Rotas de auth têm limite
+  // mais estrito (ver auth.routes.ts) contra brute force de login.
+  await app.register(fastifyRateLimit, {
+    max: 300,
+    timeWindow: "1 minute",
+  });
+
+  await app.register(authPlugin);
+
+  // Serve evidências (screenshots, logs) sob /evidence/<analysisId>/<arquivo>.
+  await app.register(fastifyStatic, {
+    root: resolve(env.STORAGE_DIR),
+    prefix: "/evidence/",
+    decorateReply: false,
+  });
+
+  // Tratamento centralizado de erros (validação Zod -> 400).
+  app.setErrorHandler((error: FastifyError, _req, reply) => {
+    if (error instanceof ZodError) {
+      return reply.status(400).send({
+        statusCode: 400,
+        error: "ValidationError",
+        message: "Dados inválidos",
+        issues: error.flatten(),
+      });
+    }
+    app.log.error(error);
+    const statusCode = error.statusCode ?? 500;
+    // Erros 5xx podem carregar detalhes internos (query, path, stack) — só
+    // expõe a mensagem original para 4xx, que já são textos pensados pro
+    // usuário (ex.: NotFoundError). Em produção some com qualquer coisa ≥500.
+    const message =
+      statusCode >= 500
+        ? "Erro interno. Tente novamente em instantes."
+        : (error.message ?? "Erro interno");
+    return reply.status(statusCode).send({
+      statusCode,
+      error: error.name ?? "InternalServerError",
+      message,
+    });
+  });
+
+  app.get("/health", async () => ({ status: "ok" }));
+
+  await app.register(authRoutes);
+  await app.register(projectRoutes);
+  await app.register(analysisRoutes);
+  await app.register(blueprintRoutes);
+  await app.register(dashboardRoutes);
+  await app.register(settingsRoutes);
+
+  return app;
+}

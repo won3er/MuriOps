@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // App usa o pooler (Supabase: porta 6543, ?pgbouncer=true).
+  url       = env("DATABASE_URL")
+  // Migrations usam a conexão direta (Supabase: porta 5432). Fora do Supabase,
+  // deixe DIRECT_URL igual a DATABASE_URL.
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------- Contas / multi-tenant ----------
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+model Organization {
+  id        String           @id @default(cuid())
+  name      String
+  plan      SubscriptionPlan @default(FREE)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  // Chave de IA própria da organização (opcional). Se ausente, usa a chave
+  // padrão do servidor configurada em .env. Armazenada criptografada (AES-256-GCM).
+  aiProvider          String?
+  aiApiKeyEncrypted   String?
+
+  users        User[]
+  projects     Project[]
+  subscription Subscription?
+  blueprints   Blueprint[]
+}
+
+model User {
+  id             String   @id @default(cuid())
+  name           String
+  email          String   @unique
+  passwordHash   String
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+// Estrutura de assinatura preparada para expansao futura (sem cobranca agora).
+model Subscription {
+  id             String           @id @default(cuid())
+  organizationId String           @unique
+  plan           SubscriptionPlan @default(FREE)
+  status         String           @default("active")
+  // limites por plano (crawler, analises/mes) — aplicados na camada de aplicacao
+  maxPagesPerAnalysis Int         @default(50)
+  maxAnalysesPerMonth Int         @default(20)
+  currentPeriodEnd    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+// ---------- Projetos ----------
+
+model Project {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  url            String
+  organizationId String
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  analyses     Analysis[]
+
+  @@index([organizationId])
+}
+
+// ---------- Analises ----------
+
+enum AnalysisStatus {
+  QUEUED
+  CRAWLING
+  ANALYZING
+  AI_REVIEW
+  COMPLETED
+  FAILED
+}
+
+model Analysis {
+  id              String         @id @default(cuid())
+  projectId       String
+  version         Int
+  status          AnalysisStatus @default(QUEUED)
+  // score agregado + por categoria (JSON: ScoreBreakdown)
+  score           Json?
+  pagesDiscovered Int            @default(0)
+  issueCount      Int            @default(0)
+  durationMs      Int?
+  aiSummary       String?
+  error           String?
+  // parametros usados (categorias, maxDepth, maxPages, url override)
+  config          Json?
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  createdAt       DateTime       @default(now())
+
+  project  Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  pages    CrawledPage[]
+  issues   Issue[]
+  evidence Evidence[]
+
+  @@unique([projectId, version])
+  @@index([projectId])
+}
+
+model CrawledPage {
+  id         String  @id @default(cuid())
+  analysisId String
+  url        String
+  title      String?
+  depth      Int     @default(0)
+  linkedFrom String?
+  statusCode Int?
+
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+}
+
+enum AnalysisCategory {
+  UI
+  UX
+  PERFORMANCE
+  SEO
+  ACCESSIBILITY
+  SECURITY
+  CONSOLE
+  NETWORK
+  DEEP_SECURITY
+}
+
+enum Severity {
+  INFO
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IssueStatus {
+  OPEN
+  ACKNOWLEDGED
+  FIXED
+  IGNORED
+}
+
+model Issue {
+  id               String           @id @default(cuid())
+  analysisId       String
+  title            String
+  description      String
+  category         AnalysisCategory
+  severity         Severity
+  status           IssueStatus      @default(OPEN)
+  pageUrl          String?
+  selector         String?
+  stepsToReproduce String[]
+  impact           String?
+  suggestion       String?
+  raw              String?
+  // chave estavel de deteccao para comparar entre versoes
+  fingerprint      String
+  createdAt        DateTime         @default(now())
+
+  analysis Analysis   @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  evidence Evidence[]
+
+  @@index([analysisId])
+  @@index([category])
+  @@index([severity])
+  @@index([fingerprint])
+}
+
+enum EvidenceType {
+  SCREENSHOT
+  VIDEO
+  CONSOLE
+  NETWORK
+  DOM
+}
+
+model Evidence {
+  id         String       @id @default(cuid())
+  analysisId String
+  issueId    String?
+  type       EvidenceType
+  // caminho relativo dentro do STORAGE_DIR
+  path       String
+  pageUrl    String?
+  viewport   String?
+  meta       Json?
+  capturedAt DateTime     @default(now())
+
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  issue    Issue?   @relation(fields: [issueId], references: [id], onDelete: SetNull)
+
+  @@index([analysisId])
+  @@index([issueId])
+}
+
+// ---------- Blueprint (pilar Projetar) ----------
+
+model Blueprint {
+  id             String   @id @default(cuid())
+  organizationId String
+  // Vínculo opcional a um projeto existente.
+  projectId      String?
+  createdById    String
+  title          String
+  // form | canvas | prompt
+  mode           String
+  // provider de IA usado (claude | openai | gemini | noop)
+  provider       String
+  // PENDING | READY | FAILED
+  status         String   @default("PENDING")
+  // Entrada bruta conforme o modo (BlueprintInputPayload).
+  input          Json
+  // Saída estruturada da IA (BlueprintResult).
+  result         Json?
+  error          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([projectId])
+}
