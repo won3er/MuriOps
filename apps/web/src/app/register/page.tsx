@@ -43,18 +43,21 @@ function RegisterForm() {
       )}
       <form onSubmit={submit} className="mt-6 space-y-3">
         <Input
+          aria-label="Nome"
           placeholder="Nome"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
         <Input
           type="email"
+          aria-label="E-mail"
           placeholder="E-mail"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         <Input
           type="password"
+          aria-label="Senha (mínimo 8 caracteres)"
           placeholder="Senha (mínimo 8 caracteres)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -77,6 +80,14 @@ function RegisterForm() {
 export default function RegisterPage() {
   return (
     <main className="grid min-h-screen place-items-center px-6">
+      <nav aria-label="Principal" className="fixed left-0 top-0 p-6">
+        <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
+            Q
+          </span>
+          QA AI
+        </Link>
+      </nav>
       <Suspense fallback={null}>
         <RegisterForm />
       </Suspense>

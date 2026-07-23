@@ -81,12 +81,10 @@ export default function LandingPage() {
         </nav>
       </header>
 
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="mt-16 flex flex-col items-center text-center"
-      >
+      {/* Sem fade-in aqui: é o conteúdo acima da dobra (candidato a LCP) —
+          animar opacity de 0 atrasa o momento em que o navegador considera
+          o maior elemento como "pintado", inflando o LCP medido. */}
+      <section className="mt-16 flex flex-col items-center text-center">
         <span className="mb-4 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
           Sua equipe de QA, automatizada por IA
         </span>
@@ -104,6 +102,7 @@ export default function LandingPage() {
 
         <div className="mt-8 flex w-full max-w-xl flex-col gap-2 sm:flex-row">
           <Input
+            aria-label="URL do site a analisar"
             placeholder="https://seusite.com"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
@@ -121,7 +120,7 @@ export default function LandingPage() {
           </Button>
         </div>
         {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
-      </motion.section>
+      </section>
 
       <section className="mt-24 grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {FEATURES.map((f, i) => (
@@ -133,7 +132,7 @@ export default function LandingPage() {
             className="glass rounded-lg p-5"
           >
             <f.icon className="mb-3 h-6 w-6 text-primary" />
-            <h3 className="font-medium">{f.title}</h3>
+            <h2 className="font-medium">{f.title}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{f.desc}</p>
           </motion.div>
         ))}

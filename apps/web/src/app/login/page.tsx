@@ -29,6 +29,14 @@ export default function LoginPage() {
 
   return (
     <main className="grid min-h-screen place-items-center px-6">
+      <nav aria-label="Principal" className="fixed left-0 top-0 p-6">
+        <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
+            Q
+          </span>
+          QA AI
+        </Link>
+      </nav>
       <Card className="w-full max-w-sm p-6">
         <h1 className="text-xl font-semibold">Entrar no QA AI</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -37,12 +45,14 @@ export default function LoginPage() {
         <form onSubmit={submit} className="mt-6 space-y-3">
           <Input
             type="email"
+            aria-label="E-mail"
             placeholder="E-mail"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <Input
             type="password"
+            aria-label="Senha"
             placeholder="Senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

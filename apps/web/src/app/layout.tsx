@@ -18,10 +18,34 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://elevate-qa.vercel.app";
+const title = "QA AI — Análise inteligente de qualidade web";
+const description =
+  "Analise automaticamente qualquer site como uma equipe profissional de QA: UI, UX, performance, SEO, acessibilidade, segurança e mais — com IA.";
+
 export const metadata: Metadata = {
-  title: "QA AI — Análise inteligente de qualidade web",
-  description:
-    "Analise automaticamente qualquer site como uma equipe profissional de QA: UI, UX, performance, SEO, acessibilidade, segurança e mais — com IA.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: title,
+    template: "%s — QA AI",
+  },
+  description,
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    url: siteUrl,
+    siteName: "QA AI",
+    title,
+    description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+  },
 };
 
 export const viewport: Viewport = {
