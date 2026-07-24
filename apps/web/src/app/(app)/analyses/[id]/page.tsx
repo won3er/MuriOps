@@ -2,9 +2,9 @@
 
 import { ALL_CATEGORIES, Severity, type AnalysisDetail, type Issue } from "@qa-ai/shared";
 import { motion } from "framer-motion";
-import { Download, FileSearch, Loader2, Sparkles } from "lucide-react";
+import { Download, FileSearch, Loader2, Sparkles, Wrench } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnalysisStatusBadge } from "@/components/status-badge";
 import { IssueCard } from "@/components/issue-card";
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
+import { useCreateRemediationPlan } from "@/lib/queries";
 import { securityGroupOf } from "@/lib/security-groups";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,8 @@ const CATEGORY_LABEL: Record<string, string> = {
 
 export default function AnalysisDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const createRemediation = useCreateRemediationPlan();
   const [data, setData] = useState<AnalysisDetail | null>(null);
   const [category, setCategory] = useState<string>("");
   const [securityGroup, setSecurityGroup] = useState<string>("");
@@ -87,6 +90,14 @@ export default function AnalysisDetailPage() {
     }
   }
 
+  function generateApplication() {
+    if (!data) return;
+    createRemediation.mutate(
+      { sourceType: "analysis", sourceId: data.id },
+      { onSuccess: (plan) => router.push(`/aplicacao/${plan.id}`) },
+    );
+  }
+
   // Refetch on filter change.
   useEffect(() => {
     load();
@@ -126,6 +137,22 @@ export default function AnalysisDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-4">
+          {data.status === "COMPLETED" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={generateApplication}
+              disabled={createRemediation.isPending}
+              title="Transforma os problemas encontrados num checklist de mudanças aplicáveis"
+            >
+              {createRemediation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Wrench className="h-4 w-4" />
+              )}
+              Gerar Aplicação
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"

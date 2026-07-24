@@ -1,15 +1,28 @@
 "use client";
 
 import type { Analysis, Project } from "@qa-ai/shared";
-import { Loader2, Play, ShieldAlert, Trash2 } from "lucide-react";
+import { Loader2, Play, ShieldAlert, Trash2, Wrench } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AnalysisStatusBadge } from "@/components/status-badge";
 import { api } from "@/lib/api";
+import { useProjectRemediationPlans } from "@/lib/queries";
 import { cn, formatDuration, scoreColor, timeAgo } from "@/lib/utils";
+
+const REMEDIATION_STATUS_LABEL: Record<string, string> = {
+  PENDING: "Gerando…",
+  READY: "Pronta",
+  FAILED: "Falhou",
+};
+const REMEDIATION_STATUS_CLASS: Record<string, string> = {
+  PENDING: "border-amber-500/40 bg-amber-500/15 text-amber-300",
+  READY: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
+  FAILED: "border-red-500/40 bg-red-500/15 text-red-300",
+};
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,7 +32,8 @@ export default function ProjectDetailPage() {
   const [starting, setStarting] = useState(false);
   const [startingSecurity, setStartingSecurity] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"normal" | "security">("normal");
+  const [tab, setTab] = useState<"normal" | "security" | "remediation">("normal");
+  const { data: remediationPlans = [] } = useProjectRemediationPlans(id);
 
   const loadAnalyses = () =>
     api.projectAnalyses(id).then(setAnalyses).catch(() => {});
@@ -146,9 +160,55 @@ export default function ProjectDetailPage() {
               <span className="hidden sm:inline">Auditorias de Segurança</span>
               <span className="sm:hidden">Segurança</span> ({securityAnalyses.length})
             </button>
+            <button
+              onClick={() => setTab("remediation")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors",
+                tab === "remediation"
+                  ? "bg-primary/15 text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Wrench className="h-3.5 w-3.5" />
+              <span>Aplicações</span> ({remediationPlans.length})
+            </button>
           </div>
         </div>
-        {visibleAnalyses.length === 0 ? (
+        {tab === "remediation" ? (
+          remediationPlans.length === 0 ? (
+            <Card>
+              <CardContent className="py-10 text-center text-muted-foreground">
+                Nenhuma Aplicação ainda. Gere uma a partir de uma análise ou
+                blueprint concluído.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {remediationPlans.map((plan) => (
+                <Link key={plan.id} href={`/aplicacao/${plan.id}`}>
+                  <Card className="transition-colors hover:border-primary/50">
+                    <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">
+                        <span className="truncate font-medium">{plan.title}</span>
+                        <Badge className={REMEDIATION_STATUS_CLASS[plan.status]}>
+                          {REMEDIATION_STATUS_LABEL[plan.status] ?? plan.status}
+                        </Badge>
+                        {plan.status === "READY" && (
+                          <span className="tabular text-xs text-muted-foreground">
+                            {plan.doneCount}/{plan.itemCount} aplicado(s)
+                          </span>
+                        )}
+                      </div>
+                      <span className="tabular text-xs text-muted-foreground">
+                        {timeAgo(plan.createdAt)}
+                      </span>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )
+        ) : visibleAnalyses.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
               {tab === "normal"

@@ -8,12 +8,16 @@ import type {
   BlueprintSummary,
   CreateBlueprintRequest,
   CreateProjectRequest,
+  CreateRemediationPlanRequest,
   DashboardStats,
   IssueFilters,
   LoginRequest,
   Project,
   ProjectWithStats,
   RegisterRequest,
+  RemediationItemStatus,
+  RemediationPlan,
+  RemediationSummary,
   StartAnalysisRequest,
 } from "@qa-ai/shared";
 
@@ -105,6 +109,8 @@ export const api = {
   getProject: (id: string) => request<Project>(`/projects/${id}`),
   projectAnalyses: (id: string) =>
     request<Analysis[]>(`/projects/${id}/analyses`),
+  projectRemediationPlans: (id: string) =>
+    request<RemediationSummary[]>(`/projects/${id}/remediation-plans`),
   deleteProject: (id: string) =>
     request<void>(`/projects/${id}`, { method: "DELETE" }),
 
@@ -174,6 +180,39 @@ export const api = {
     const a = document.createElement("a");
     a.href = url;
     a.download = `blueprint-${title.toLowerCase().replace(/\s+/g, "-").slice(0, 40)}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
+
+  // ---- aplicação (RemediationPlan) ----
+  createRemediationPlan: (body: CreateRemediationPlanRequest) =>
+    request<RemediationPlan>("/remediation-plans", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  getRemediationPlan: (id: string) =>
+    request<RemediationPlan>(`/remediation-plans/${id}`),
+  updateRemediationItem: (id: string, itemId: string, status: RemediationItemStatus) =>
+    request<RemediationPlan>(`/remediation-plans/${id}/items/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+  deleteRemediationPlan: (id: string) =>
+    request<void>(`/remediation-plans/${id}`, { method: "DELETE" }),
+  /** Baixa o relatório em PDF do plano de aplicação. */
+  downloadRemediationPdf: async (id: string) => {
+    const token = getToken();
+    const res = await fetch(`${BASE}/remediation-plans/${id}/report.pdf`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new ApiError("Falha ao gerar PDF", res.status);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `aplicacao-${id}.pdf`;
     document.body.appendChild(a);
     a.click();
     a.remove();

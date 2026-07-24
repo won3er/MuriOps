@@ -33,10 +33,11 @@ model Organization {
   aiProvider          String?
   aiApiKeyEncrypted   String?
 
-  users        User[]
-  projects     Project[]
-  subscription Subscription?
-  blueprints   Blueprint[]
+  users             User[]
+  projects          Project[]
+  subscription      Subscription?
+  blueprints        Blueprint[]
+  remediationPlans  RemediationPlan[]
 }
 
 model User {
@@ -247,4 +248,47 @@ model Blueprint {
 
   @@index([organizationId])
   @@index([projectId])
+}
+
+// ---------- Aplicação (RemediationPlan) ----------
+// Transforma os achados de uma Análise (Issues) ou de um Blueprint num plano
+// de ação concreto — o que mudar, onde, e como — para o usuário aplicar de
+// verdade no projeto. Fase 1: aplicação manual (checklist); a IA não altera
+// o código do usuário, só instrui.
+
+enum RemediationSourceType {
+  ANALYSIS
+  BLUEPRINT
+}
+
+enum RemediationStatus {
+  PENDING
+  READY
+  FAILED
+}
+
+model RemediationPlan {
+  id             String                @id @default(cuid())
+  organizationId String
+  // Vínculo ao projeto quando a origem tem um (Análise sempre tem; Blueprint
+  // às vezes não está associado a nenhum projeto ainda).
+  projectId      String?
+  createdById    String
+  sourceType     RemediationSourceType
+  sourceId       String
+  title          String
+  // provider de IA usado (claude | openai | gemini | noop)
+  provider       String
+  status         RemediationStatus     @default(PENDING)
+  // Saída estruturada da IA (RemediationResult).
+  result         Json?
+  error          String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([projectId])
+  @@index([sourceType, sourceId])
 }

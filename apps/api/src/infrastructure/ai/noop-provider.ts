@@ -1,10 +1,11 @@
-import type { BlueprintResult } from "@qa-ai/shared";
+import type { BlueprintResult, RemediationResult } from "@qa-ai/shared";
 import type { BlueprintDesignInput } from "./blueprint-prompt.js";
 import type {
   AiAnalysisInput,
   AiAnalysisResult,
   AiProvider,
 } from "./provider.js";
+import type { RemediationDesignInput } from "./remediation-prompt.js";
 
 /**
  * Provider sem IA — usado quando nenhuma chave está configurada.
@@ -163,6 +164,36 @@ export class NoopProvider implements AiProvider {
           name: "Change failure rate",
           target: "< 15%",
           why: "Qualidade dos deploys.",
+        },
+      ],
+    };
+  }
+
+  /**
+   * Sem IA, não há como transformar os achados num checklist detalhado —
+   * devolve um único item apontando para o contexto bruto, orientando a
+   * configurar um provider pra obter o plano de aplicação de verdade.
+   */
+  async buildRemediationPlan(
+    input: RemediationDesignInput,
+  ): Promise<RemediationResult> {
+    return {
+      summary:
+        `Plano-base sem IA para "${input.title}". Configure um provider ` +
+        `(Claude, OpenAI ou Gemini) em Configurações para obter um checklist ` +
+        `detalhado, arquivo por arquivo, de como aplicar cada mudança.`,
+      items: [
+        {
+          id: "item-1",
+          title: "Revisar achados manualmente",
+          category: "geral",
+          severity: "info",
+          filePath: null,
+          description: input.context.slice(0, 1000),
+          howTo:
+            "Configure um provider de IA em Configurações e regenere este " +
+            "plano para receber um passo a passo detalhado por item.",
+          status: "pending",
         },
       ],
     };

@@ -6,7 +6,10 @@ import type {
   BlueprintSummary,
   CreateBlueprintRequest,
   CreateProjectRequest,
+  CreateRemediationPlanRequest,
   ProjectWithStats,
+  RemediationItemStatus,
+  RemediationPlan,
 } from "@qa-ai/shared";
 import {
   useMutation,
@@ -22,6 +25,9 @@ export const qk = {
   blueprint: (id: string) => ["blueprint", id] as const,
   projects: ["projects"] as const,
   dashboard: ["dashboard"] as const,
+  remediationPlan: (id: string) => ["remediation-plan", id] as const,
+  projectRemediationPlans: (projectId: string) =>
+    ["remediation-plans", "project", projectId] as const,
 };
 
 // ---------- Blueprints ----------
@@ -90,6 +96,79 @@ export function useDeleteBlueprint() {
     },
     onSuccess: () => toast.success("Blueprint apagado"),
     onSettled: () => qc.invalidateQueries({ queryKey: qk.blueprints }),
+  });
+}
+
+// ---------- Aplicação (RemediationPlan) ----------
+
+/**
+ * Detalhe da Aplicação. Enquanto está PENDING, faz polling a cada 2.5s até
+ * virar READY/FAILED — mesmo padrão do Blueprint.
+ */
+export function useRemediationPlan(id: string) {
+  return useQuery({
+    queryKey: qk.remediationPlan(id),
+    queryFn: () => api.getRemediationPlan(id),
+    refetchInterval: (query) =>
+      query.state.data?.status === "PENDING" ? 2500 : false,
+  });
+}
+
+export function useProjectRemediationPlans(projectId: string) {
+  return useQuery({
+    queryKey: qk.projectRemediationPlans(projectId),
+    queryFn: () => api.projectRemediationPlans(projectId),
+    enabled: !!projectId,
+  });
+}
+
+export function useCreateRemediationPlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateRemediationPlanRequest) =>
+      api.createRemediationPlan(body),
+    onSuccess: (plan) => {
+      qc.setQueryData<RemediationPlan>(qk.remediationPlan(plan.id), plan);
+      if (plan.projectId) {
+        qc.invalidateQueries({
+          queryKey: qk.projectRemediationPlans(plan.projectId),
+        });
+      }
+    },
+    onError: (err) =>
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao gerar a Aplicação",
+      ),
+  });
+}
+
+export function useUpdateRemediationItem(planId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      itemId,
+      status,
+    }: {
+      itemId: string;
+      status: RemediationItemStatus;
+    }) => api.updateRemediationItem(planId, itemId, status),
+    onSuccess: (plan) => {
+      qc.setQueryData<RemediationPlan>(qk.remediationPlan(planId), plan);
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao atualizar item"),
+  });
+}
+
+export function useDeleteRemediationPlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteRemediationPlan(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["remediation-plans"] });
+      toast.success("Aplicação apagada");
+    },
+    onError: () => toast.error("Falha ao apagar Aplicação"),
   });
 }
 

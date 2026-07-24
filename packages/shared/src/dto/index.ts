@@ -5,6 +5,11 @@ import type {
   BlueprintMode,
   BlueprintProviderName,
 } from "../types/blueprint.js";
+import type {
+  RemediationItemStatus,
+  RemediationProviderName,
+  RemediationSourceType,
+} from "../types/remediation.js";
 
 export interface RegisterRequest {
   name: string;
@@ -71,3 +76,17 @@ export interface CreateBlueprintRequest {
 }
 
 export type { BlueprintMode };
+
+// ---------- Aplicação (RemediationPlan) ----------
+
+export interface CreateRemediationPlanRequest {
+  sourceType: RemediationSourceType;
+  /** id da Análise ou do Blueprint de origem. */
+  sourceId: string;
+  /** IA escolhida por request. Ausente = provider configurado da organização. */
+  provider?: RemediationProviderName;
+}
+
+export interface UpdateRemediationItemRequest {
+  status: RemediationItemStatus;
+}

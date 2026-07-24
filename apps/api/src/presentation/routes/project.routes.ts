@@ -5,6 +5,7 @@ import {
   NotFoundError,
 } from "../../application/analysis.service.js";
 import { projectService } from "../../application/project.service.js";
+import { remediationService } from "../../application/remediation.service.js";
 
 const createSchema = z.object({
   name: z.string().min(2),
@@ -42,6 +43,12 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
   app.get("/projects/:id/analyses", async (req) => {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     return analysisService.listByProject(req.user.organizationId, id);
+  });
+
+  // Aplicações (pilar Aplicação) geradas a partir de análises/blueprints deste projeto.
+  app.get("/projects/:id/remediation-plans", async (req) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    return remediationService.list(req.user.organizationId, id);
   });
 
   // Apaga o projeto e todas as análises/problemas/evidências relacionados.

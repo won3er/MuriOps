@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { BlueprintResult } from "@qa-ai/shared";
+import type { BlueprintResult, RemediationResult } from "@qa-ai/shared";
 import { env } from "../../config/env.js";
 import {
   BLUEPRINT_SYSTEM_PROMPT,
@@ -10,6 +10,13 @@ import {
 } from "./blueprint-prompt.js";
 import { buildUserPrompt, normalizeAiResult, parseAiJson, SYSTEM_PROMPT } from "./prompt.js";
 import type { AiAnalysisInput, AiAnalysisResult, AiProvider } from "./provider.js";
+import {
+  buildRemediationUserPrompt,
+  normalizeRemediation,
+  parseRemediationJson,
+  REMEDIATION_SYSTEM_PROMPT,
+  type RemediationDesignInput,
+} from "./remediation-prompt.js";
 
 /** Provider alternativo via OpenAI (mesma interface do engine). */
 export class OpenAiProvider implements AiProvider {
@@ -46,5 +53,21 @@ export class OpenAiProvider implements AiProvider {
 
     const text = completion.choices[0]?.message?.content ?? "{}";
     return normalizeBlueprint(parseBlueprintJson(text));
+  }
+
+  async buildRemediationPlan(
+    input: RemediationDesignInput,
+  ): Promise<RemediationResult> {
+    const completion = await this.client.chat.completions.create({
+      model: env.OPENAI_MODEL,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: REMEDIATION_SYSTEM_PROMPT },
+        { role: "user", content: buildRemediationUserPrompt(input) },
+      ],
+    });
+
+    const text = completion.choices[0]?.message?.content ?? "{}";
+    return normalizeRemediation(parseRemediationJson(text));
   }
 }

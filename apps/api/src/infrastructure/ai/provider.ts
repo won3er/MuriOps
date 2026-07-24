@@ -1,9 +1,11 @@
 import type {
   AnalysisCategory,
   BlueprintResult,
+  RemediationResult,
   Severity,
 } from "@qa-ai/shared";
 import type { BlueprintDesignInput } from "./blueprint-prompt.js";
+import type { RemediationDesignInput } from "./remediation-prompt.js";
 
 /** Um problema bruto detectado pelos módulos, entregue à IA para enriquecer. */
 export interface AiIssueInput {
@@ -55,4 +57,9 @@ export interface AiProvider {
    * Recebe a descrição do projeto e devolve o blueprint estruturado.
    */
   designBlueprint(input: BlueprintDesignInput): Promise<BlueprintResult>;
+  /**
+   * Transforma achados de uma análise (ou o plano de um blueprint) num plano
+   * de aplicação concreto — o checklist do pilar Aplicação.
+   */
+  buildRemediationPlan(input: RemediationDesignInput): Promise<RemediationResult>;
 }

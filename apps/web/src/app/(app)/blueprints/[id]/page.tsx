@@ -12,6 +12,7 @@ import {
   Target,
   Trash2,
   Workflow,
+  Wrench,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -26,6 +27,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import {
   useBlueprint,
+  useCreateRemediationPlan,
   useDeleteBlueprint,
   useRegenerateBlueprint,
 } from "@/lib/queries";
@@ -44,6 +46,7 @@ export default function BlueprintDetailPage() {
   const { data: bp, isLoading } = useBlueprint(id);
   const regenerate = useRegenerateBlueprint(id);
   const del = useDeleteBlueprint();
+  const createRemediation = useCreateRemediationPlan();
   const [downloading, setDownloading] = useState(false);
 
   function remove() {
@@ -59,6 +62,14 @@ export default function BlueprintDetailPage() {
     } finally {
       setDownloading(false);
     }
+  }
+
+  function generateApplication() {
+    if (!bp) return;
+    createRemediation.mutate(
+      { sourceType: "blueprint", sourceId: bp.id },
+      { onSuccess: (plan) => router.push(`/aplicacao/${plan.id}`) },
+    );
   }
 
   if (isLoading) {
@@ -103,6 +114,22 @@ export default function BlueprintDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          {bp.status === "READY" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={generateApplication}
+              disabled={createRemediation.isPending}
+              title="Transforma este plano num checklist de mudanças aplicáveis"
+            >
+              {createRemediation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Wrench className="h-3.5 w-3.5" />
+              )}
+              Aplicação
+            </Button>
+          )}
           {bp.status === "READY" && (
             <Button
               variant="outline"
