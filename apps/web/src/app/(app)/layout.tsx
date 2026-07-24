@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { LogoFull } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -49,11 +50,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   const brand = (
-    <Link href="/" className="flex items-center gap-2 px-2 font-semibold">
-      <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-        E
-      </span>
-      Elevate QA
+    <Link href="/" className="px-2">
+      <LogoFull />
     </Link>
   );
 
