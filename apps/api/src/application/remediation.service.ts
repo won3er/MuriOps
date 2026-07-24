@@ -239,9 +239,16 @@ type AnalysisWithIssues = Prisma.AnalysisGetPayload<{
   include: { project: true; issues: true };
 }>;
 
+/** Categorias rodadas ficam em config.categories (Json) na Analysis. */
+function analysisCategories(a: { config: unknown }): string[] {
+  const cfg = a.config as { categories?: unknown } | null;
+  return Array.isArray(cfg?.categories) ? (cfg.categories as string[]) : [];
+}
+
 /** Análise de Segurança = rodou só a categoria DEEP_SECURITY. */
-function isSecurityAnalysis(a: { categories: string[] }): boolean {
-  return a.categories.length === 1 && a.categories[0] === "DEEP_SECURITY";
+function isSecurityAnalysis(a: { config: unknown }): boolean {
+  const cats = analysisCategories(a);
+  return cats.length === 1 && cats[0] === "DEEP_SECURITY";
 }
 
 /** Serializa os achados de uma análise em texto pra IA. */
