@@ -34,24 +34,33 @@ export default function OpengraphImage() {
             marginBottom: 36,
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              width: 72,
-              height: 72,
-              borderRadius: 16,
-              background: "#14b8a6",
-              color: "#0b1220",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 44,
-              fontWeight: 700,
-            }}
-          >
-            E
-          </div>
-          <div style={{ fontSize: 48, fontWeight: 700, color: "#f8fafc" }}>
-            Elevate QA
+          <svg width="80" height="80" viewBox="0 0 32 32">
+            <defs>
+              <linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0%" stopColor="#0d9488" />
+                <stop offset="100%" stopColor="#22d3ee" />
+              </linearGradient>
+            </defs>
+            <rect width="32" height="32" rx="8.5" fill="url(#g)" />
+            <path
+              d="M9.5 13.5 L16 7 L22.5 13.5"
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M9.5 19.5 L14 24 L22.5 15.5"
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <div style={{ fontSize: 48, fontWeight: 700, color: "#f8fafc", display: "flex" }}>
+            Elevate&nbsp;<span style={{ color: "#2dd4bf" }}>QA</span>
           </div>
         </div>
         <div

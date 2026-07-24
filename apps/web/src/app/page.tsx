@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { LogoFull } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
@@ -55,12 +56,7 @@ export default function LandingPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col items-center px-6">
       <header className="flex w-full items-center justify-between py-6">
-        <div className="flex items-center gap-2 text-lg font-semibold">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-            E
-          </span>
-          Elevate QA
-        </div>
+        <LogoFull className="text-lg" />
         <nav className="flex items-center gap-3 text-sm">
           {loading ? null : user ? (
             <Link href="/dashboard">
