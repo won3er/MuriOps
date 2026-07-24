@@ -129,7 +129,10 @@ export default function AnalysisDetailPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold">Análise v{data.version}</h1>
+            <h1 className="text-2xl font-semibold">
+              {isSecurityOnly ? "Análise de Segurança" : "Análise QA padrão"} v
+              {data.version}
+            </h1>
             <AnalysisStatusBadge status={data.status} />
           </div>
           <p className="tabular text-sm text-muted-foreground">

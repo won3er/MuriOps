@@ -116,7 +116,7 @@ export default function ProjectDetailPage() {
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                <ShieldAlert className="h-4 w-4" /> Auditoria de Segurança
+                <ShieldAlert className="h-4 w-4" /> Análise de Segurança
               </>
             )}
           </Button>
@@ -125,7 +125,7 @@ export default function ProjectDetailPage() {
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                <Play className="h-4 w-4" /> Iniciar análise
+                <Play className="h-4 w-4" /> Análise QA padrão
               </>
             )}
           </Button>
@@ -145,7 +145,8 @@ export default function ProjectDetailPage() {
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
-              Análises ({normalAnalyses.length})
+              <span className="hidden sm:inline">Análises QA padrão</span>
+              <span className="sm:hidden">QA</span> ({normalAnalyses.length})
             </button>
             <button
               onClick={() => setTab("security")}
@@ -157,7 +158,7 @@ export default function ProjectDetailPage() {
               )}
             >
               <ShieldAlert className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Auditorias de Segurança</span>
+              <span className="hidden sm:inline">Análises de Segurança</span>
               <span className="sm:hidden">Segurança</span> ({securityAnalyses.length})
             </button>
             <button
@@ -212,8 +213,8 @@ export default function ProjectDetailPage() {
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
               {tab === "normal"
-                ? "Nenhuma análise ainda. Clique em “Iniciar análise”."
-                : "Nenhuma auditoria de segurança ainda. Clique em “Auditoria de Segurança”."}
+                ? "Nenhuma análise ainda. Clique em “Análise QA padrão”."
+                : "Nenhuma análise de segurança ainda. Clique em “Análise de Segurança”."}
             </CardContent>
           </Card>
         ) : (

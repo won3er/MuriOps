@@ -187,6 +187,8 @@ export const api = {
   },
 
   // ---- aplicação (RemediationPlan) ----
+  listRemediationPlans: () =>
+    request<RemediationSummary[]>("/remediation-plans"),
   createRemediationPlan: (body: CreateRemediationPlanRequest) =>
     request<RemediationPlan>("/remediation-plans", {
       method: "POST",
@@ -201,6 +203,28 @@ export const api = {
     }),
   deleteRemediationPlan: (id: string) =>
     request<void>(`/remediation-plans/${id}`, { method: "DELETE" }),
+  /** Texto do pacote da ponte universal (markdown p/ IA de dev). */
+  fetchRemediationBridge: async (id: string): Promise<string> => {
+    const token = getToken();
+    const res = await fetch(`${BASE}/remediation-plans/${id}/bridge.md`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new ApiError("Falha ao gerar o pacote", res.status);
+    return res.text();
+  },
+  /** Baixa o pacote da ponte universal como arquivo .md. */
+  downloadRemediationBridge: async (id: string) => {
+    const text = await api.fetchRemediationBridge(id);
+    const blob = new Blob([text], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `aplicacao-${id}.md`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
   /** Baixa o relatório em PDF do plano de aplicação. */
   downloadRemediationPdf: async (id: string) => {
     const token = getToken();

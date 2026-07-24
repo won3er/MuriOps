@@ -26,6 +26,7 @@ export const qk = {
   projects: ["projects"] as const,
   dashboard: ["dashboard"] as const,
   remediationPlan: (id: string) => ["remediation-plan", id] as const,
+  remediationPlans: ["remediation-plans"] as const,
   projectRemediationPlans: (projectId: string) =>
     ["remediation-plans", "project", projectId] as const,
 };
@@ -102,15 +103,34 @@ export function useDeleteBlueprint() {
 // ---------- Aplicação (RemediationPlan) ----------
 
 /**
- * Detalhe da Aplicação. Enquanto está PENDING, faz polling a cada 2.5s até
- * virar READY/FAILED — mesmo padrão do Blueprint.
+ * Detalhe da Aplicação.
+ * - PENDING: polling a cada 2.5s até virar READY/FAILED (geração da IA).
+ * - READY com itens pendentes: polling a cada 4s — é assim que os "Feito"
+ *   marcados pela IA do ambiente de dev (ponte universal) aparecem em tempo
+ *   real na tela, sem o usuário recarregar.
  */
 export function useRemediationPlan(id: string) {
   return useQuery({
     queryKey: qk.remediationPlan(id),
     queryFn: () => api.getRemediationPlan(id),
+    refetchInterval: (query) => {
+      const plan = query.state.data;
+      if (!plan) return false;
+      if (plan.status === "PENDING") return 2500;
+      const items = plan.result?.items ?? [];
+      const allDone = items.length > 0 && items.every((i) => i.status === "done");
+      return plan.status === "READY" && !allDone ? 4000 : false;
+    },
+  });
+}
+
+/** Lista geral de Aplicações (seção do menu). Atualiza enquanto houver geração em andamento. */
+export function useRemediationPlans() {
+  return useQuery({
+    queryKey: qk.remediationPlans,
+    queryFn: api.listRemediationPlans,
     refetchInterval: (query) =>
-      query.state.data?.status === "PENDING" ? 2500 : false,
+      query.state.data?.some((p) => p.status === "PENDING") ? 3000 : false,
   });
 }
 
@@ -129,6 +149,7 @@ export function useCreateRemediationPlan() {
       api.createRemediationPlan(body),
     onSuccess: (plan) => {
       qc.setQueryData<RemediationPlan>(qk.remediationPlan(plan.id), plan);
+      qc.invalidateQueries({ queryKey: qk.remediationPlans });
       if (plan.projectId) {
         qc.invalidateQueries({
           queryKey: qk.projectRemediationPlans(plan.projectId),

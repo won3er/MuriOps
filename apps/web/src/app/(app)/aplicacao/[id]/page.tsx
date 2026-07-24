@@ -4,8 +4,10 @@ import type { RemediationItem } from "@qa-ai/shared";
 import {
   AlertTriangle,
   ArrowLeft,
+  Bot,
   CheckCircle2,
   Circle,
+  ClipboardCopy,
   Download,
   FileCode2,
   Loader2,
@@ -15,6 +17,7 @@ import {
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -78,6 +81,26 @@ export default function RemediationPlanDetailPage() {
     }
   }
 
+  /** Baixa o pacote da ponte universal (.md) pra entregar à IA de dev. */
+  async function downloadBridge() {
+    try {
+      await api.downloadRemediationBridge(id);
+    } catch {
+      toast.error("Falha ao gerar o pacote");
+    }
+  }
+
+  /** Copia o pacote pra colar direto no chat da IA (Claude Code, Windsurf...). */
+  async function copyBridge() {
+    try {
+      const text = await api.fetchRemediationBridge(id);
+      await navigator.clipboard.writeText(text);
+      toast.success("Pacote copiado — cole na sua IA de desenvolvimento");
+    } catch {
+      toast.error("Falha ao copiar o pacote");
+    }
+  }
+
   function toggle(item: RemediationItem) {
     toggleItem.mutate({
       itemId: item.id,
@@ -106,11 +129,10 @@ export default function RemediationPlanDetailPage() {
     );
   }
 
-  const backHref = plan.projectId
-    ? `/projects/${plan.projectId}`
-    : plan.sourceType === "blueprint"
+  const backHref =
+    plan.sourceType === "blueprint" && !plan.projectId
       ? `/blueprints/${plan.sourceId}`
-      : "/dashboard";
+      : "/aplicacao";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -142,20 +164,21 @@ export default function RemediationPlanDetailPage() {
             )}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {plan.status === "READY" && (
             <Button
               variant="outline"
               size="sm"
               onClick={downloadPdf}
               disabled={downloading}
+              title="Documento único com todas as mudanças, para aplicar manualmente"
             >
               {downloading ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
                 <Download className="h-3.5 w-3.5" />
               )}
-              PDF
+              Baixar documento
             </Button>
           )}
           <Button
@@ -202,6 +225,31 @@ export default function RemediationPlanDetailPage() {
 
       {plan.result && plan.status === "READY" && (
         <>
+          {/* Ponte universal — aplicação direta via IA do ambiente de dev */}
+          <Card className="border-primary/30">
+            <CardContent className="flex flex-col gap-3 pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <Bot className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                <div>
+                  <p className="font-medium">Aplicar direto no desenvolvimento</p>
+                  <p className="text-sm text-muted-foreground">
+                    Copie o pacote e cole na sua IA de desenvolvimento (Claude
+                    Code, Windsurf, Codex, Cursor…). Ela aplica as mudanças e
+                    marca cada item como “Feito” aqui, em tempo real.
+                  </p>
+                </div>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <Button size="sm" onClick={copyBridge}>
+                  <ClipboardCopy className="h-3.5 w-3.5" /> Copiar pacote
+                </Button>
+                <Button variant="outline" size="sm" onClick={downloadBridge}>
+                  <Download className="h-3.5 w-3.5" /> .md
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {plan.result.summary && (
             <Card>
               <CardContent className="pt-5">

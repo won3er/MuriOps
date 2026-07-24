@@ -1,9 +1,11 @@
+import { randomBytes } from "node:crypto";
 import type {
   CreateRemediationPlanRequest,
   RemediationItemStatus,
   RemediationPlan,
   RemediationProviderName,
   RemediationResult,
+  RemediationScope,
   RemediationSummary,
 } from "@qa-ai/shared";
 import type { Prisma } from "@prisma/client";
@@ -30,7 +32,12 @@ export const remediationService = {
     userId: string,
     input: CreateRemediationPlanRequest,
   ): Promise<RemediationPlan> {
-    const source = await loadSource(organizationId, input.sourceType, input.sourceId);
+    const source = await loadSource(
+      organizationId,
+      input.sourceType,
+      input.sourceId,
+      input.scope,
+    );
     const providerName = await resolveProviderName(organizationId, input.provider);
 
     const created = await prisma.remediationPlan.create({
@@ -38,11 +45,20 @@ export const remediationService = {
         organizationId,
         projectId: source.projectId,
         createdById: userId,
-        sourceType: input.sourceType === "analysis" ? "ANALYSIS" : "BLUEPRINT",
+        sourceType:
+          input.sourceType === "analysis"
+            ? "ANALYSIS"
+            : input.sourceType === "blueprint"
+              ? "BLUEPRINT"
+              : "PROJECT",
         sourceId: input.sourceId,
+        scope: input.sourceType === "project" ? (input.scope ?? "full") : null,
         title: source.title,
         provider: providerName,
         status: "PENDING",
+        // Token da ponte universal (URL-safe): identifica o plano na API
+        // pública para a IA do ambiente de dev marcar itens como feitos.
+        apiToken: randomBytes(24).toString("base64url"),
       },
     });
 
@@ -109,6 +125,43 @@ export const remediationService = {
     });
     if (!row) throw new NotFoundError("Aplicação não encontrada");
     await prisma.remediationPlan.delete({ where: { id } });
+  },
+
+  // ---------- ponte universal (API pública por token) ----------
+
+  /** Busca o plano pelo token da ponte — usado pela IA do ambiente de dev. */
+  async getByToken(token: string): Promise<RemediationPlan | null> {
+    const row = await prisma.remediationPlan.findUnique({
+      where: { apiToken: token },
+    });
+    return row ? toDto(row) : null;
+  },
+
+  /** Marca item como feito/pendente via token — sem login, um token por plano. */
+  async updateItemStatusByToken(
+    token: string,
+    itemId: string,
+    status: RemediationItemStatus,
+  ): Promise<RemediationPlan> {
+    const row = await prisma.remediationPlan.findUnique({
+      where: { apiToken: token },
+    });
+    if (!row) throw new NotFoundError("Aplicação não encontrada");
+    const result = row.result as unknown as RemediationResult | null;
+    if (!result) throw new NotFoundError("O plano ainda não foi gerado");
+    if (!result.items.some((it) => it.id === itemId))
+      throw new NotFoundError(`Item "${itemId}" não existe neste plano`);
+
+    const items = result.items.map((it) =>
+      it.id === itemId ? { ...it, status } : it,
+    );
+    const updated = await prisma.remediationPlan.update({
+      where: { id: row.id },
+      data: {
+        result: { ...result, items } as unknown as Prisma.InputJsonValue,
+      },
+    });
+    return toDto(updated);
   },
 };
 
@@ -182,11 +235,44 @@ interface RemediationSource {
   context: string;
 }
 
-/** Carrega a Análise ou o Blueprint de origem e serializa em texto pra IA. */
+type AnalysisWithIssues = Prisma.AnalysisGetPayload<{
+  include: { project: true; issues: true };
+}>;
+
+/** Análise de Segurança = rodou só a categoria DEEP_SECURITY. */
+function isSecurityAnalysis(a: { categories: string[] }): boolean {
+  return a.categories.length === 1 && a.categories[0] === "DEEP_SECURITY";
+}
+
+/** Serializa os achados de uma análise em texto pra IA. */
+function analysisContext(analysis: AnalysisWithIssues, label: string): string {
+  const openIssues = analysis.issues.filter((i) => i.status !== "IGNORED");
+  const lines = openIssues.map(
+    (i) =>
+      `- [${i.severity}/${i.category}] ${i.title}${i.pageUrl ? ` (${i.pageUrl})` : ""}: ${i.description}${
+        i.suggestion ? ` Sugestão: ${i.suggestion}` : ""
+      }`,
+  );
+  return [
+    `## ${label} (v${analysis.version})`,
+    `Score geral: ${(analysis.score as unknown as { overall?: number } | null)?.overall ?? "?"}/100`,
+    `Problemas encontrados (${openIssues.length}):`,
+    ...lines,
+  ].join("\n");
+}
+
+const SCOPE_LABEL: Record<RemediationScope, string> = {
+  qa: "Análise QA padrão",
+  security: "Análise de Segurança",
+  full: "Projeto completo",
+};
+
+/** Carrega a origem (Análise, Blueprint ou Projeto) e serializa em texto pra IA. */
 async function loadSource(
   organizationId: string,
-  sourceType: "analysis" | "blueprint",
+  sourceType: "analysis" | "blueprint" | "project",
   sourceId: string,
+  scope?: RemediationScope,
 ): Promise<RemediationSource> {
   if (sourceType === "analysis") {
     const analysis = await prisma.analysis.findFirst({
@@ -197,25 +283,66 @@ async function loadSource(
     if (analysis.status !== "COMPLETED")
       throw new NotFoundError("A análise ainda não terminou — aguarde para gerar a Aplicação");
 
-    const openIssues = analysis.issues.filter((i) => i.status !== "IGNORED");
-    const lines = openIssues.map(
-      (i) =>
-        `- [${i.severity}/${i.category}] ${i.title}${i.pageUrl ? ` (${i.pageUrl})` : ""}: ${i.description}${
-          i.suggestion ? ` Sugestão: ${i.suggestion}` : ""
-        }`,
-    );
-    const context = [
-      `Site: ${analysis.project.url}`,
-      `Score geral: ${(analysis.score as unknown as { overall?: number } | null)?.overall ?? "?"}/100`,
-      `Problemas encontrados (${openIssues.length}):`,
-      ...lines,
-    ].join("\n");
-
+    const label = isSecurityAnalysis(analysis)
+      ? "Análise de Segurança"
+      : "Análise QA padrão";
     return {
-      title: `Aplicação — ${analysis.project.name} (análise v${analysis.version})`,
+      title: `Aplicação — ${analysis.project.name} (${label} v${analysis.version})`,
       projectId: analysis.projectId,
       siteUrl: analysis.project.url,
-      context,
+      context: `Site: ${analysis.project.url}\n${analysisContext(analysis, label)}`,
+    };
+  }
+
+  if (sourceType === "project") {
+    const effectiveScope: RemediationScope = scope ?? "full";
+    const project = await prisma.project.findFirst({
+      where: { id: sourceId, organizationId },
+    });
+    if (!project) throw new NotFoundError("Projeto não encontrado");
+
+    // Todas as análises concluídas do projeto, mais recentes primeiro.
+    const completed = await prisma.analysis.findMany({
+      where: { projectId: project.id, status: "COMPLETED" },
+      include: { project: true, issues: true },
+      orderBy: { createdAt: "desc" },
+    });
+    const latestQa = completed.find((a) => !isSecurityAnalysis(a)) ?? null;
+    const latestSecurity = completed.find(isSecurityAnalysis) ?? null;
+
+    const parts: string[] = [`Site: ${project.url}`];
+    if (effectiveScope === "qa" || effectiveScope === "full") {
+      if (latestQa) parts.push(analysisContext(latestQa, "Análise QA padrão"));
+      else if (effectiveScope === "qa")
+        throw new NotFoundError(
+          "Este projeto ainda não tem uma Análise QA padrão concluída — rode uma antes de exportar",
+        );
+    }
+    if (effectiveScope === "security" || effectiveScope === "full") {
+      if (latestSecurity)
+        parts.push(analysisContext(latestSecurity, "Análise de Segurança"));
+      else if (effectiveScope === "security")
+        throw new NotFoundError(
+          "Este projeto ainda não tem uma Análise de Segurança concluída — rode uma antes de exportar",
+        );
+    }
+    if (effectiveScope === "full" && !latestQa && !latestSecurity)
+      throw new NotFoundError(
+        "Este projeto ainda não tem nenhuma análise concluída — rode uma Análise QA padrão ou de Segurança antes de exportar",
+      );
+    if (effectiveScope === "full" && (!latestQa || !latestSecurity)) {
+      parts.push(
+        `Observação: o projeto ainda não tem uma ${
+          latestQa ? "Análise de Segurança" : "Análise QA padrão"
+        } concluída — o plano cobre apenas o que está disponível.`,
+      );
+    }
+
+    return {
+      title: `Aplicação — ${project.name} (${SCOPE_LABEL[effectiveScope]})`,
+      projectId: project.id,
+      siteUrl: project.url,
+      context: parts.join("\n\n"),
     };
   }
 
@@ -295,29 +422,39 @@ async function loadAiOverride(
   }
 }
 
+function toSourceType(dbValue: string): RemediationPlan["sourceType"] {
+  if (dbValue === "ANALYSIS") return "analysis";
+  if (dbValue === "BLUEPRINT") return "blueprint";
+  return "project";
+}
+
 function toDto(row: {
   id: string;
   projectId: string | null;
   sourceType: string;
   sourceId: string;
+  scope: string | null;
   title: string;
   provider: string;
   status: string;
   result: unknown;
   error: string | null;
+  apiToken: string;
   createdAt: Date;
   updatedAt: Date;
 }): RemediationPlan {
   return {
     id: row.id,
     projectId: row.projectId,
-    sourceType: row.sourceType === "ANALYSIS" ? "analysis" : "blueprint",
+    sourceType: toSourceType(row.sourceType),
     sourceId: row.sourceId,
+    scope: (row.scope as RemediationScope | null) ?? null,
     title: row.title,
     provider: row.provider,
     status: row.status as RemediationPlan["status"],
     result: (row.result as RemediationResult | null) ?? null,
     error: row.error,
+    apiToken: row.apiToken,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -328,6 +465,7 @@ function toSummary(row: {
   projectId: string | null;
   sourceType: string;
   sourceId: string;
+  scope: string | null;
   title: string;
   status: string;
   result: unknown;
@@ -339,8 +477,9 @@ function toSummary(row: {
   return {
     id: row.id,
     projectId: row.projectId,
-    sourceType: row.sourceType === "ANALYSIS" ? "analysis" : "blueprint",
+    sourceType: toSourceType(row.sourceType),
     sourceId: row.sourceId,
+    scope: (row.scope as RemediationScope | null) ?? null,
     title: row.title,
     status: row.status as RemediationSummary["status"],
     itemCount: items.length,

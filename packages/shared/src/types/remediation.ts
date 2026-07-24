@@ -5,10 +5,17 @@
  * marca cada item como feito conforme aplica as mudanças.
  */
 
-export type RemediationSourceType = "analysis" | "blueprint";
+export type RemediationSourceType = "analysis" | "blueprint" | "project";
 export type RemediationStatus = "PENDING" | "READY" | "FAILED";
 export type RemediationItemStatus = "pending" | "done";
 export type RemediationProviderName = "claude" | "openai" | "gemini";
+/**
+ * Escopo da exportação quando a origem é um projeto:
+ * - "qa": Análise QA padrão mais recente
+ * - "security": Análise de Segurança mais recente
+ * - "full": Projeto completo (as duas juntas)
+ */
+export type RemediationScope = "qa" | "security" | "full";
 
 export interface RemediationItem {
   id: string;
@@ -34,11 +41,14 @@ export interface RemediationPlan {
   projectId: string | null;
   sourceType: RemediationSourceType;
   sourceId: string;
+  scope: RemediationScope | null;
   title: string;
   provider: string;
   status: RemediationStatus;
   result: RemediationResult | null;
   error: string | null;
+  /** Token da ponte universal — usado pela IA do ambiente de dev via API pública. */
+  apiToken: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,6 +58,7 @@ export interface RemediationSummary {
   projectId: string | null;
   sourceType: RemediationSourceType;
   sourceId: string;
+  scope: RemediationScope | null;
   title: string;
   status: RemediationStatus;
   itemCount: number;

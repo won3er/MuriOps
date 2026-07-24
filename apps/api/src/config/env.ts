@@ -30,6 +30,10 @@ const schema = z
     JWT_EXPIRES_IN: z.string().default("7d"),
     CORS_ORIGIN: z.string().default("http://localhost:3000"),
     STORAGE_DIR: z.string().default("./storage"),
+    // URL pública da API (ex.: https://elevate-qa-api.onrender.com). Usada nos
+    // comandos do pacote da ponte universal da Aplicação. Sem ela, a API tenta
+    // deduzir dos headers da requisição (x-forwarded-proto/host).
+    PUBLIC_API_URL: z.string().url().optional(),
 
     AI_PROVIDER: z.enum(["claude", "openai", "gemini", "noop"]).default("noop"),
     ANTHROPIC_API_KEY: z.string().optional().default(""),

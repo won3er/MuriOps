@@ -7,6 +7,7 @@ import {
   LogOut,
   Menu,
   Settings,
+  Wrench,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -20,6 +21,7 @@ const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "Projetos", icon: FolderKanban },
   { href: "/blueprints", label: "Projetar", icon: DraftingCompass },
+  { href: "/aplicacao", label: "Aplicação", icon: Wrench },
   { href: "/settings", label: "Configurações", icon: Settings },
 ];
 

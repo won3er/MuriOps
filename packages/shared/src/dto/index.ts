@@ -8,6 +8,7 @@ import type {
 import type {
   RemediationItemStatus,
   RemediationProviderName,
+  RemediationScope,
   RemediationSourceType,
 } from "../types/remediation.js";
 
@@ -81,8 +82,10 @@ export type { BlueprintMode };
 
 export interface CreateRemediationPlanRequest {
   sourceType: RemediationSourceType;
-  /** id da Análise ou do Blueprint de origem. */
+  /** id da Análise, do Blueprint ou do Projeto de origem. */
   sourceId: string;
+  /** Obrigatório quando sourceType === "project": qa | security | full. */
+  scope?: RemediationScope;
   /** IA escolhida por request. Ausente = provider configurado da organização. */
   provider?: RemediationProviderName;
 }

@@ -259,6 +259,9 @@ model Blueprint {
 enum RemediationSourceType {
   ANALYSIS
   BLUEPRINT
+  // Exportação por projeto: junta as análises do projeto conforme o escopo
+  // (qa | security | full) — o fluxo principal da seção "Aplicação".
+  PROJECT
 }
 
 enum RemediationStatus {
@@ -276,9 +279,15 @@ model RemediationPlan {
   createdById    String
   sourceType     RemediationSourceType
   sourceId       String
+  // Escopo quando sourceType=PROJECT: "qa" | "security" | "full".
+  scope          String?
   title          String
   // provider de IA usado (claude | openai | gemini | noop)
   provider       String
+  // Token da ponte universal: permite que a IA do ambiente de dev (Claude
+  // Code, Windsurf, Codex...) marque itens como "Feito" via API pública,
+  // sem precisar de login. Um token por plano, revogado ao apagar o plano.
+  apiToken       String                @unique
   status         RemediationStatus     @default(PENDING)
   // Saída estruturada da IA (RemediationResult).
   result         Json?
