@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { LogoFull } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -81,11 +82,8 @@ export default function RegisterPage() {
   return (
     <main className="grid min-h-screen place-items-center px-6">
       <nav aria-label="Principal" className="fixed left-0 top-0 p-6">
-        <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-            E
-          </span>
-          Elevate QA
+        <Link href="/">
+          <LogoFull className="text-lg" />
         </Link>
       </nav>
       <Suspense fallback={null}>
