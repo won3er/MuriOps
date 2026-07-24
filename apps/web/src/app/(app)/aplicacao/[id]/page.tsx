@@ -152,7 +152,16 @@ export default function RemediationPlanDetailPage() {
             <span className="uppercase">IA: {plan.provider}</span>
             <span>·</span>
             <span>
-              Origem: {plan.sourceType === "analysis" ? "análise" : "blueprint"}
+              Origem:{" "}
+              {plan.sourceType === "analysis"
+                ? "análise"
+                : plan.sourceType === "blueprint"
+                  ? "blueprint"
+                  : plan.scope === "qa"
+                    ? "projeto · Análise QA padrão"
+                    : plan.scope === "security"
+                      ? "projeto · Análise de Segurança"
+                      : "projeto · completo"}
             </span>
             {sortedItems.length > 0 && (
               <>
