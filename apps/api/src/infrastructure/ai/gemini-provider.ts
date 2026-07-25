@@ -22,6 +22,7 @@ const API_BASE = "https://generativelanguage.googleapis.com/v1beta";
 // Ordem de preferência quando a chave não expõe nenhuma pista melhor —
 // modelos "flash" mais novos primeiro (mais baratos/rápidos), com quedas
 // para nomes mais antigos/genéricos que contas mais velhas ainda enxergam.
+const DEFAULT_MODEL = "gemini-2.5-flash";
 const MODEL_PREFERENCE = [
   "gemini-flash-latest",
   "gemini-2.5-flash",
@@ -61,10 +62,11 @@ async function resolveModel(apiKey: string): Promise<string> {
       if (available.length > 0) {
         // Prioriza os nomes conhecidos e "melhores"; se nenhum bater,
         // usa o primeiro modelo flash disponível; senão o primeiro da lista.
-        const preferred =
+        const preferred: string =
           MODEL_PREFERENCE.find((m) => available.includes(m)) ??
           available.find((m) => /flash/i.test(m) && !/lite|vision|8b/i.test(m)) ??
-          available[0];
+          available[0] ??
+          DEFAULT_MODEL;
         modelCache.set(apiKey, preferred);
         return preferred;
       }
@@ -74,7 +76,7 @@ async function resolveModel(apiKey: string): Promise<string> {
   }
 
   // Sem conseguir listar: usa o configurado em env, ou o primeiro da lista de preferência.
-  const fallback = env.GEMINI_MODEL || MODEL_PREFERENCE[0];
+  const fallback = env.GEMINI_MODEL || DEFAULT_MODEL;
   modelCache.set(apiKey, fallback);
   return fallback;
 }
