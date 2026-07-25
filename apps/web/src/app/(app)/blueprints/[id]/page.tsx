@@ -174,12 +174,24 @@ export default function BlueprintDetailPage() {
         <Card>
           <CardContent className="flex items-start gap-3 pt-5">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
-            <div>
-              <p className="font-medium">Falha ao gerar</p>
+            <div className="min-w-0 flex-1 space-y-2">
+              <p className="font-medium">Não deu para gerar o blueprint</p>
               <p className="text-sm text-muted-foreground">
-                {bp.error ?? "Erro desconhecido."} Verifique a chave de IA em
-                Configurações e tente regerar.
+                A IA configurada não respondeu corretamente. Isso costuma ser
+                a chave de API ausente/expirada ou o modelo escolhido estar
+                indisponível — confira em Configurações e clique em
+                "Regerar" acima para tentar de novo.
               </p>
+              {bp.error && (
+                <details className="text-xs text-muted-foreground">
+                  <summary className="cursor-pointer select-none hover:text-foreground">
+                    Detalhe técnico
+                  </summary>
+                  <pre className="mt-2 whitespace-pre-wrap break-words rounded bg-black/30 p-2 font-mono text-[11px]">
+                    {bp.error}
+                  </pre>
+                </details>
+              )}
             </div>
           </CardContent>
         </Card>
