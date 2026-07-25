@@ -206,12 +206,22 @@ export default function RemediationPlanDetailPage() {
         <Card>
           <CardContent className="flex items-start gap-3 pt-5">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
-            <div>
-              <p className="font-medium">Falha ao gerar</p>
+            <div className="min-w-0 flex-1 space-y-2">
+              <p className="font-medium">Não deu para gerar a Aplicação</p>
               <p className="text-sm text-muted-foreground">
-                {plan.error ?? "Erro desconhecido."} Verifique a chave de IA em
-                Configurações e tente de novo.
+                A IA configurada não respondeu corretamente. Confira a chave
+                de API em Configurações e tente de novo.
               </p>
+              {plan.error && (
+                <details className="text-xs text-muted-foreground">
+                  <summary className="cursor-pointer select-none hover:text-foreground">
+                    Detalhe técnico
+                  </summary>
+                  <pre className="mt-2 whitespace-pre-wrap break-words rounded bg-black/30 p-2 font-mono text-[11px]">
+                    {plan.error}
+                  </pre>
+                </details>
+              )}
             </div>
           </CardContent>
         </Card>
