@@ -105,30 +105,37 @@ export default function ProjectDetailPage() {
             {project?.url}
           </a>
         </div>
-        <div className="flex flex-col gap-2 min-[420px]:flex-row sm:shrink-0">
-          <Button
-            variant="outline"
-            onClick={startSecurityAudit}
-            disabled={startingSecurity}
-            title="Auditoria prática de segurança: TLS, DNS, segredos expostos, headers avançados e mais — só esse módulo, mais rápido"
-          >
-            {startingSecurity ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <ShieldAlert className="h-4 w-4" /> Análise de Segurança
-              </>
-            )}
-          </Button>
-          <Button onClick={start} disabled={starting}>
-            {starting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <Play className="h-4 w-4" /> Análise QA padrão
-              </>
-            )}
-          </Button>
+        <div className="flex flex-col items-stretch gap-2 min-[420px]:items-end sm:shrink-0">
+          <div className="flex flex-col gap-2 min-[420px]:flex-row">
+            <Button
+              variant="outline"
+              onClick={startSecurityAudit}
+              disabled={startingSecurity}
+              title="Auditoria prática de segurança: TLS, DNS, segredos expostos, headers avançados e mais — só esse módulo, mais rápido"
+            >
+              {startingSecurity ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <ShieldAlert className="h-4 w-4" /> Análise de Segurança
+                </>
+              )}
+            </Button>
+            <Button onClick={start} disabled={starting}>
+              {starting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Play className="h-4 w-4" /> Análise QA padrão
+                </>
+              )}
+            </Button>
+          </div>
+          <p className="max-w-xs text-right text-xs text-muted-foreground min-[420px]:block">
+            <b className="text-foreground/80">QA padrão</b> cobre UI, performance,
+            SEO e acessibilidade. <b className="text-foreground/80">Segurança</b>{" "}
+            audita TLS, DNS e dados expostos.
+          </p>
         </div>
       </div>
 
@@ -178,9 +185,23 @@ export default function ProjectDetailPage() {
         {tab === "remediation" ? (
           remediationPlans.length === 0 ? (
             <Card>
-              <CardContent className="py-10 text-center text-muted-foreground">
-                Nenhuma Aplicação ainda. Gere uma a partir de uma análise ou
-                blueprint concluído.
+              <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+                <div className="grid h-12 w-12 place-items-center rounded-xl bg-primary/15 text-primary">
+                  <Wrench className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="font-medium">Nenhuma Aplicação ainda</p>
+                  <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                    Depois de uma análise concluída, vá em "Aplicação" no menu
+                    para transformar os achados num checklist pronto para
+                    aplicar no seu projeto.
+                  </p>
+                </div>
+                <Link href="/aplicacao">
+                  <Button size="sm" variant="outline">
+                    <Wrench className="h-3.5 w-3.5" /> Ir para Aplicação
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           ) : (
@@ -211,10 +232,38 @@ export default function ProjectDetailPage() {
           )
         ) : visibleAnalyses.length === 0 ? (
           <Card>
-            <CardContent className="py-10 text-center text-muted-foreground">
-              {tab === "normal"
-                ? "Nenhuma análise ainda. Clique em “Análise QA padrão”."
-                : "Nenhuma análise de segurança ainda. Clique em “Análise de Segurança”."}
+            <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+              <div className="grid h-12 w-12 place-items-center rounded-xl bg-primary/15 text-primary">
+                {tab === "normal" ? (
+                  <Play className="h-6 w-6" />
+                ) : (
+                  <ShieldAlert className="h-6 w-6" />
+                )}
+              </div>
+              <div>
+                <p className="font-medium">
+                  {tab === "normal"
+                    ? "Nenhuma análise QA padrão ainda"
+                    : "Nenhuma análise de segurança ainda"}
+                </p>
+                <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                  {tab === "normal"
+                    ? "Roda o site inteiro e verifica UI, UX, performance, SEO e acessibilidade página por página."
+                    : "Audita TLS/HTTPS, DNS, headers, segredos expostos e outros pontos de segurança."}
+                </p>
+              </div>
+              <Button
+                onClick={tab === "normal" ? start : startSecurityAudit}
+                disabled={tab === "normal" ? starting : startingSecurity}
+                size="sm"
+              >
+                {tab === "normal" ? (
+                  <Play className="h-3.5 w-3.5" />
+                ) : (
+                  <ShieldAlert className="h-3.5 w-3.5" />
+                )}
+                Iniciar agora
+              </Button>
             </CardContent>
           </Card>
         ) : (
