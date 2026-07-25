@@ -1,11 +1,55 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Marca do Elevate QA.
- * Conceito: um chevron subindo (elevação) sobre um checkmark (qualidade
- * aprovada) — "eleve seu site com QA de verdade". Gradiente teal → ciano
- * derivado do --primary do tema.
+ * Identidade visual do Elevate QA.
+ *
+ * Isotipo: um "E" monograma construído com barras que crescem de baixo para
+ * cima — lê-se ao mesmo tempo como a letra e como um gráfico de elevação
+ * ("eleve a qualidade"). Sem texto: funciona sozinho como marca.
+ * Paleta laranja (âmbar → laranja profundo), a cor da marca.
  */
+function isotypePaths() {
+  return (
+    <>
+      {/* espinha vertical do E */}
+      <rect x="5" y="6" width="5.5" height="22" rx="2.75" />
+      {/* barra superior (a mais longa — o topo da elevação) */}
+      <rect x="5" y="6" width="22" height="5.5" rx="2.75" />
+      {/* barra do meio */}
+      <rect x="5" y="13.25" width="16" height="5.5" rx="2.75" />
+      {/* barra inferior (a mais curta — o ponto de partida) */}
+      <rect x="5" y="22.5" width="10.5" height="5.5" rx="2.75" />
+    </>
+  );
+}
+
+/** Isotipo puro: a marca em laranja, sem fundo e sem texto. */
+export function LogoIsotype({
+  className,
+  title = "Elevate QA",
+}: {
+  className?: string;
+  title?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      role="img"
+      aria-label={title}
+      className={cn("h-9 w-9", className)}
+    >
+      <defs>
+        <linearGradient id="eqa-iso" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0%" stopColor="#ea580c" />
+          <stop offset="100%" stopColor="#fbbf24" />
+        </linearGradient>
+      </defs>
+      <g fill="url(#eqa-iso)">{isotypePaths()}</g>
+    </svg>
+  );
+}
+
+/** Versão em selo: isotipo branco sobre fundo laranja. Ideal para sidebar/ícone. */
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg
@@ -15,55 +59,20 @@ export function LogoMark({ className }: { className?: string }) {
       focusable="false"
     >
       <defs>
-        <linearGradient id="eqa-g" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0%" stopColor="#0d9488" />
-          <stop offset="100%" stopColor="#22d3ee" />
+        <linearGradient id="eqa-badge" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0%" stopColor="#ea580c" />
+          <stop offset="100%" stopColor="#fb923c" />
         </linearGradient>
       </defs>
-      <rect width="32" height="32" rx="8.5" fill="url(#eqa-g)" />
-      {/* chevron de elevação */}
-      <path
-        d="M9.5 13.5 L16 7 L22.5 13.5"
-        fill="none"
-        stroke="#04211f"
-        strokeOpacity="0.35"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        transform="translate(0 1)"
-      />
-      <path
-        d="M9.5 13.5 L16 7 L22.5 13.5"
-        fill="none"
-        stroke="#ffffff"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* check de qualidade */}
-      <path
-        d="M9.5 19.5 L14 24 L22.5 15.5"
-        fill="none"
-        stroke="#04211f"
-        strokeOpacity="0.35"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        transform="translate(0 1)"
-      />
-      <path
-        d="M9.5 19.5 L14 24 L22.5 15.5"
-        fill="none"
-        stroke="#ffffff"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <rect width="32" height="32" rx="8.5" fill="url(#eqa-badge)" />
+      <g fill="#fff" transform="translate(16 16) scale(0.72) translate(-16 -16)">
+        {isotypePaths()}
+      </g>
     </svg>
   );
 }
 
-/** Marca + nome, para headers e sidebars. */
+/** Marca + nome, para headers e sidebars onde o texto ajuda no reconhecimento. */
 export function LogoFull({
   className,
   markClassName,

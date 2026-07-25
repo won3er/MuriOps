@@ -19,9 +19,9 @@ const mono = JetBrains_Mono({
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://elevate-qa.vercel.app";
-const title = "Elevate QA — Eleve a qualidade do seu site com IA";
+const title = "Elevate QA — Sua equipe de QA, do diagnóstico à correção";
 const description =
-  "Analise automaticamente qualquer site como uma equipe profissional de QA: UI, UX, performance, SEO, acessibilidade, segurança e mais — com IA.";
+  "Analise qualquer site com IA — UI, UX, performance, SEO, acessibilidade e segurança — e receba o plano de correção pronto para aplicar, manualmente ou pela sua IA de desenvolvimento.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

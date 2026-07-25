@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Elevate QA — Eleve a qualidade do seu site com IA";
+export const alt = "Elevate QA — Sua equipe de QA, do diagnóstico à correção";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -23,7 +23,7 @@ export default function OpengraphImage() {
           justifyContent: "center",
           background: "#0b1220",
           backgroundImage:
-            "radial-gradient(60% 60% at 50% -10%, rgba(20,184,166,0.35), transparent), radial-gradient(50% 50% at 100% 0%, rgba(56,189,248,0.2), transparent)",
+            "radial-gradient(60% 60% at 50% -10%, rgba(234,88,12,0.38), transparent), radial-gradient(50% 50% at 100% 0%, rgba(251,191,36,0.18), transparent)",
         }}
       >
         <div
@@ -34,38 +34,28 @@ export default function OpengraphImage() {
             marginBottom: 36,
           }}
         >
-          <svg width="80" height="80" viewBox="0 0 32 32">
+          <svg width="84" height="84" viewBox="0 0 32 32">
             <defs>
               <linearGradient id="g" x1="0" y1="1" x2="1" y2="0">
-                <stop offset="0%" stopColor="#0d9488" />
-                <stop offset="100%" stopColor="#22d3ee" />
+                <stop offset="0%" stopColor="#ea580c" />
+                <stop offset="100%" stopColor="#fb923c" />
               </linearGradient>
             </defs>
             <rect width="32" height="32" rx="8.5" fill="url(#g)" />
-            <path
-              d="M9.5 13.5 L16 7 L22.5 13.5"
-              fill="none"
-              stroke="#ffffff"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M9.5 19.5 L14 24 L22.5 15.5"
-              fill="none"
-              stroke="#ffffff"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            <g fill="#fff" transform="translate(16 16) scale(0.72) translate(-16 -16)">
+              <rect x="5" y="6" width="5.5" height="22" rx="2.75" />
+              <rect x="5" y="6" width="22" height="5.5" rx="2.75" />
+              <rect x="5" y="13.25" width="16" height="5.5" rx="2.75" />
+              <rect x="5" y="22.5" width="10.5" height="5.5" rx="2.75" />
+            </g>
           </svg>
           <div style={{ fontSize: 48, fontWeight: 700, color: "#f8fafc", display: "flex" }}>
-            Elevate&nbsp;<span style={{ color: "#2dd4bf" }}>QA</span>
+            Elevate&nbsp;<span style={{ color: "#fb923c" }}>QA</span>
           </div>
         </div>
         <div
           style={{
-            fontSize: 40,
+            fontSize: 42,
             fontWeight: 700,
             color: "#f8fafc",
             textAlign: "center",
@@ -73,7 +63,7 @@ export default function OpengraphImage() {
             lineHeight: 1.3,
           }}
         >
-          Eleve qualquer site ao nível de uma equipe profissional de QA
+          Sua equipe de QA, do diagnóstico à correção
         </div>
         <div
           style={{
@@ -81,9 +71,11 @@ export default function OpengraphImage() {
             fontSize: 24,
             color: "#94a3b8",
             textAlign: "center",
+            maxWidth: 880,
           }}
         >
-          Análise automática de UI, UX, performance, SEO, acessibilidade e segurança
+          Analisa UI, performance, SEO, acessibilidade e segurança — e entrega o
+          plano de correção pronto para aplicar
         </div>
       </div>
     ),
