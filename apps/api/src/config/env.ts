@@ -42,9 +42,10 @@ const schema = z
     OPENAI_API_KEY: z.string().optional().default(""),
     OPENAI_MODEL: z.string().default("gpt-4o"),
     GEMINI_API_KEY: z.string().optional().default(""),
-    // Flash-Lite: bem mais barato em tokens que o Flash normal, cota free
-    // maior — ideal pro volume de análise deste app.
-    GEMINI_MODEL: z.string().default("gemini-2.5-flash-lite"),
+    // gemini-2.5-flash-lite foi descontinuado pelo Google para novos
+    // clientes (erro 404 "no longer available to new users"). Flash normal
+    // segue disponível e ainda é o tier mais barato/rápido ativo.
+    GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
   })
   // Em produção, barra segredo fraco/placeholder e CORS aberto — os mesmos
   // erros que o próprio módulo de Segurança Avançada da ferramenta aponta.
