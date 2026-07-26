@@ -1,7 +1,7 @@
 "use client";
 
 import type { Analysis, Project } from "@qa-ai/shared";
-import { Loader2, Play, ShieldAlert, Trash2, Wrench } from "lucide-react";
+import { GitBranch, Loader2, Play, ShieldAlert, Trash2, Wrench } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AnalysisStatusBadge } from "@/components/status-badge";
+import { McpConnectionPanel } from "@/components/mcp-connection-panel";
+import { GithubConnectionPanel } from "@/components/github-connection-panel";
+import { OrchestrationPanel } from "@/components/orchestration-panel";
 import { api } from "@/lib/api";
 import { useProjectRemediationPlans } from "@/lib/queries";
 import { cn, formatDuration, scoreColor, timeAgo } from "@/lib/utils";
@@ -32,7 +35,7 @@ export default function ProjectDetailPage() {
   const [starting, setStarting] = useState(false);
   const [startingSecurity, setStartingSecurity] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"normal" | "security" | "remediation">("normal");
+  const [tab, setTab] = useState<"normal" | "security" | "remediation" | "orchestration">("normal");
   const { data: remediationPlans = [] } = useProjectRemediationPlans(id);
 
   const loadAnalyses = () =>
@@ -180,56 +183,76 @@ export default function ProjectDetailPage() {
               <Wrench className="h-3.5 w-3.5" />
               <span>Aplicações</span> ({remediationPlans.length})
             </button>
+            <button
+              onClick={() => setTab("orchestration")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors",
+                tab === "orchestration"
+                  ? "bg-primary/15 text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <GitBranch className="h-3.5 w-3.5" />
+              <span>Orquestração</span>
+            </button>
           </div>
         </div>
-        {tab === "remediation" ? (
-          remediationPlans.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-                <div className="grid h-12 w-12 place-items-center rounded-xl bg-primary/15 text-primary">
-                  <Wrench className="h-6 w-6" />
-                </div>
-                <div>
-                  <p className="font-medium">Nenhuma Aplicação ainda</p>
-                  <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                    Depois de uma análise concluída, vá em "Aplicação" no menu
-                    para transformar os achados num checklist pronto para
-                    aplicar no seu projeto.
-                  </p>
-                </div>
-                <Link href="/aplicacao">
-                  <Button size="sm" variant="outline">
-                    <Wrench className="h-3.5 w-3.5" /> Ir para Aplicação
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {remediationPlans.map((plan) => (
-                <Link key={plan.id} href={`/aplicacao/${plan.id}`}>
-                  <Card className="transition-colors hover:border-primary/50">
-                    <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">
-                        <span className="truncate font-medium">{plan.title}</span>
-                        <Badge className={REMEDIATION_STATUS_CLASS[plan.status]}>
-                          {REMEDIATION_STATUS_LABEL[plan.status] ?? plan.status}
-                        </Badge>
-                        {plan.status === "READY" && (
-                          <span className="tabular text-xs text-muted-foreground">
-                            {plan.doneCount}/{plan.itemCount} aplicado(s)
-                          </span>
-                        )}
-                      </div>
-                      <span className="tabular text-xs text-muted-foreground">
-                        {timeAgo(plan.createdAt)}
-                      </span>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+        {tab === "orchestration" ? (
+          project && <OrchestrationPanel projectId={id} autonomyLevel={project.autonomyLevel} />
+        ) : tab === "remediation" ? (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <McpConnectionPanel projectId={id} />
+              <GithubConnectionPanel projectId={id} />
             </div>
-          )
+            {remediationPlans.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+                  <div className="grid h-12 w-12 place-items-center rounded-xl bg-primary/15 text-primary">
+                    <Wrench className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Nenhuma Aplicação ainda</p>
+                    <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                      Depois de uma análise concluída, vá em "Aplicação" no menu
+                      para transformar os achados num checklist pronto para
+                      aplicar no seu projeto.
+                    </p>
+                  </div>
+                  <Link href="/aplicacao">
+                    <Button size="sm" variant="outline">
+                      <Wrench className="h-3.5 w-3.5" /> Ir para Aplicação
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {remediationPlans.map((plan) => (
+                  <Link key={plan.id} href={`/aplicacao/${plan.id}`}>
+                    <Card className="transition-colors hover:border-primary/50">
+                      <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">
+                          <span className="truncate font-medium">{plan.title}</span>
+                          <Badge className={REMEDIATION_STATUS_CLASS[plan.status]}>
+                            {REMEDIATION_STATUS_LABEL[plan.status] ?? plan.status}
+                          </Badge>
+                          {plan.status === "READY" && (
+                            <span className="tabular text-xs text-muted-foreground">
+                              {plan.doneCount}/{plan.itemCount} aplicado(s)
+                            </span>
+                          )}
+                        </div>
+                        <span className="tabular text-xs text-muted-foreground">
+                          {timeAgo(plan.createdAt)}
+                        </span>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         ) : visibleAnalyses.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-3 py-12 text-center">

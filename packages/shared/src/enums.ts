@@ -76,3 +76,70 @@ export const SubscriptionPlan = {
 } as const;
 export type SubscriptionPlan =
   (typeof SubscriptionPlan)[keyof typeof SubscriptionPlan];
+
+/** Nível de autonomia do orquestrador. Padrão MANUAL: toda aplicação de mudança pede aprovação humana. */
+export const AutonomyLevel = {
+  MANUAL: "MANUAL",
+  SUPERVISED: "SUPERVISED",
+  AUTONOMOUS: "AUTONOMOUS",
+} as const;
+export type AutonomyLevel = (typeof AutonomyLevel)[keyof typeof AutonomyLevel];
+
+/** Ciclo de vida de um OrchestrationRun. */
+export const OrchestrationRunStatus = {
+  QUEUED: "QUEUED",
+  ANALYZING: "ANALYZING",
+  EVALUATING_GATES: "EVALUATING_GATES",
+  PLANNING: "PLANNING",
+  AWAITING_APPLY: "AWAITING_APPLY",
+  APPLYING: "APPLYING",
+  AWAITING_OBSERVATION: "AWAITING_OBSERVATION",
+  REANALYZING: "REANALYZING",
+  PASSED: "PASSED",
+  STOPPED: "STOPPED",
+  FAILED: "FAILED",
+} as const;
+export type OrchestrationRunStatus =
+  (typeof OrchestrationRunStatus)[keyof typeof OrchestrationRunStatus];
+
+/** Estados ativos de um run — usados na recuperação de boot (mesma ideia de recoverStaleAnalyses). */
+export const ACTIVE_ORCHESTRATION_STATUSES: OrchestrationRunStatus[] = [
+  OrchestrationRunStatus.ANALYZING,
+  OrchestrationRunStatus.EVALUATING_GATES,
+  OrchestrationRunStatus.PLANNING,
+  OrchestrationRunStatus.APPLYING,
+  OrchestrationRunStatus.REANALYZING,
+];
+
+export const OrchestrationEventType = {
+  RUN_STARTED: "RUN_STARTED",
+  ANALYSIS_STARTED: "ANALYSIS_STARTED",
+  ANALYSIS_COMPLETED: "ANALYSIS_COMPLETED",
+  GATE_EVALUATED: "GATE_EVALUATED",
+  PLAN_GENERATED: "PLAN_GENERATED",
+  APPLY_REQUESTED: "APPLY_REQUESTED",
+  APPLY_APPROVED: "APPLY_APPROVED",
+  APPLY_COMPLETED: "APPLY_COMPLETED",
+  OBSERVATION_RECEIVED: "OBSERVATION_RECEIVED",
+  ITERATION_ADVANCED: "ITERATION_ADVANCED",
+  RUN_PASSED: "RUN_PASSED",
+  RUN_STOPPED: "RUN_STOPPED",
+  RUN_FAILED: "RUN_FAILED",
+} as const;
+export type OrchestrationEventType =
+  (typeof OrchestrationEventType)[keyof typeof OrchestrationEventType];
+
+export const AdapterKind = {
+  MANUAL_BRIDGE: "MANUAL_BRIDGE",
+  MCP: "MCP",
+  GITHUB: "GITHUB",
+} as const;
+export type AdapterKind = (typeof AdapterKind)[keyof typeof AdapterKind];
+
+export const AdapterCapability = {
+  ANALYZE: "ANALYZE",
+  APPLY: "APPLY",
+  OBSERVE: "OBSERVE",
+} as const;
+export type AdapterCapability =
+  (typeof AdapterCapability)[keyof typeof AdapterCapability];

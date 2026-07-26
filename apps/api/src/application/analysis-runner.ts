@@ -68,8 +68,19 @@ export async function runAnalysis(analysisId: string): Promise<void> {
   }
 }
 
+/**
+ * Persiste sequencialmente, sem `prisma.$transaction` interativo: o pooler
+ * do Supabase (PgBouncer em modo transaction, usado em `DATABASE_URL`) não
+ * suporta transações interativas do Prisma — a conexão de sessão implícita
+ * que o `$transaction(async (tx) => ...)` espera manter entre as várias
+ * queries do callback pode ser reciclada pelo pooler no meio do caminho,
+ * derrubando com "Transaction not found... obtained before disconnecting".
+ * Sem atomicidade entre os inserts (aceito: uma falha no meio deixa dados
+ * parciais, mas a análise já fica marcada como erro nesse caso).
+ */
 async function persist(analysisId: string, result: EngineResult): Promise<void> {
-  await prisma.$transaction(async (tx) => {
+  {
+    const tx = prisma;
     // Páginas descobertas.
     if (result.pages.length) {
       await tx.crawledPage.createMany({
@@ -158,7 +169,7 @@ async function persist(analysisId: string, result: EngineResult): Promise<void> 
         finishedAt: new Date(),
       },
     });
-  });
+  }
 }
 
 /** Busca a chave de IA própria da organização, se configurada. */

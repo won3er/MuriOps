@@ -11,12 +11,15 @@ import { analysisRoutes } from "./routes/analysis.routes.js";
 import { authRoutes } from "./routes/auth.routes.js";
 import { blueprintRoutes } from "./routes/blueprint.routes.js";
 import { dashboardRoutes } from "./routes/dashboard.routes.js";
+import { mcpBridgeRoutes } from "./routes/mcp.routes.js";
+import { orchestrationRoutes } from "./routes/orchestration.routes.js";
 import { projectRoutes } from "./routes/project.routes.js";
 import {
   remediationBridgeRoutes,
   remediationRoutes,
 } from "./routes/remediation.routes.js";
 import { settingsRoutes } from "./routes/settings.routes.js";
+import { githubWebhookRoutes } from "./routes/webhooks.routes.js";
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -100,6 +103,11 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(remediationBridgeRoutes);
   await app.register(dashboardRoutes);
   await app.register(settingsRoutes);
+  await app.register(orchestrationRoutes);
+  // Bridge MCP: pública, autenticada só pelo token da conexão na URL.
+  await app.register(mcpBridgeRoutes);
+  // Webhook do GitHub: público, autenticado por assinatura HMAC.
+  await app.register(githubWebhookRoutes);
 
   return app;
 }

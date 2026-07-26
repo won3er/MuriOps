@@ -2,7 +2,7 @@
 
 import { ALL_CATEGORIES, Severity, type AnalysisDetail, type Issue } from "@qa-ai/shared";
 import { motion } from "framer-motion";
-import { Download, FileSearch, Loader2, Sparkles, Wrench } from "lucide-react";
+import { AlertTriangle, Download, FileSearch, Loader2, Sparkles, Wrench } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -138,6 +138,15 @@ export default function AnalysisDetailPage() {
           <p className="tabular text-sm text-muted-foreground">
             {data.pagesDiscovered} página(s) · {data.issueCount} problema(s)
           </p>
+          {data.status === "COMPLETED" && (
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              O score vai de 0 a 100 (quanto maior, melhor) e é calculado a
+              partir dos problemas encontrados em cada dimensão. Use os
+              filtros abaixo pra focar numa categoria ou severidade, e gere
+              uma Aplicação quando quiser transformar esses achados num
+              checklist de correção.
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-4">
           {data.status === "COMPLETED" && (
@@ -189,8 +198,26 @@ export default function AnalysisDetailPage() {
 
       {data.status === "FAILED" && (
         <Card>
-          <CardContent className="py-6 text-red-400">
-            A análise falhou: {data.error}
+          <CardContent className="flex items-start gap-3 pt-5">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <p className="font-medium">Não deu para concluir esta análise</p>
+              <p className="text-sm text-muted-foreground">
+                O site pode estar fora do ar, bloqueando o acesso do crawler,
+                ou algo travou no meio do processo. Volte pro projeto e rode
+                uma nova análise pra tentar de novo.
+              </p>
+              {data.error && (
+                <details className="text-xs text-muted-foreground">
+                  <summary className="cursor-pointer select-none hover:text-foreground">
+                    Detalhe técnico
+                  </summary>
+                  <pre className="mt-2 whitespace-pre-wrap break-words rounded bg-black/30 p-2 font-mono text-[11px]">
+                    {data.error}
+                  </pre>
+                </details>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -232,6 +259,10 @@ export default function AnalysisDetailPage() {
       )}
 
       {/* Filtros */}
+      <div className="space-y-2">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        Filtrar problemas
+      </p>
       <div className="flex flex-wrap items-center gap-2">
         {isSecurityOnly ? (
           <FilterPills
@@ -281,6 +312,7 @@ export default function AnalysisDetailPage() {
             Mostrar descartados pela IA
           </label>
         </div>
+      </div>
       </div>
 
       {/* Lista de problemas */}

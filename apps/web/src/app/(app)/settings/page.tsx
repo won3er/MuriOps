@@ -13,7 +13,7 @@ type Provider = "claude" | "openai" | "gemini";
 const PROVIDERS: { value: Provider; label: string; hint: string }[] = [
   { value: "claude", label: "Claude (Anthropic)", hint: "sk-ant-..." },
   { value: "openai", label: "OpenAI", hint: "sk-..." },
-  { value: "gemini", label: "Gemini (Google)", hint: "AQ...ou AIza..." },
+  { value: "gemini", label: "Gemini (Google)", hint: "AIzaSy..." },
 ];
 
 export default function SettingsPage() {
@@ -167,6 +167,15 @@ export default function SettingsPage() {
             <p className="text-xs text-muted-foreground">
               A chave é criptografada e nunca é exibida novamente por completo.
             </p>
+            {provider === "gemini" && (
+              <p className="text-xs text-muted-foreground">
+                Gere a chave em Google AI Studio (aistudio.google.com → "Get
+                API key"). O formato correto começa com{" "}
+                <code className="text-foreground">AIzaSy</code> — chaves em
+                outro formato (ex: começando com "AQ.") não funcionam com
+                essa integração e retornam erro de autenticação.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

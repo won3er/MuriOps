@@ -74,6 +74,24 @@ export const projectService = {
     if (!project) throw new NotFoundError("Projeto não encontrado");
     await prisma.project.delete({ where: { id } });
   },
+
+  /** Atualiza o nível de autonomia do orquestrador pra este projeto. */
+  async updateAutonomyLevel(
+    organizationId: string,
+    id: string,
+    autonomyLevel: Project["autonomyLevel"],
+  ): Promise<Project> {
+    const project = await prisma.project.findFirst({
+      where: { id, organizationId },
+      select: { id: true },
+    });
+    if (!project) throw new NotFoundError("Projeto não encontrado");
+    const updated = await prisma.project.update({
+      where: { id },
+      data: { autonomyLevel },
+    });
+    return toDto(updated);
+  },
 };
 
 function toDto(p: {
@@ -82,6 +100,7 @@ function toDto(p: {
   description: string | null;
   url: string;
   organizationId: string;
+  autonomyLevel: string;
   createdAt: Date;
   updatedAt: Date;
 }): Project {
@@ -91,6 +110,7 @@ function toDto(p: {
     description: p.description,
     url: p.url,
     ownerId: p.organizationId,
+    autonomyLevel: p.autonomyLevel as Project["autonomyLevel"],
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
   };

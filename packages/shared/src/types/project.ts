@@ -1,4 +1,4 @@
-import type { SubscriptionPlan } from "../enums.js";
+import type { AutonomyLevel, SubscriptionPlan } from "../enums.js";
 
 export interface Project {
   id: string;
@@ -6,8 +6,13 @@ export interface Project {
   description: string | null;
   url: string;
   ownerId: string;
+  autonomyLevel: AutonomyLevel;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface UpdateProjectAutonomyRequest {
+  autonomyLevel: AutonomyLevel;
 }
 
 export interface ProjectWithStats extends Project {

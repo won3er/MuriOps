@@ -1,12 +1,16 @@
 "use client";
 
 import type {
+  AutonomyLevel,
   Blueprint,
   BlueprintProviderName,
   BlueprintSummary,
   CreateBlueprintRequest,
+  CreateOrchestrationRunRequest,
   CreateProjectRequest,
   CreateRemediationPlanRequest,
+  OrchestrationRun,
+  Project,
   ProjectWithStats,
   RemediationItemStatus,
   RemediationPlan,
@@ -29,7 +33,23 @@ export const qk = {
   remediationPlans: ["remediation-plans"] as const,
   projectRemediationPlans: (projectId: string) =>
     ["remediation-plans", "project", projectId] as const,
+  mcpConnection: (projectId: string) => ["mcp-connection", projectId] as const,
+  githubConnection: (projectId: string) => ["github-connection", projectId] as const,
+  orchestrationRuns: (projectId: string) => ["orchestration-runs", projectId] as const,
+  orchestrationRun: (id: string) => ["orchestration-run", id] as const,
+  orchestrationEvents: (id: string) => ["orchestration-events", id] as const,
+  qualityGates: (projectId: string) => ["quality-gates", projectId] as const,
 };
+
+/** Estados em que o loop ainda está em andamento — mantém o polling ligado. */
+const ACTIVE_RUN_STATUSES = new Set([
+  "QUEUED",
+  "ANALYZING",
+  "EVALUATING_GATES",
+  "PLANNING",
+  "APPLYING",
+  "REANALYZING",
+]);
 
 // ---------- Blueprints ----------
 
@@ -230,6 +250,184 @@ export function useDeleteProject() {
     },
     onSuccess: () => toast.success("Projeto apagado"),
     onSettled: () => qc.invalidateQueries({ queryKey: qk.projects }),
+  });
+}
+
+export function useUpdateProjectAutonomy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, autonomyLevel }: { id: string; autonomyLevel: AutonomyLevel }) =>
+      api.updateProjectAutonomy(id, autonomyLevel),
+    onSuccess: (project) => {
+      qc.invalidateQueries({ queryKey: qk.projects });
+      qc.setQueryData<Project>(["project", project.id], project);
+      toast.success("Nível de autonomia atualizado");
+    },
+    onError: () => toast.error("Falha ao atualizar o nível de autonomia"),
+  });
+}
+
+// ---------- Adapter MCP (Fase 1) ----------
+
+export function useMcpConnection(projectId: string) {
+  return useQuery({
+    queryKey: qk.mcpConnection(projectId),
+    queryFn: () => api.getMcpConnection(projectId),
+    enabled: !!projectId,
+    retry: false,
+  });
+}
+
+export function useConnectMcp(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.connectMcp(projectId),
+    onSuccess: (connection) => {
+      qc.setQueryData(qk.mcpConnection(projectId), connection);
+    },
+    onError: () => toast.error("Falha ao criar a conexão MCP"),
+  });
+}
+
+export function useRegenerateMcpToken(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.regenerateMcpToken(projectId),
+    onSuccess: (connection) => {
+      qc.setQueryData(qk.mcpConnection(projectId), connection);
+      toast.message("Novo token gerado — o anterior parou de funcionar.");
+    },
+    onError: () => toast.error("Falha ao gerar novo token"),
+  });
+}
+
+export function useGithubConnection(projectId: string) {
+  return useQuery({
+    queryKey: qk.githubConnection(projectId),
+    queryFn: () => api.getGithubConnection(projectId),
+    enabled: !!projectId,
+    retry: false,
+  });
+}
+
+export function useConnectGithub(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { owner: string; repo: string; token: string }) =>
+      api.connectGithub(projectId, body),
+    onSuccess: (connection) => {
+      qc.setQueryData(qk.githubConnection(projectId), connection);
+      toast.success("Conexão GitHub criada");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao conectar o GitHub"),
+  });
+}
+
+// ---------- Orquestrador (Fase 3) ----------
+
+export function useOrchestrationRuns(projectId: string) {
+  return useQuery({
+    queryKey: qk.orchestrationRuns(projectId),
+    queryFn: () => api.listOrchestrationRuns(projectId),
+    enabled: !!projectId,
+  });
+}
+
+/** Polling ativo enquanto o run está em andamento; para quando parado esperando humano/adapter ou terminal. */
+export function useOrchestrationRun(id: string) {
+  return useQuery({
+    queryKey: qk.orchestrationRun(id),
+    queryFn: () => api.getOrchestrationRun(id),
+    enabled: !!id,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (!status) return false;
+      return ACTIVE_RUN_STATUSES.has(status) ? 2000 : status === "AWAITING_APPLY" ? 4000 : false;
+    },
+  });
+}
+
+export function useOrchestrationEvents(id: string) {
+  return useQuery({
+    queryKey: qk.orchestrationEvents(id),
+    queryFn: () => api.listOrchestrationEvents(id),
+    enabled: !!id,
+    refetchInterval: 3000,
+  });
+}
+
+export function useCreateOrchestrationRun(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateOrchestrationRunRequest = {}) =>
+      api.createOrchestrationRun(projectId, body),
+    onSuccess: (run) => {
+      qc.setQueryData<OrchestrationRun>(qk.orchestrationRun(run.id), run);
+      qc.invalidateQueries({ queryKey: qk.orchestrationRuns(projectId) });
+      toast.success("Execução iniciada");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao iniciar a execução"),
+  });
+}
+
+export function useApproveOrchestrationRun(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.approveOrchestrationRun(id),
+    onSuccess: (run) => {
+      qc.setQueryData(qk.orchestrationRun(id), run);
+      qc.invalidateQueries({ queryKey: qk.orchestrationEvents(id) });
+      toast.success("Aprovado — reanalisando");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao aprovar"),
+  });
+}
+
+export function useCancelOrchestrationRun(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.cancelOrchestrationRun(id),
+    onSuccess: (run) => {
+      qc.setQueryData(qk.orchestrationRun(id), run);
+      toast.message("Execução cancelada");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao cancelar"),
+  });
+}
+
+export function useQualityGates(projectId: string) {
+  return useQuery({
+    queryKey: qk.qualityGates(projectId),
+    queryFn: () => api.listQualityGates(projectId),
+    enabled: !!projectId,
+  });
+}
+
+export function useCreateQualityGate(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { category?: string | null; minScore: number; label?: string }) =>
+      api.createQualityGate(projectId, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.qualityGates(projectId) });
+      toast.success("Quality gate criado");
+    },
+    onError: () => toast.error("Falha ao criar quality gate"),
+  });
+}
+
+export function useDeleteQualityGate(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (gateId: string) => api.deleteQualityGate(projectId, gateId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.qualityGates(projectId) });
+    },
+    onError: () => toast.error("Falha ao apagar quality gate"),
   });
 }
 

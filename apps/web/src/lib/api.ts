@@ -1,5 +1,6 @@
 import type {
   Analysis,
+  AdapterConnection,
   AnalysisComparison,
   AnalysisDetail,
   AuthSession,
@@ -7,12 +8,16 @@ import type {
   BlueprintProviderName,
   BlueprintSummary,
   CreateBlueprintRequest,
+  CreateOrchestrationRunRequest,
   CreateProjectRequest,
   CreateRemediationPlanRequest,
   DashboardStats,
   IssueFilters,
   LoginRequest,
+  OrchestrationEvent,
+  OrchestrationRun,
   Project,
+  ProjectQualityGate,
   ProjectWithStats,
   RegisterRequest,
   RemediationItemStatus,
@@ -113,6 +118,82 @@ export const api = {
     request<RemediationSummary[]>(`/projects/${id}/remediation-plans`),
   deleteProject: (id: string) =>
     request<void>(`/projects/${id}`, { method: "DELETE" }),
+  updateProjectAutonomy: (id: string, autonomyLevel: Project["autonomyLevel"]) =>
+    request<Project>(`/projects/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ autonomyLevel }),
+    }),
+
+  // ---- adapter MCP (Fase 1) ----
+  getMcpConnection: (projectId: string) =>
+    request<(AdapterConnection & { mcpUrl: string }) | { configured: false }>(
+      `/projects/${projectId}/mcp-connection`,
+    ),
+  connectMcp: (projectId: string) =>
+    request<AdapterConnection & { mcpUrl: string }>(
+      `/projects/${projectId}/mcp-connection`,
+      { method: "POST" },
+    ),
+  regenerateMcpToken: (projectId: string) =>
+    request<AdapterConnection & { mcpUrl: string }>(
+      `/projects/${projectId}/mcp-connection/regenerate`,
+      { method: "POST" },
+    ),
+
+  // ---- adapter GitHub (Fase 2) ----
+  getGithubConnection: (projectId: string) =>
+    request<
+      | (AdapterConnection & { maskedToken: string | null; webhookUrl: string })
+      | { configured: false }
+    >(`/projects/${projectId}/github-connection`),
+  connectGithub: (
+    projectId: string,
+    body: { owner: string; repo: string; token: string },
+  ) =>
+    request<AdapterConnection & { webhookSecret: string; webhookUrl: string }>(
+      `/projects/${projectId}/github-connection`,
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+
+  // ---- quality gates (Fase 3) ----
+  listQualityGates: (projectId: string) =>
+    request<ProjectQualityGate[]>(`/projects/${projectId}/quality-gates`),
+  createQualityGate: (
+    projectId: string,
+    body: { category?: string | null; minScore: number; label?: string },
+  ) =>
+    request<ProjectQualityGate>(`/projects/${projectId}/quality-gates`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  deleteQualityGate: (projectId: string, gateId: string) =>
+    request<void>(`/projects/${projectId}/quality-gates/${gateId}`, {
+      method: "DELETE",
+    }),
+
+  // ---- orquestrador (Fase 3) ----
+  listOrchestrationRuns: (projectId: string) =>
+    request<OrchestrationRun[]>(`/projects/${projectId}/orchestration-runs`),
+  createOrchestrationRun: (
+    projectId: string,
+    body: CreateOrchestrationRunRequest = {},
+  ) =>
+    request<OrchestrationRun>(`/projects/${projectId}/orchestration-runs`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  getOrchestrationRun: (id: string) =>
+    request<OrchestrationRun>(`/orchestration-runs/${id}`),
+  listOrchestrationEvents: (id: string) =>
+    request<OrchestrationEvent[]>(`/orchestration-runs/${id}/events`),
+  approveOrchestrationRun: (id: string) =>
+    request<OrchestrationRun>(`/orchestration-runs/${id}/approve`, {
+      method: "POST",
+    }),
+  cancelOrchestrationRun: (id: string) =>
+    request<OrchestrationRun>(`/orchestration-runs/${id}/cancel`, {
+      method: "POST",
+    }),
 
   // ---- analyses ----
   startAnalysis: (projectId: string, body: StartAnalysisRequest = {}) =>

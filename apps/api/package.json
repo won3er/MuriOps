@@ -25,6 +25,7 @@
     "@fastify/jwt": "^9.0.1",
     "@fastify/rate-limit": "^11.1.0",
     "@fastify/static": "^8.0.2",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@prisma/client": "^5.22.0",
     "@qa-ai/shared": "workspace:*",
     "bcryptjs": "^2.4.3",
