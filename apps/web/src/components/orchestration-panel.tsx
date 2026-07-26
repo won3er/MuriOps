@@ -221,6 +221,15 @@ export function OrchestrationPanel({
                   run.status,
                 ) && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
               </div>
+              {run.status === "AWAITING_APPLY" && (
+                <p className="text-xs text-muted-foreground">
+                  Antes de aprovar: se você aplicou as correções fora do Atlas
+                  QA (deploy manual, PR mesclado etc.), rode uma nova análise
+                  no projeto primeiro. "Aprovar" reavalia a análise mais
+                  recente que já existir — ele não dispara uma análise nova
+                  sozinho.
+                </p>
+              )}
               {run.error && <p className="text-sm text-muted-foreground">{run.error}</p>}
               <div className="space-y-1.5">
                 {events.map((e) => (
