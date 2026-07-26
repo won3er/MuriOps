@@ -4,6 +4,88 @@ Sessão iniciada em 2026-07-26, seguindo o plano em
 `C:\Users\woner\.claude\plans\unified-herding-snail.md`. Registro de decisões,
 bloqueios e bugs encontrados, na ordem em que aconteceram.
 
+## BUG ENCONTRADO — "Aprovar e reanalisar" não dispara nova análise (2026-07-26, Cowork)
+
+Ao fechar o loop de dogfooding completo (implementar as 8 correções → subir pro
+GitHub → redeploy Vercel → marcar os 8 itens como feitos na tela de Aplicação →
+clicar "Aprovar e reanalisar" na Orquestração), foi encontrado um bug real no
+orquestrador:
+
+**Esperado**: ao aprovar a reanálise, o orquestrador deveria disparar uma NOVA
+"Análise QA padrão" (novo crawl/Playwright) contra a URL do projeto
+(`https://atlas-qa-demo-todo.vercel.app`, já com as 8 correções no ar), gerar uma
+v2, e comparar o novo score contra o quality gate (mínimo 100).
+
+**Observado**: o log da execução mostra, na "Iteração 2":
+```
+Buscando a análise mais recente do projeto.
+Usando a análise v1.
+1 gate(s) não atingido(s): geral (99/100)
+Gerando plano de remediação a partir da análise.
+Plano "Aplicação — Minhas Tarefas (demo) (Análise QA padrão v1)" gerado.
+Nenhum adapter conectado — aplicação manual via tela de Aplicação ou ponte/MCP.
+Aguardando aprovação humana pra reanalisar...
+```
+Ou seja: ele reutiliza a v1 (score 99/100, gerada ANTES das correções), gera um
+plano de remediação duplicado (por isso "Aplicações" foi de 1 → 2 no histórico do
+projeto), e volta a esperar aprovação — em loop, sem nunca rodar uma análise nova.
+Confirmado que `/projects/.../` continua mostrando "Análises QA padrão (1)" mesmo
+depois de aprovar a reanálise duas vezes.
+
+**Hipótese de causa**: em `orchestration-runner.ts` (ou `orchestration.service.ts`),
+o step de reanálise provavelmente está com uma chamada faltando que deveria
+disparar `POST /projects/:id/analyses` (ou equivalente) antes de "buscar a análise
+mais recente" — hoje ele só busca a mais recente já existente, sem criar uma nova.
+
+**Impacto**: o branch REANALYZING do state machine (`QUEUED→ANALYZING→
+EVALUATING_GATES→PLANNING→APPLYING→AWAITING_APPLY→REANALYZING→PASSED/STOPPED/
+FAILED`) nunca é exercitado de verdade — o loop fica preso entre
+AWAITING_APPLY e a reavaliação do mesmo gate, sempre com o mesmo resultado.
+
+**Não corrigido pelo Cowork** porque é mudança de backend (TypeScript, precisa
+`git commit`/push) e a sessão do Cowork não deve escrever/commitar código nesse
+repo diretamente (ver seção "Sandbox sem git push" no CLAUDE.md). Fica como
+próximo passo pro Claude Code local: localizar o step "reanalisar" no orchestration
+runner/service e garantir que ele dispare uma análise nova antes de reavaliar o
+gate, em vez de reusar a última análise existente.
+
+### Atualização: não era bug, era passo de processo faltando — loop fechado com sucesso
+
+Lendo `orchestration.service.ts` (`advance()`, linha ~199), o design real é: o
+`REANALYZING` sempre busca a análise `COMPLETED` mais recente do projeto
+(`findFirst orderBy version desc`) — ele não dispara um crawl novo sozinho. O
+texto do botão "Aprovar e reanalisar" sugere que ele mesmo reanalisa, o que é
+ambíguo/confuso na UI, mas o comportamento é intencional: quem deve rodar uma
+"Análise QA padrão" nova é o operador (ou, futuramente, um adapter observe),
+*antes* de aprovar — a aprovação só libera o run pra reavaliar contra o que já
+existir de mais recente.
+
+Corrigido o procedimento (não o código): rodei manualmente uma nova "Análise QA
+padrão" contra `https://atlas-qa-demo-todo.vercel.app` (já com as 8 correções no
+ar) → **v2 saiu com score 100/100, 0 problemas, em todas as 8 dimensões**
+(UI, UX, SEO, Console, Network, Segurança, Performance, Acessibilidade,
+Segurança Avançada). Voltei pra Orquestração e cliquei "Aprovar e reanalisar" de
+novo — iteração 3 buscou a v2, todos os quality gates (mínimo 100) passaram, e o
+run foi pra `PASSED`. Log final da execução:
+```
+Iniciando iteração 3.
+Buscando a análise mais recente do projeto.
+Usando a análise v2.
+Todos os quality gates passaram.
+Todos os quality gates foram atingidos.
+```
+
+**Loop de dogfooding fechado de ponta a ponta**: analisar (v1, 99/100) → avaliar
+quality gates (gate mínimo 100, falhou) → gerar plano de remediação via Gemini →
+implementar as 8 correções de verdade no código → commit/push → redeploy Vercel →
+marcar itens como feitos → rodar nova análise (v2, 100/100) → aprovar reanálise →
+gate passou → run PASSED.
+
+**Sugestão de melhoria de UX (não urgente, backlog)**: renomear o botão "Aprovar e
+reanalisar" pra algo como "Aprovar e reavaliar" ou adicionar um aviso "rode uma
+nova Análise QA padrão antes de aprovar, senão ele reavalia a mesma análise
+anterior" — evita o operador cair na mesma confusão de achar que é um bug.
+
 ## Verificação inicial de ferramentas (bloqueio parcial)
 
 - `gh` (GitHub CLI): instalado (v2.94.0), **não autenticado**
@@ -259,6 +341,44 @@ Adapter GitHub real (owner/repo/PAT), conexão ao repositório
 `atlas-qa-demo-todo`, e o ciclo completo do orquestrador continuam
 pendentes — falta a Fase 3 estar em produção (ou testar tudo no banco de dev,
 que exigiria rodar a API localmente de novo).
+
+## Fase 3 publicada em produção e primeira execução do orquestrador (2026-07-26, Cowork)
+
+Resolvida a pendência acima: o commit local da Fase 3 (que estava preso por um
+`.git/index.lock` — causa raiz: o mount da pasta usado por um dos ambientes
+de agente bloqueia `unlink`/substituição de arquivo em baixo nível, então
+`git add`/`commit` nunca fechavam a operação) foi finalmente feito **direto
+no terminal real do Windows** (não pelo agente): commit `73097ac`
+("feat: Fase 3 do orquestrador - loop completo + UI de orquestracao", 36
+arquivos, 3817 inserções) e `git push` bem-sucedido pra `origin/main`.
+
+- Redeploy automático confirmado nos dois serviços: Render (`elevate-qa-api`,
+  live em ~2m33s, `/health` respondendo `{"status":"ok"}`, migrations novas
+  aplicadas sem erro) e Vercel (`elevate-qa`, "Ready", commit `73097ac`).
+- Aba "Orquestração" confirmada visível em produção no projeto "Minhas
+  Tarefas (demo)".
+- Quality gate criado em produção: **Score geral · mínimo 90** (o gate de
+  Segurança ≥95 do banco de dev não foi recriado aqui — a UI atual só expõe
+  gate de score geral pela tela; um gate por categoria específica exigiria
+  usar a API diretamente, não abordado nesta sessão).
+- **Primeira execução do orquestrador rodada em produção**: usou a análise
+  v1 existente (score 99), avaliou o gate, resultado **"Passou nos quality
+  gates"** na iteração 1/3 — sem precisar de reanálise. Ciclo básico
+  (analisar → avaliar gate → decidir) provado funcionando de ponta a ponta
+  contra o projeto real publicado.
+
+### O que ainda falta pra fechar o ciclo completo de dogfooding
+
+Como o gate já passou de primeira (site já estava bom), o ramo de
+`PLANNING`/`APPLYING`/`AWAITING_APPLY`/reanálise via PR do orquestrador
+**não foi exercitado em produção** — só tinha sido testado via curl contra o
+banco de dev. Pra ver esse ramo rodar de verdade contra o projeto publicado,
+seria preciso ou (a) apertar o gate pra um valor que a v1 não bate (ex: 100),
+forçando gerar plano de remediação, ou (b) introduzir um problema real no
+app de demonstração e reanalisar. Também ainda faltam: conectar o adapter
+GitHub de verdade (PAT + repo `atlas-qa-demo-todo`) pra que a etapa
+`APPLYING` abra uma PR de verdade, em vez de só esperar aprovação manual sem
+adapter.
 
 STATUS: BROWSER_STEPS_STARTED (2026-07-26, checagem automática do Cowork)
 
