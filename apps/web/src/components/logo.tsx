@@ -3,25 +3,16 @@ import { cn } from "@/lib/utils";
 /**
  * Identidade visual do Elevate QA.
  *
- * Isotipo: um "E" monograma construído com barras que crescem de baixo para
- * cima — lê-se ao mesmo tempo como a letra e como um gráfico de elevação
- * ("eleve a qualidade"). Sem texto: funciona sozinho como marca.
- * Cor "Índigo" (#6366f1), fill sólido — sem gradiente decorativo, seguindo a
- * filosofia "um único acento cromático, plano" do design system "Instrument".
- * Ver DESIGN.md.
+ * Isótipo: uma harpia estilizada em poucas formas geométricas — cabeça com
+ * crista de penas angulares (a coroa característica da harpia-real) e bico
+ * curvo, olhando pra frente ("de olho na qualidade do seu site"). Espírito
+ * parecido com o Octocat do GitHub: um mascote simples que funciona sozinho
+ * como marca, de favicon a hero.
+ * Cor "Índigo" (#6366f1), fill sólido — sem gradiente. Ver DESIGN.md.
  */
-function isotypePaths() {
+function isotypePath() {
   return (
-    <>
-      {/* espinha vertical do E */}
-      <rect x="5" y="6" width="5.5" height="22" rx="2.75" />
-      {/* barra superior (a mais longa — o topo da elevação) */}
-      <rect x="5" y="6" width="22" height="5.5" rx="2.75" />
-      {/* barra do meio */}
-      <rect x="5" y="13.25" width="16" height="5.5" rx="2.75" />
-      {/* barra inferior (a mais curta — o ponto de partida) */}
-      <rect x="5" y="22.5" width="10.5" height="5.5" rx="2.75" />
-    </>
+    <path d="M8,21.5 L8,10.5 L11,7 L13.5,9.5 L12.3,11 L16.5,9.3 L15.3,12.5 L19.5,10.8 L18.2,14 L26,16 L19,18.2 L20.5,20.5 L14,25 L8,25 Z" />
   );
 }
 
@@ -40,7 +31,8 @@ export function LogoIsotype({
       aria-label={title}
       className={cn("h-9 w-9", className)}
     >
-      <g fill="#6366f1">{isotypePaths()}</g>
+      <g fill="#6366f1">{isotypePath()}</g>
+      <circle cx="17.6" cy="12.6" r="1.3" fill="currentColor" className="text-background" />
     </svg>
   );
 }
@@ -55,9 +47,8 @@ export function LogoMark({ className }: { className?: string }) {
       focusable="false"
     >
       <rect width="32" height="32" rx="7" fill="#6366f1" />
-      <g fill="#fff" transform="translate(16 16) scale(0.72) translate(-16 -16)">
-        {isotypePaths()}
-      </g>
+      <g fill="#fff">{isotypePath()}</g>
+      <circle cx="17.6" cy="12.6" r="1.3" fill="#6366f1" />
     </svg>
   );
 }
