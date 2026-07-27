@@ -81,23 +81,26 @@ sem `background-image`. Essa foi a correção mais direta pedida pelo usuário
 
 ## Mascote
 
-O mascote é um **texugo geométrico em perfil** — orelha e cabeça como
-círculos simples, focinho afilado, corpo arredondado. A marca registrada do
-bicho, a listra clara que atravessa o rosto escuro (e o olho), é desenhada
-como um "recorte": um path na cor de fundo por cima do preenchimento sólido,
-a mesma técnica usada antes só pro olho da harpia, agora reaproveitada pra
-listra inteira. Isso faz a peça funcionar em qualquer contexto — cutout na
-cor do background no isótipo solto, cutout na cor índigo dentro do selo —
-sem precisar de gradiente. Formas bem separadas, fáceis de ler mesmo em
-24px, no espírito do Octocat do GitHub. Desenhado numa grade 0–200 (círculos
-e paths simples) e escalado (`scale(0.16)`) pro viewBox 32×32 do resto do
-app. Fill sólido em índigo (`#6366f1`). Formas em `components/logo.tsx`
-(`isotypeShape()` pro corpo, `isotypeCutout()` pra listra/olho),
-reaproveitadas em `icon.svg` e `opengraph-image.tsx`.
+O mascote é a arte de **texugo em silhueta** enviada diretamente pelo
+usuário: um círculo branco com o texugo em preto (perfil, orelha, focinho e
+olho recortados em negativo), fundo preto ao redor do círculo. Diferente das
+tentativas anteriores (harpia e um primeiro texugo desenhados à mão em SVG
+com paths), esta versão usa a **imagem raster original como está**, sem
+recriar os traços — o usuário pediu explicitamente essa imagem, "se
+necessário diminuindo pra encaixar".
 
-Trocou o mascote anterior (harpia) por pedido direto do usuário, que mandou
-uma referência visual de um texugo em círculo preto/branco — mesmo espírito
-de isótipo geométrico simples, bicho diferente.
+Arquivo fonte: `public/badger-logo-512.png` (recorte quadrado do círculo,
+512×512, gerado a partir da imagem enviada). Usado em:
+- `components/logo.tsx` (`LogoMark`/`LogoIsotype`) via `next/image`,
+  arredondado com `rounded-full`.
+- `app/icon.svg` — a mesma imagem em 32×32, embutida como PNG em base64
+  dentro do SVG (`<image href="data:image/png;base64,...">`), pro favicon.
+- `app/opengraph-image.tsx` — lida do disco em runtime Node.js (não edge,
+  porque precisa de `fs`) e embutida como data URI na imagem de
+  compartilhamento (og:image).
+
+Trocou dos mascotes anteriores (harpia, depois um texugo desenhado à mão)
+por pedido direto do usuário, que mandou a imagem final pronta.
 
 ## Página inicial — seção de destaques
 
