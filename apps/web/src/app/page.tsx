@@ -147,9 +147,7 @@ export default function LandingPage() {
         </span>
         <h1 className="max-w-3xl text-balance text-4xl font-bold leading-[1.1] sm:text-5xl md:text-6xl">
           Sua equipe de QA,{" "}
-          <span className="bg-gradient-to-r from-primary to-amber-400 bg-clip-text text-transparent">
-            do diagnóstico à correção
-          </span>
+          <span className="text-primary">do diagnóstico à correção</span>
         </h1>
         <p className="mt-5 max-w-2xl text-balance text-lg text-muted-foreground">
           Cole uma URL e a IA testa seu site inteiro — UI, performance, SEO,
