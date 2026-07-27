@@ -3,14 +3,16 @@
 import type { RemediationScope } from "@qa-ai/shared";
 import {
   FileSearch,
+  GitBranch,
   Layers,
   Loader2,
   ShieldAlert,
   Wrench,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { OrchestrationPanel } from "@/components/orchestration-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +22,8 @@ import {
   useRemediationPlans,
 } from "@/lib/queries";
 import { cn, timeAgo } from "@/lib/utils";
+
+type Tab = "exportar" | "orquestracao";
 
 const SCOPES: {
   value: RemediationScope;
@@ -64,13 +68,35 @@ const SCOPE_LABEL: Record<string, string> = {
 };
 
 export default function AplicacaoPage() {
+  return (
+    <Suspense fallback={null}>
+      <AplicacaoPageInner />
+    </Suspense>
+  );
+}
+
+function AplicacaoPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: projects = [] } = useProjects();
   const { data: plans = [], isLoading } = useRemediationPlans();
   const createPlan = useCreateRemediationPlan();
 
+  const [tab, setTab] = useState<Tab>("exportar");
   const [projectId, setProjectId] = useState("");
+  const [orchestrationProjectId, setOrchestrationProjectId] = useState("");
   const [scope, setScope] = useState<RemediationScope>("full");
+
+  useEffect(() => {
+    const wantedTab = searchParams.get("tab");
+    const wantedProjectId = searchParams.get("projectId");
+    if (wantedTab === "orquestracao") setTab("orquestracao");
+    if (wantedProjectId) setOrchestrationProjectId(wantedProjectId);
+  }, [searchParams]);
+
+  const orchestrationProject = projects.find(
+    (p) => p.id === orchestrationProjectId,
+  );
 
   function exportar() {
     if (!projectId) return;
@@ -89,10 +115,83 @@ export default function AplicacaoPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           Exporte suas análises e transforme os achados num plano de mudanças —
           para aplicar manualmente ou direto no seu ambiente de desenvolvimento
-          via IA.
+          via IA. Ou deixe a Orquestração rodar o ciclo completo sozinha.
         </p>
       </div>
 
+      {/* Abas */}
+      <div className="flex gap-2 border-b">
+        <button
+          type="button"
+          onClick={() => setTab("exportar")}
+          className={cn(
+            "flex items-center gap-2 border-b-2 px-3 py-2 text-sm transition-colors",
+            tab === "exportar"
+              ? "border-primary font-medium text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Wrench className="h-4 w-4" /> Exportar &amp; aplicar
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("orquestracao")}
+          className={cn(
+            "flex items-center gap-2 border-b-2 px-3 py-2 text-sm transition-colors",
+            tab === "orquestracao"
+              ? "border-primary font-medium text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <GitBranch className="h-4 w-4" /> Orquestração
+        </button>
+      </div>
+
+      {tab === "orquestracao" ? (
+        <div className="space-y-5">
+          <Card>
+            <CardContent className="space-y-2 py-6">
+              <label
+                htmlFor="orquestracao-projeto"
+                className="mb-1.5 block text-xs text-muted-foreground"
+              >
+                Projeto
+              </label>
+              <select
+                id="orquestracao-projeto"
+                value={orchestrationProjectId}
+                onChange={(e) => setOrchestrationProjectId(e.target.value)}
+                className="h-10 w-full rounded-md border border-input bg-background/60 px-3 text-sm sm:max-w-sm"
+              >
+                <option value="">Selecione um projeto…</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Nível de autonomia, quality gates e o loop analisar → plano →
+                aplicar → reanalisar, tudo num só lugar.
+              </p>
+            </CardContent>
+          </Card>
+
+          {orchestrationProject ? (
+            <OrchestrationPanel
+              projectId={orchestrationProject.id}
+              autonomyLevel={orchestrationProject.autonomyLevel}
+            />
+          ) : (
+            <Card>
+              <CardContent className="py-10 text-center text-muted-foreground">
+                Selecione um projeto acima para configurar a orquestração.
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      ) : (
+        <>
       {/* Exportar análises */}
       <Card>
         <CardContent className="space-y-5 py-6">
@@ -213,6 +312,8 @@ export default function AplicacaoPage() {
           </div>
         )}
       </div>
+        </>
+      )}
     </div>
   );
 }

@@ -11,7 +11,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AnalysisStatusBadge } from "@/components/status-badge";
 import { McpConnectionPanel } from "@/components/mcp-connection-panel";
 import { GithubConnectionPanel } from "@/components/github-connection-panel";
-import { OrchestrationPanel } from "@/components/orchestration-panel";
 import { api } from "@/lib/api";
 import { useProjectRemediationPlans } from "@/lib/queries";
 import { cn, formatDuration, scoreColor, timeAgo } from "@/lib/utils";
@@ -35,7 +34,7 @@ export default function ProjectDetailPage() {
   const [starting, setStarting] = useState(false);
   const [startingSecurity, setStartingSecurity] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"normal" | "security" | "remediation" | "orchestration">("normal");
+  const [tab, setTab] = useState<"normal" | "security" | "remediation">("normal");
   const { data: remediationPlans = [] } = useProjectRemediationPlans(id);
 
   const loadAnalyses = () =>
@@ -183,28 +182,29 @@ export default function ProjectDetailPage() {
               <Wrench className="h-3.5 w-3.5" />
               <span>Aplicações</span> ({remediationPlans.length})
             </button>
-            <button
-              onClick={() => setTab("orchestration")}
-              className={cn(
-                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors",
-                tab === "orchestration"
-                  ? "bg-primary/15 text-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <GitBranch className="h-3.5 w-3.5" />
-              <span>Orquestração</span>
-            </button>
           </div>
         </div>
-        {tab === "orchestration" ? (
-          project && <OrchestrationPanel projectId={id} autonomyLevel={project.autonomyLevel} />
-        ) : tab === "remediation" ? (
+        {tab === "remediation" ? (
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <McpConnectionPanel projectId={id} />
               <GithubConnectionPanel projectId={id} />
             </div>
+            <Link href={`/aplicacao?tab=orquestracao&projectId=${id}`}>
+              <Card className="border-primary/30 transition-colors hover:border-primary/60">
+                <CardContent className="flex items-center gap-3 py-4">
+                  <GitBranch className="h-5 w-5 shrink-0 text-primary" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">Orquestração deste projeto</p>
+                    <p className="text-sm text-muted-foreground">
+                      Nível de autonomia, quality gates e o loop analisar →
+                      plano → aplicar → reanalisar agora ficam dentro de
+                      Aplicação.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
             {remediationPlans.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center gap-3 py-12 text-center">

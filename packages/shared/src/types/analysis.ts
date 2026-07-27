@@ -35,6 +35,12 @@ export interface AnalysisDetail extends Analysis {
   issues: Issue[];
 }
 
+/** Resumo de análise com o projeto já embutido — usado no hub "Análise" (visão geral, todos os projetos). */
+export interface AnalysisSummary extends Analysis {
+  projectName: string;
+  projectUrl: string;
+}
+
 /** Diferença entre duas análises (comparação de versões). */
 export interface AnalysisComparison {
   from: Analysis;

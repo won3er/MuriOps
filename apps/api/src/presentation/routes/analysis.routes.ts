@@ -40,6 +40,11 @@ export async function analysisRoutes(app: FastifyInstance): Promise<void> {
     }
   };
 
+  // Hub "Análise": todas as análises da organização, qualquer projeto.
+  app.get("/analyses", async (req) => {
+    return analysisService.listAll(req.user.organizationId);
+  });
+
   // Inicia uma nova análise em um projeto.
   app.post("/projects/:id/analyses", async (req, reply) => {
     const { id } = z.object({ id: z.string() }).parse(req.params);

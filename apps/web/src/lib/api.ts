@@ -3,6 +3,7 @@ import type {
   AdapterConnection,
   AnalysisComparison,
   AnalysisDetail,
+  AnalysisSummary,
   AuthSession,
   Blueprint,
   BlueprintProviderName,
@@ -200,6 +201,8 @@ export const api = {
     }),
 
   // ---- analyses ----
+  /** Hub "Análise": todas as análises da organização, qualquer projeto. */
+  listAnalyses: () => request<AnalysisSummary[]>("/analyses"),
   startAnalysis: (projectId: string, body: StartAnalysisRequest = {}) =>
     request<Analysis>(`/projects/${projectId}/analyses`, {
       method: "POST",

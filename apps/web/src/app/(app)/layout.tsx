@@ -3,6 +3,7 @@
 import {
   ArrowUpCircle,
   DraftingCompass,
+  FileSearch,
   FolderKanban,
   LayoutDashboard,
   LogOut,
@@ -21,6 +22,7 @@ import { useAuth } from "@/lib/auth";
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "Projetos", icon: FolderKanban },
+  { href: "/analyses", label: "Análise", icon: FileSearch },
   { href: "/blueprints", label: "Projetar", icon: DraftingCompass },
   { href: "/aplicacao", label: "Aplicação", icon: Wrench },
   { href: "/atualizar", label: "Atualizar", icon: ArrowUpCircle },

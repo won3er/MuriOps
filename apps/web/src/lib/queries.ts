@@ -299,6 +299,21 @@ export function useDeleteUpgradePlan() {
   });
 }
 
+// ---------- Análise (hub, todos os projetos) ----------
+
+export function useAnalysesList() {
+  return useQuery({
+    queryKey: ["analyses"],
+    queryFn: api.listAnalyses,
+    refetchInterval: (query) =>
+      query.state.data?.some((a) =>
+        ["QUEUED", "CRAWLING", "ANALYZING", "AI_REVIEW"].includes(a.status),
+      )
+        ? 4000
+        : false,
+  });
+}
+
 // ---------- Projetos ----------
 
 export function useProjects() {

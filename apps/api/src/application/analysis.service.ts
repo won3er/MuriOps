@@ -3,6 +3,7 @@ import {
   type AnalysisCategory,
   type AnalysisComparison,
   type AnalysisDetail,
+  type AnalysisSummary,
   type DashboardStats,
   type IssueFilters,
   type StartAnalysisRequest,
@@ -20,6 +21,25 @@ export class NotFoundError extends Error {
 }
 
 export const analysisService = {
+  /**
+   * Hub "Análise": todas as análises da organização, de qualquer projeto,
+   * mais recentes primeiro — com o nome/URL do projeto já embutido para não
+   * precisar de N+1 no front.
+   */
+  async listAll(organizationId: string): Promise<AnalysisSummary[]> {
+    const rows = await prisma.analysis.findMany({
+      where: { project: { organizationId } },
+      include: { project: { select: { name: true, url: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    });
+    return rows.map((r) => ({
+      ...toAnalysisDto(r),
+      projectName: r.project.name,
+      projectUrl: r.project.url,
+    }));
+  },
+
   /** Cria a análise (QUEUED) e coloca na fila para processamento assíncrono. */
   async start(
     organizationId: string,
