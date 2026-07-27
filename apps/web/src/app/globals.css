@@ -2,45 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Tema claro (padrão :root). O toggle (next-themes) troca a classe .dark. */
-:root {
-  --background: 210 30% 98%;
-  --foreground: 222 24% 12%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 24% 12%;
-  /* Laranja — energia e ação ("eleve", "aplique"), longe do azul genérico de
-     ferramenta técnica. Cores de severidade ficam separadas deste token. */
-  --primary: 22 92% 48%;
-  --primary-foreground: 0 0% 100%;
-  --muted: 210 20% 93%;
-  --muted-foreground: 215 16% 42%;
-  --accent: 210 22% 90%;
-  --accent-foreground: 222 24% 12%;
-  --border: 214 20% 85%;
-  --input: 214 20% 85%;
-  --ring: 22 92% 52%;
-  --destructive: 0 72% 45%;
-  --destructive-foreground: 0 0% 100%;
-  --radius: 0.625rem;
-}
-
-/* Tema escuro — azul-carvão frio, peso "instrumento técnico". */
+/* Paleta "Console" — estilo GitHub: quase-preto neutro, texto branco/cinza,
+   laranja Ember só como destaque mínimo (CTA, links ativos, foco). Sem
+   versão clara por enquanto (ver apps/web/DESIGN.md). Definida tanto em
+   :root quanto em .dark para não haver flash de cor errada antes do JS
+   aplicar a classe — o app roda sempre em modo escuro (forcedTheme="dark"). */
+:root,
 .dark {
-  --background: 222 24% 7%;
-  --foreground: 210 20% 96%;
-  --card: 222 20% 10%;
-  --card-foreground: 210 20% 96%;
-  --primary: 24 94% 53%;
-  --primary-foreground: 222 24% 7%;
-  --muted: 222 16% 15%;
-  --muted-foreground: 215 14% 62%;
-  --accent: 222 16% 17%;
-  --accent-foreground: 210 20% 96%;
-  --border: 222 15% 20%;
-  --input: 222 15% 20%;
-  --ring: 24 94% 53%;
+  --background: 216 28% 7%;
+  --foreground: 208 35% 93%;
+  --card: 215 21% 11%;
+  --card-foreground: 208 35% 93%;
+  /* Ember — único ponto de cor da marca. Usado com parcimônia. */
+  --primary: 17 77% 52%;
+  --primary-foreground: 30 40% 97%;
+  --muted: 215 15% 15%;
+  --muted-foreground: 212 9% 58%;
+  --accent: 215 15% 15%;
+  --accent-foreground: 208 35% 93%;
+  --border: 212 12% 21%;
+  --input: 212 12% 21%;
+  --ring: 17 77% 55%;
   --destructive: 0 72% 58%;
   --destructive-foreground: 0 0% 100%;
+  --radius: 0.75rem;
 }
 
 * {
@@ -52,10 +37,16 @@ body {
   background: hsl(var(--background));
   color: hsl(var(--foreground));
   background-image:
-    radial-gradient(60% 60% at 50% -10%, hsl(24 94% 53% / 0.12), transparent),
-    radial-gradient(50% 50% at 100% 0%, hsl(38 95% 55% / 0.07), transparent);
+    radial-gradient(60% 60% at 50% -10%, hsl(17 77% 52% / 0.07), transparent),
+    radial-gradient(50% 50% at 100% 0%, hsl(212 20% 40% / 0.05), transparent);
   background-attachment: fixed;
   min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
 }
 
 /* Dados que precisam alinhar em coluna (score, ms, status code, seletor). */
