@@ -116,7 +116,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  getProject: (id: string) => request<Project>(`/projects/${id}`),
+  getProject: (id: string) => request<ProjectWithStats>(`/projects/${id}`),
   projectAnalyses: (id: string) =>
     request<Analysis[]>(`/projects/${id}/analyses`),
   projectRemediationPlans: (id: string) =>
@@ -159,6 +159,70 @@ export const api = {
       `/projects/${projectId}/github-connection`,
       { method: "POST", body: JSON.stringify(body) },
     ),
+
+  // ---- adapters de plataforma (Fase 4 — apply real) ----
+  getWordpressConnection: (projectId: string) =>
+    request<
+      | (AdapterConnection & { maskedCredential: string | null })
+      | { configured: false }
+    >(`/projects/${projectId}/wordpress-connection`),
+  connectWordpress: (
+    projectId: string,
+    body: { siteUrl: string; username: string; appPassword: string },
+  ) =>
+    request<AdapterConnection>(`/projects/${projectId}/wordpress-connection`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  getShopifyConnection: (projectId: string) =>
+    request<
+      | (AdapterConnection & { maskedCredential: string | null })
+      | { configured: false }
+    >(`/projects/${projectId}/shopify-connection`),
+  connectShopify: (
+    projectId: string,
+    body: { shopDomain: string; accessToken: string },
+  ) =>
+    request<AdapterConnection>(`/projects/${projectId}/shopify-connection`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  getNuvemshopConnection: (projectId: string) =>
+    request<
+      | (AdapterConnection & { maskedCredential: string | null })
+      | { configured: false }
+    >(`/projects/${projectId}/nuvemshop-connection`),
+  connectNuvemshop: (
+    projectId: string,
+    body: { storeId: string; accessToken: string },
+  ) =>
+    request<AdapterConnection>(`/projects/${projectId}/nuvemshop-connection`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  getFtpConnection: (projectId: string) =>
+    request<
+      | (AdapterConnection & { maskedCredential: string | null })
+      | { configured: false }
+    >(`/projects/${projectId}/ftp-connection`),
+  connectFtp: (
+    projectId: string,
+    body: {
+      host: string;
+      port?: number;
+      user: string;
+      password: string;
+      secure?: boolean;
+      remotePath?: string;
+    },
+  ) =>
+    request<AdapterConnection>(`/projects/${projectId}/ftp-connection`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   // ---- quality gates (Fase 3) ----
   listQualityGates: (projectId: string) =>

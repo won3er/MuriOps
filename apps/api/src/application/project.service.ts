@@ -58,11 +58,29 @@ export const projectService = {
     });
   },
 
-  async getById(organizationId: string, id: string): Promise<Project | null> {
+  /** Inclui métricas (analysisCount, lastScore, lastAnalysisAt) — a tela de Projetos é o painel administrativo/dashboard. */
+  async getById(organizationId: string, id: string): Promise<ProjectWithStats | null> {
     const project = await prisma.project.findFirst({
       where: { id, organizationId },
+      include: {
+        analyses: {
+          where: { status: "COMPLETED" },
+          orderBy: { version: "desc" },
+          take: 1,
+        },
+        _count: { select: { analyses: true } },
+      },
     });
-    return project ? toDto(project) : null;
+    if (!project) return null;
+    const last = project.analyses[0];
+    const score =
+      (last?.score as unknown as { overall?: number } | null)?.overall ?? null;
+    return {
+      ...toDto(project),
+      analysisCount: project._count.analyses,
+      lastScore: score,
+      lastAnalysisAt: last?.finishedAt?.toISOString() ?? null,
+    };
   },
 
   /** Remove o projeto e todas as análises/problemas/evidências em cascata. */

@@ -41,6 +41,10 @@ export const qk = {
   upgradePlans: ["upgrade-plans"] as const,
   mcpConnection: (projectId: string) => ["mcp-connection", projectId] as const,
   githubConnection: (projectId: string) => ["github-connection", projectId] as const,
+  wordpressConnection: (projectId: string) => ["wordpress-connection", projectId] as const,
+  shopifyConnection: (projectId: string) => ["shopify-connection", projectId] as const,
+  nuvemshopConnection: (projectId: string) => ["nuvemshop-connection", projectId] as const,
+  ftpConnection: (projectId: string) => ["ftp-connection", projectId] as const,
   orchestrationRuns: (projectId: string) => ["orchestration-runs", projectId] as const,
   orchestrationRun: (id: string) => ["orchestration-run", id] as const,
   orchestrationEvents: (id: string) => ["orchestration-events", id] as const,
@@ -422,6 +426,106 @@ export function useConnectGithub(projectId: string) {
     },
     onError: (err) =>
       toast.error(err instanceof Error ? err.message : "Falha ao conectar o GitHub"),
+  });
+}
+
+// ---------- Adapters de plataforma (Fase 4 — apply real) ----------
+
+export function useWordpressConnection(projectId: string) {
+  return useQuery({
+    queryKey: qk.wordpressConnection(projectId),
+    queryFn: () => api.getWordpressConnection(projectId),
+    enabled: !!projectId,
+    retry: false,
+  });
+}
+
+export function useConnectWordpress(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { siteUrl: string; username: string; appPassword: string }) =>
+      api.connectWordpress(projectId, body),
+    onSuccess: (connection) => {
+      qc.setQueryData(qk.wordpressConnection(projectId), connection);
+      toast.success("Conexão WordPress criada");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao conectar o WordPress"),
+  });
+}
+
+export function useShopifyConnection(projectId: string) {
+  return useQuery({
+    queryKey: qk.shopifyConnection(projectId),
+    queryFn: () => api.getShopifyConnection(projectId),
+    enabled: !!projectId,
+    retry: false,
+  });
+}
+
+export function useConnectShopify(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { shopDomain: string; accessToken: string }) =>
+      api.connectShopify(projectId, body),
+    onSuccess: (connection) => {
+      qc.setQueryData(qk.shopifyConnection(projectId), connection);
+      toast.success("Conexão Shopify criada");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao conectar a Shopify"),
+  });
+}
+
+export function useNuvemshopConnection(projectId: string) {
+  return useQuery({
+    queryKey: qk.nuvemshopConnection(projectId),
+    queryFn: () => api.getNuvemshopConnection(projectId),
+    enabled: !!projectId,
+    retry: false,
+  });
+}
+
+export function useConnectNuvemshop(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { storeId: string; accessToken: string }) =>
+      api.connectNuvemshop(projectId, body),
+    onSuccess: (connection) => {
+      qc.setQueryData(qk.nuvemshopConnection(projectId), connection);
+      toast.success("Conexão Nuvemshop criada");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao conectar a Nuvemshop"),
+  });
+}
+
+export function useFtpConnection(projectId: string) {
+  return useQuery({
+    queryKey: qk.ftpConnection(projectId),
+    queryFn: () => api.getFtpConnection(projectId),
+    enabled: !!projectId,
+    retry: false,
+  });
+}
+
+export function useConnectFtp(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      host: string;
+      port?: number;
+      user: string;
+      password: string;
+      secure?: boolean;
+      remotePath?: string;
+    }) => api.connectFtp(projectId, body),
+    onSuccess: (connection) => {
+      qc.setQueryData(qk.ftpConnection(projectId), connection);
+      toast.success("Conexão FTP criada");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao conectar por FTP"),
   });
 }
 

@@ -133,6 +133,12 @@ export const AdapterKind = {
   MANUAL_BRIDGE: "MANUAL_BRIDGE",
   MCP: "MCP",
   GITHUB: "GITHUB",
+  // Adapters push que aplicam de verdade na plataforma do site (Fase 4).
+  WORDPRESS: "WORDPRESS",
+  SHOPIFY: "SHOPIFY",
+  NUVEMSHOP: "NUVEMSHOP",
+  // Hostinger/Hostgator (e qualquer host com acesso a arquivo) via FTP/FTPS.
+  FTP: "FTP",
 } as const;
 export type AdapterKind = (typeof AdapterKind)[keyof typeof AdapterKind];
 

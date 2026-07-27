@@ -26,6 +26,31 @@ const githubConnectionSchema = z.object({
   token: z.string().min(10),
 });
 
+const wordpressConnectionSchema = z.object({
+  siteUrl: z.string().url(),
+  username: z.string().min(1),
+  appPassword: z.string().min(8),
+});
+
+const shopifyConnectionSchema = z.object({
+  shopDomain: z.string().min(3),
+  accessToken: z.string().min(8),
+});
+
+const nuvemshopConnectionSchema = z.object({
+  storeId: z.string().min(1),
+  accessToken: z.string().min(8),
+});
+
+const ftpConnectionSchema = z.object({
+  host: z.string().min(1),
+  port: z.number().int().positive().optional(),
+  user: z.string().min(1),
+  password: z.string().min(1),
+  secure: z.boolean().optional(),
+  remotePath: z.string().optional(),
+});
+
 const createGateSchema = z.object({
   category: z
     .enum(["UI", "UX", "PERFORMANCE", "SEO", "ACCESSIBILITY", "SECURITY", "CONSOLE", "NETWORK", "DEEP_SECURITY"])
@@ -172,6 +197,106 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
       webhookUrl: `${apiBaseUrl(req)}/webhooks/github/${connection.id}`,
     };
   });
+
+  // Conexões de plataforma (Fase 4 — apply real): WordPress, Shopify, Nuvemshop, FTP.
+  app.post("/projects/:id/wordpress-connection", async (req, reply) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const body = wordpressConnectionSchema.parse(req.body);
+    try {
+      const connection = await adapterConnectionService.upsertWordpressConnection(
+        req.user.organizationId,
+        id,
+        req.user.sub,
+        body,
+      );
+      return reply.status(201).send(connection);
+    } catch (err) {
+      if (err instanceof NotFoundError)
+        return reply
+          .status(404)
+          .send({ statusCode: 404, error: "NotFound", message: err.message });
+      throw err;
+    }
+  });
+
+  app.post("/projects/:id/shopify-connection", async (req, reply) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const body = shopifyConnectionSchema.parse(req.body);
+    try {
+      const connection = await adapterConnectionService.upsertShopifyConnection(
+        req.user.organizationId,
+        id,
+        req.user.sub,
+        body,
+      );
+      return reply.status(201).send(connection);
+    } catch (err) {
+      if (err instanceof NotFoundError)
+        return reply
+          .status(404)
+          .send({ statusCode: 404, error: "NotFound", message: err.message });
+      throw err;
+    }
+  });
+
+  app.post("/projects/:id/nuvemshop-connection", async (req, reply) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const body = nuvemshopConnectionSchema.parse(req.body);
+    try {
+      const connection = await adapterConnectionService.upsertNuvemshopConnection(
+        req.user.organizationId,
+        id,
+        req.user.sub,
+        body,
+      );
+      return reply.status(201).send(connection);
+    } catch (err) {
+      if (err instanceof NotFoundError)
+        return reply
+          .status(404)
+          .send({ statusCode: 404, error: "NotFound", message: err.message });
+      throw err;
+    }
+  });
+
+  app.post("/projects/:id/ftp-connection", async (req, reply) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const body = ftpConnectionSchema.parse(req.body);
+    try {
+      const connection = await adapterConnectionService.upsertFtpConnection(
+        req.user.organizationId,
+        id,
+        req.user.sub,
+        body,
+      );
+      return reply.status(201).send(connection);
+    } catch (err) {
+      if (err instanceof NotFoundError)
+        return reply
+          .status(404)
+          .send({ statusCode: 404, error: "NotFound", message: err.message });
+      throw err;
+    }
+  });
+
+  const platformKinds = [
+    ["wordpress-connection", "WORDPRESS"],
+    ["shopify-connection", "SHOPIFY"],
+    ["nuvemshop-connection", "NUVEMSHOP"],
+    ["ftp-connection", "FTP"],
+  ] as const;
+  for (const [path, kind] of platformKinds) {
+    app.get(`/projects/:id/${path}`, async (req, reply) => {
+      const { id } = z.object({ id: z.string() }).parse(req.params);
+      const connection = await adapterConnectionService.getPlatformConnectionMasked(
+        req.user.organizationId,
+        id,
+        kind,
+      );
+      if (!connection) return reply.status(404).send({ configured: false });
+      return connection;
+    });
+  }
 
   // Quality gates do orquestrador (Fase 3) — critério numérico avaliado a cada iteração.
   app.get("/projects/:id/quality-gates", async (req, reply) => {
