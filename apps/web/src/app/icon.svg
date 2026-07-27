@@ -1,9 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="7" fill="#6366f1"/>
-  <g fill="#fff" transform="translate(16 16) scale(0.72) translate(-16 -16)">
-    <rect x="5" y="6" width="5.5" height="22" rx="2.75"/>
-    <rect x="5" y="6" width="22" height="5.5" rx="2.75"/>
-    <rect x="5" y="13.25" width="16" height="5.5" rx="2.75"/>
-    <rect x="5" y="22.5" width="10.5" height="5.5" rx="2.75"/>
+  <g fill="#fff" transform="scale(0.32)">
+    <polygon points="22,22 28,2 36,20"/>
+    <polygon points="32,20 42,6 46,22"/>
+    <circle cx="30" cy="30" r="13"/>
+    <path d="M19,29 Q4,34 17,45 Q27,40 22,31 Z"/>
+    <path d="M22,38 Q14,50 20,64 Q26,82 46,90 Q60,94 70,84
+      L62,78 L72,86 L66,74 L78,80 L70,66 L80,70 L72,56
+      Q76,46 68,40 Q58,28 42,30 Q32,26 22,38 Z"/>
   </g>
+  <circle cx="8.6" cy="8.3" r="0.7" fill="#6366f1"/>
 </svg>
