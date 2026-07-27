@@ -82,16 +82,16 @@ sem `background-image`. Essa foi a correção mais direta pedida pelo usuário
 ## Mascote
 
 O isótipo de barras foi substituído por uma **harpia geométrica em perfil**
-— crista dupla de penas no topo da cabeça, bico curvo em gancho, olho como
-furo circular, corpo arredondado terminando em penas pontudas na base. Poucas
-formas simples (polígonos + curvas), no espírito do Octocat do GitHub: um
-mascote que funciona sozinho, de favicon a hero, sem precisar de gradiente ou
-sombreamento pra ter personalidade. Desenhado numa grade 0–100 e escalado
-(`scale(0.32)`) pro viewBox 32×32 do resto do app. Fill sólido em índigo
-(`#6366f1`), olho como furo de cor inversa (índigo sobre branco no selo,
-branco/fundo sobre índigo no isótipo solto). Formas em
-`components/logo.tsx` (`isotypeShape()`), reaproveitadas em `icon.svg` e
-`opengraph-image.tsx`.
+— crista dupla (dois triângulos), cabeça e corpo como dois círculos simples,
+bico em gancho e três penas pontudas na base do corpo. Formas bem separadas
+e fáceis de ler mesmo em 24px, no espírito do Octocat do GitHub: um mascote
+que funciona sozinho, de favicon a hero, sem precisar de gradiente ou
+sombreamento pra ter personalidade. Desenhado numa grade 0–200 (círculos e
+polígonos simples, sem curvas complexas) e escalado (`scale(0.16)`) pro
+viewBox 32×32 do resto do app. Fill sólido em índigo (`#6366f1`), olho como
+furo de cor inversa (índigo sobre branco no selo, branco/fundo sobre índigo
+no isótipo solto). Formas em `components/logo.tsx` (`isotypeShape()`),
+reaproveitadas em `icon.svg` e `opengraph-image.tsx`.
 
 ## Página inicial — seção de destaques
 
