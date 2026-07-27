@@ -1,45 +1,50 @@
 # Elevate QA — Style Reference
 
-> Console — um terminal quase-preto e neutro onde o único ponto de cor é o
-> resultado de uma análise ou uma ação a tomar.
+> Instrument — cinza-grafite puro, um único acento cromático, sem gradiente
+> decorativo.
 
 **Tema:** dark único, fixo (`forcedTheme="dark"` no `ThemeProvider`). Sem
-variante light por enquanto — a primeira versão do sistema ("Signal room",
-fundo mogno/âmbar com variante clara) foi descartada por feedback direto do
-usuário: o tema claro ficou "muito claro" e ele queria algo mais preto e
-branco, no estilo de ferramentas como GitHub.
+variante light.
 
-## Por que esse design
+## De onde veio
 
-O Elevate QA é usado por gente que já vive dentro de terminais, editores de
-código e dashboards de CI — GitHub, Vercel, VS Code. A referência mais direta
-pedida pelo usuário foi justamente "estilo GitHub": interface quase
-monocromática (preto/cinza/branco), onde cor é reservada só para o que
-precisa de atenção — um link ativo, um botão primário, ou (no caso do
-Elevate QA) a nota e a severidade de um achado de QA.
+Esta versão usa literalmente a escala de cinza do design system real do
+**Linear**, capturado via [styles.refero.design](https://styles.refero.design)
+(não é "inspirado em" — os valores hex abaixo são os tokens documentados lá
+para o Linear: Void/Carbon/Obsidian/Graphite/Smoke/Fog/Bone/Paper). A cor de
+acento não é a do Linear (eles usam um verde-lima elétrico só num botão) —
+trocamos por um índigo (`#6366f1`), comum em ferramentas de dev/IA (tags do
+próprio Linear, GitHub Copilot, Vercel em alguns contextos) e sem nenhuma
+relação com o laranja usado nas duas versões anteriores.
 
-Isso significa: nada de gradientes chamativos, nada de fundo colorido, nada
-de "identidade visual" competindo com o dado. O laranja "Ember" continua
-sendo a cor de marca (logo, CTA principal, foco, link ativo), mas em uma
-única intensidade e usado com muita parcimônia — o resto da interface é
-neutro.
+Duas versões anteriores foram descartadas por feedback direto do usuário:
 
-## Tokens — Cores (dark, único tema)
+1. **v1 "Signal room"** — fundo mogno/âmbar quente + variante clara. Rejeitada:
+   tema claro ficou muito aberto, usuário queria preto e branco.
+2. **v2 "Console"** — quase-preto neutro estilo GitHub, mas ainda com laranja
+   como acento e um glow radial no fundo. Rejeitada: usuário não queria mais
+   nenhum laranja, e classificou o gradiente de fundo como "amador".
 
-| Nome | Valor aprox. | Token CSS | Papel |
-|------|--------------|-----------|-------|
-| Canvas | `#0d1117` | `--background` | Fundo de página — quase-preto neutro (leve frieza azulada, como GitHub dark), não mogno/quente como na v1 |
-| Panel | `#161b22` | `--card` | Superfície elevada — cards, modais, painéis |
-| Ember | `#e35a26` | `--primary` | Único ponto de cor da marca — CTAs, links ativos, foco, logo. Usado com parcimônia |
-| Paper | `#e6edf3` | `--foreground` | Texto primário — quase-branco, levemente frio |
-| Seam | `#3a414a` | `--border` | Bordas e divisores — hairline estrutural |
-| Fog | `#8b949e` | `--muted-foreground` | Texto secundário, legendas, placeholders |
-| Ash | `#21262d` | `--muted` / `--accent` | Fundo sutil para hover, seções secundárias |
+**v3 "Instrument" (atual)** corrige os dois pontos: acento trocado para
+índigo, e o `body{}` não tem mais nenhum `background-image` — é um flat color
+sólido, sem glow, sem gradiente. O logo (isótipo em barras) manteve a forma
+mas passou a usar fill sólido em vez de gradiente interno — a filosofia do
+Linear é "quase tudo neutro, uma única cor plana quando precisa de ação".
+
+## Tokens — Cores
+
+| Nome (Linear) | Valor | Token CSS | Papel |
+|------|-------|-----------|-------|
+| Void | `#08090a` | `--background` | Fundo de página — canvas padrão |
+| Carbon | `#0f1011` | `--card` | Cards, navs — um degrau acima do canvas |
+| Obsidian | `#161718` | `--muted` | Superfícies levemente elevadas |
+| Graphite | `#23252a` | `--border` / `--accent` | Bordas, divisores, hover |
+| Fog | `#8a8f98` | `--muted-foreground` | Texto secundário, placeholder |
+| Paper | `#ffffff` | `--foreground` | Texto primário — branco puro |
+| Índigo (não é do Linear) | `#6366f1` | `--primary` | Único acento cromático — CTA, link ativo, foco, logo |
 | Alarm | mantém `--destructive` | `--destructive` | Vermelho de erro/severidade alta — não muda |
 
-Não existe token de tema claro no momento — `:root` e `.dark` compartilham os
-mesmos valores para não haver flash de cor errada antes da hidratação, já
-que o app roda sempre com a classe `.dark`.
+Sem token de tema claro — app roda sempre com `.dark`.
 
 ## Tokens — Tipografia
 
@@ -49,33 +54,36 @@ Mantém a dupla já usada no projeto:
 - **JetBrains Mono** — dados tabulares (score, ms, status code, seletor CSS),
   via classe `.tabular`.
 
-Headings (`h1`–`h3`) mantêm `letter-spacing: -0.02em` da v1.
+Headings (`h1`–`h3`) com `letter-spacing: -0.02em` (o Linear real usa
+`-0.022em`, ficamos bem próximos).
 
 ## Tokens — Forma
 
-- **Raio base:** `0.75rem` (12px) nos cards e inputs.
+- **Raio base:** `0.5rem` (8px) — mais próximo da escala compacta do Linear
+  (6px/12px) que o `0.75rem` das versões anteriores.
 - **Pill (`9999px`)** reservado só para badges de severidade/status.
-- **Sombra:** mínima ou nenhuma — profundidade vem da diferença de
-  luminância entre Canvas/Panel/Ash, não de drop-shadow.
+- **Sombra:** nenhuma — profundidade vem só da diferença de luminância entre
+  Void/Carbon/Obsidian, sem drop-shadow.
 
 ## Atmosfera
 
-Radiais de fundo em `body{}` ficaram bem mais discretos que na v1 (7% e 5%
-de opacidade) — um leve halo de Ember no topo e um cinza-azulado muito sutil
-no canto, só para não deixar o fundo 100% chapado, sem competir com o
-conteúdo.
+**Sem gradiente.** `body{}` é `background: hsl(var(--background))` puro,
+sem `background-image`. Essa foi a correção mais direta pedida pelo usuário
+— nenhum glow radial, nenhum halo de cor no topo da página.
 
 ## Onde isso não muda
 
-- **Cores de severidade/status** (emerald/amber/red/sky do Tailwind)
-  continuam — comunicam prioridade, não fazem parte da identidade de marca.
-- **Isótipo** (barras ascendentes formando "E") mantém a forma e o gradiente
-  Ember introduzido na v1.
+- **Cores de severidade/status** (emerald/amber/red/sky do Tailwind, e os
+  hexs de score em `lib/utils.ts`) continuam — comunicam prioridade, não
+  fazem parte da identidade de marca.
+- **Isótipo** (barras ascendentes formando "E") mantém a forma exata das
+  versões anteriores; só a cor e o fill (sólido, não gradiente) mudaram.
 
 ## Histórico
 
-- **v1 ("Signal room")** — quase-preto quente (mogno) + Ember + variante
-  clara em tom "Linen". Descartada: usuário achou o tema claro muito aberto
-  e pediu algo mais preto e branco.
-- **v2 ("Console", atual)** — quase-preto neutro estilo GitHub, dark único,
-  Ember como único acento de cor.
+- **v1 "Signal room"** — mogno quente + Ember + variante clara. Rejeitada
+  (tema claro muito aberto).
+- **v2 "Console"** — preto neutro estilo GitHub + Ember + glow radial sutil.
+  Rejeitada (ainda tinha laranja, gradiente considerado "amador").
+- **v3 "Instrument" (atual)** — escala de cinza real do Linear + acento
+  índigo sólido + zero gradiente.
