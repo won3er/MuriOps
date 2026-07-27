@@ -3,9 +3,11 @@ import type {
   BlueprintResult,
   RemediationResult,
   Severity,
+  UpgradeResult,
 } from "@qa-ai/shared";
 import type { BlueprintDesignInput } from "./blueprint-prompt.js";
 import type { RemediationDesignInput } from "./remediation-prompt.js";
+import type { UpgradeDesignInput } from "./upgrade-prompt.js";
 
 /** Um problema bruto detectado pelos módulos, entregue à IA para enriquecer. */
 export interface AiIssueInput {
@@ -62,4 +64,9 @@ export interface AiProvider {
    * de aplicação concreto — o checklist do pilar Aplicação.
    */
   buildRemediationPlan(input: RemediationDesignInput): Promise<RemediationResult>;
+  /**
+   * Analisa um package.json e devolve um plano de atualização de dependências
+   * (pilar Atualizar) — risco, breaking changes e passo a passo por pacote.
+   */
+  buildUpgradePlan(input: UpgradeDesignInput): Promise<UpgradeResult>;
 }

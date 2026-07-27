@@ -14,6 +14,10 @@ import type {
   ProjectWithStats,
   RemediationItemStatus,
   RemediationPlan,
+  CreateUpgradePlanRequest,
+  UpgradeItemStatus,
+  UpgradePlan,
+  UpgradeSummary,
 } from "@qa-ai/shared";
 import {
   useMutation,
@@ -33,6 +37,8 @@ export const qk = {
   remediationPlans: ["remediation-plans"] as const,
   projectRemediationPlans: (projectId: string) =>
     ["remediation-plans", "project", projectId] as const,
+  upgradePlan: (id: string) => ["upgrade-plan", id] as const,
+  upgradePlans: ["upgrade-plans"] as const,
   mcpConnection: (projectId: string) => ["mcp-connection", projectId] as const,
   githubConnection: (projectId: string) => ["github-connection", projectId] as const,
   orchestrationRuns: (projectId: string) => ["orchestration-runs", projectId] as const,
@@ -210,6 +216,86 @@ export function useDeleteRemediationPlan() {
       toast.success("Aplicação apagada");
     },
     onError: () => toast.error("Falha ao apagar Aplicação"),
+  });
+}
+
+// ---------- Atualizar (UpgradePlan) ----------
+
+/**
+ * Detalhe da Atualização.
+ * - PENDING: polling a cada 2.5s até virar READY/FAILED (geração da IA).
+ * - READY com itens pendentes: polling a cada 4s — mesma lógica da Aplicação,
+ *   pra refletir em tempo real itens marcados como feitos pela ponte universal.
+ */
+export function useUpgradePlan(id: string) {
+  return useQuery({
+    queryKey: qk.upgradePlan(id),
+    queryFn: () => api.getUpgradePlan(id),
+    enabled: !!id,
+    refetchInterval: (query) => {
+      const plan = query.state.data;
+      if (!plan) return false;
+      if (plan.status === "PENDING") return 2500;
+      const items = plan.result?.items ?? [];
+      const allDone = items.length > 0 && items.every((i) => i.status === "done");
+      return plan.status === "READY" && !allDone ? 4000 : false;
+    },
+  });
+}
+
+export function useUpgradePlans() {
+  return useQuery({
+    queryKey: qk.upgradePlans,
+    queryFn: api.listUpgradePlans,
+    refetchInterval: (query) =>
+      query.state.data?.some((p) => p.status === "PENDING") ? 3000 : false,
+  });
+}
+
+export function useCreateUpgradePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateUpgradePlanRequest) => api.createUpgradePlan(body),
+    onSuccess: (plan) => {
+      qc.setQueryData<UpgradePlan>(qk.upgradePlan(plan.id), plan);
+      qc.invalidateQueries({ queryKey: qk.upgradePlans });
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao gerar a Atualização"),
+  });
+}
+
+export function useUpdateUpgradeItem(planId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ itemId, status }: { itemId: string; status: UpgradeItemStatus }) =>
+      api.updateUpgradeItem(planId, itemId, status),
+    onSuccess: (plan) => {
+      qc.setQueryData<UpgradePlan>(qk.upgradePlan(planId), plan);
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao atualizar item"),
+  });
+}
+
+export function useDeleteUpgradePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteUpgradePlan(id),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: qk.upgradePlans });
+      const prev = qc.getQueryData<UpgradeSummary[]>(qk.upgradePlans);
+      qc.setQueryData<UpgradeSummary[]>(qk.upgradePlans, (old) =>
+        (old ?? []).filter((p) => p.id !== id),
+      );
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(qk.upgradePlans, ctx.prev);
+      toast.error("Falha ao apagar Atualização");
+    },
+    onSuccess: () => toast.success("Atualização apagada"),
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.upgradePlans }),
   });
 }
 

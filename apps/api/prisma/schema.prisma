@@ -38,6 +38,7 @@ model Organization {
   subscription      Subscription?
   blueprints        Blueprint[]
   remediationPlans  RemediationPlan[]
+  upgradePlans      UpgradePlan[]
 }
 
 model User {
@@ -310,6 +311,45 @@ model RemediationPlan {
   @@index([organizationId])
   @@index([projectId])
   @@index([sourceType, sourceId])
+}
+
+// ---------- Atualizar (UpgradePlan) ----------
+// Recebe o package.json de um projeto e devolve um plano de atualização de
+// dependências concreto — o que subir, breaking changes esperadas e como
+// migrar, item por item. Mesma filosofia da Aplicação: manual ou via ponte
+// universal para a IA do ambiente de dev.
+
+enum UpgradeStatus {
+  PENDING
+  READY
+  FAILED
+}
+
+model UpgradePlan {
+  id             String        @id @default(cuid())
+  organizationId String
+  // Vínculo opcional a um projeto cadastrado — a atualização também pode ser
+  // feita "avulsa", só colando um package.json, sem projeto associado.
+  projectId      String?
+  createdById    String
+  title          String
+  // package.json original enviado pelo usuário (referência/auditoria).
+  packageJsonRaw String        @db.Text
+  // provider de IA usado (claude | openai | gemini | noop)
+  provider       String
+  // Token da ponte universal — mesma mecânica do RemediationPlan.apiToken.
+  apiToken       String        @unique
+  status         UpgradeStatus @default(PENDING)
+  // Saída estruturada da IA (UpgradeResult).
+  result         Json?
+  error          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([projectId])
 }
 
 // ---------- Orquestrador + Adapters (núcleo QA-only) ----------

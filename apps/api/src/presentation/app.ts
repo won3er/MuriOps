@@ -19,6 +19,7 @@ import {
   remediationRoutes,
 } from "./routes/remediation.routes.js";
 import { settingsRoutes } from "./routes/settings.routes.js";
+import { upgradeBridgeRoutes, upgradeRoutes } from "./routes/upgrade.routes.js";
 import { githubWebhookRoutes } from "./routes/webhooks.routes.js";
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -101,6 +102,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(remediationRoutes);
   // Ponte universal da Aplicação: pública, autenticada por token do plano.
   await app.register(remediationBridgeRoutes);
+  await app.register(upgradeRoutes);
+  // Ponte universal da Atualização: pública, autenticada por token do plano.
+  await app.register(upgradeBridgeRoutes);
   await app.register(dashboardRoutes);
   await app.register(settingsRoutes);
   await app.register(orchestrationRoutes);

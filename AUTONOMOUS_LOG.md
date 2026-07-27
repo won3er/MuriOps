@@ -86,6 +86,77 @@ reanalisar" pra algo como "Aprovar e reavaliar" ou adicionar um aviso "rode uma
 nova Análise QA padrão antes de aprovar, senão ele reavalia a mesma análise
 anterior" — evita o operador cair na mesma confusão de achar que é um bug.
 
+## Continuação autônoma (2026-07-26, Cowork) — usuário saiu, autorizou prosseguir sem gastar dinheiro
+
+Usuário liberou seguir trabalhando sozinho ("updates, testes, melhora de design,
+correção de bugs, aplicações") até os tokens acabarem, sem permissão para compras.
+Trabalho feito nessa janela:
+
+1. **UX do botão "Aprovar e reanalisar"** — implementada a sugestão acima: texto
+   de aviso adicionado em `orchestration-panel.tsx` quando o run está em
+   `AWAITING_APPLY`, explicando que "Aprovar" reavalia a análise mais recente já
+   existente, não dispara uma nova sozinho. Commit `af819a6` no repo principal,
+   deployado.
+2. **Revisão de `/analyses/[id]` e `/settings`** — já estavam adequadas (resumo em
+   linguagem simples, cards de problema claros, explicação de chave de IA). Nenhuma
+   mudança necessária; CLAUDE.md atualizado pra refletir isso.
+3. **Rodei a Análise de Segurança pela primeira vez** no projeto demo (nunca tinha
+   sido testada) — v3 encontrou 3 problemas reais e novos, não cobertos pelas 8
+   correções anteriores: `Permissions-Policy` ausente, `Cross-Origin-Opener-Policy`
+   ausente, `security.txt` ausente (RFC 9116). Severidade baixa/info.
+4. **Corrigi os 3 problemas de verdade** no `atlas-qa-demo-todo`: adicionei os dois
+   headers no `vercel.json` (commit `fc67c87`) e criei
+   `public/.well-known/security.txt` (commit `1a78aa4`).
+5. **Achado de instabilidade (não é bug de código)**: rodando a Análise de
+   Segurança logo após o deploy (v4, v5), os 3 itens às vezes ainda apareciam como
+   ausentes mesmo com os headers/arquivo já confirmados presentes via fetch direto
+   no navegador. Investigado: `checkAdvancedHeaders` em `deep-security.analyzer.ts`
+   usa os headers já capturados pelo Playwright no crawl principal
+   (`firstPage.responseHeaders`), não uma sondagem fresca — então se a análise
+   roda durante a janela de propagação do deploy nos edges da Vercel, pode pegar
+   uma resposta de borda desatualizada. Não mexi no código por ser comportamento
+   correto (não é bug), só esperei a propagação terminar. **v6 confirmou 100/100,
+   0 problemas** — headers e security.txt realmente aplicados.
+6. Runbook pra quem for rodar QA logo depois de um deploy na Vercel: esperar
+   ~1-2 min de propagação de CDN antes de rodar a análise, ou tratar um resultado
+   de "ausente" logo após deploy com ceticismo e rodar de novo antes de assumir
+   regressão.
+7. **Bug real encontrado: botão de excluir Aplicação trava a aba do navegador.**
+   O projeto demo tinha 2 planos de Aplicação duplicados (sobra do bug de
+   reanálise anterior). Tentativa de excluir o mais antigo via ícone de lixeira
+   (`aplicacao/[id]`) trava o clique — `Input.dispatchMouseEvent` do CDP expira em
+   30s e a aba fica sem resposta até eu navegar pra outra URL manualmente.
+   Aconteceu de forma consistente em 2 tentativas separadas. Hipótese: o handler
+   de exclusão chama `window.confirm()` de forma síncrona no clique, o que bloqueia
+   a thread principal do renderer — normal em navegação manual (usuário só clica
+   OK/Cancelar), mas quebra automação via CDP porque o diálogo nativo não é
+   visível/controlável pelas ferramentas de clique/teclado do Chrome MCP (precisaria
+   de um handler `Page.handleJavaScriptDialog`, que não está disponível aqui).
+   **Não é bug pro usuário final** (só afeta automação), mas vale considerar trocar
+   `window.confirm()` por um modal de confirmação in-app (ex: shadcn AlertDialog)
+   pra ser mais robusto e não depender de diálogo nativo do navegador — também
+   melhora a UX (dialogs nativos do Chrome são feios/inconsistentes). Não
+   implementado agora por não ser prioridade; ver task de backlog.
+   Efeito colateral: uma tentativa de clique+Enter acabou desmarcando os 8 itens
+   do plano mais antigo (foi de "8/8 aplicado(s)" pra "0/8") sem querer. Corrigido
+   remarcando os 8 itens manualmente — plano restaurado ao estado correto. Os 2
+   planos duplicados continuam existindo (não consegui excluir nenhum), mas agora
+   ambos estão consistentes (8/8 aplicado(s)), então não há dado incorreto, só
+   uma entrada redundante no histórico — inofensivo, cosmético.
+8. **Dashboard revisado** — números batendo (6 análises, 1 projeto, 16 problemas
+   encontrados no histórico, score médio 100), sem bugs visuais.
+9. **Tela Projetar testada de ponta a ponta** — criei um blueprint de teste
+   ("Teste QA – App de lista de tarefas") pra confirmar que o bug antigo do 404 do
+   Gemini (task #33) continua corrigido. Gerou normalmente: radar de maturidade de
+   QA, pirâmide de testes, abordagens e ferramentas recomendadas. Sem erros.
+   **Não consegui apagar esse blueprint de teste** — mesmo padrão de
+   `window.confirm()` travando o clique (item 7 acima), reproduzido também na
+   lista de blueprints e no detalhe. Ficou como um blueprint de teste isolado em
+   `/blueprints`, inofensivo (não afeta nenhum projeto ou análise real), mas o
+   usuário pode apagá-lo manualmente clicando no ícone de lixeira e confirmando o
+   diálogo nativo do navegador (funciona normalmente em uso humano, só trava
+   automação via CDP).
+
 ## Verificação inicial de ferramentas (bloqueio parcial)
 
 - `gh` (GitHub CLI): instalado (v2.94.0), **não autenticado**

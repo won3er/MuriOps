@@ -1,4 +1,4 @@
-import type { BlueprintResult, RemediationResult } from "@qa-ai/shared";
+import type { BlueprintResult, RemediationResult, UpgradeResult } from "@qa-ai/shared";
 import { env } from "../../config/env.js";
 import {
   BLUEPRINT_SYSTEM_PROMPT,
@@ -16,6 +16,13 @@ import {
   REMEDIATION_SYSTEM_PROMPT,
   type RemediationDesignInput,
 } from "./remediation-prompt.js";
+import {
+  buildUpgradeUserPrompt,
+  normalizeUpgrade,
+  parseUpgradeJson,
+  UPGRADE_SYSTEM_PROMPT,
+  type UpgradeDesignInput,
+} from "./upgrade-prompt.js";
 
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
@@ -154,5 +161,13 @@ export class GeminiProvider implements AiProvider {
       buildRemediationUserPrompt(input),
     );
     return normalizeRemediation(parseRemediationJson(text));
+  }
+
+  async buildUpgradePlan(input: UpgradeDesignInput): Promise<UpgradeResult> {
+    const text = await this.generate(
+      UPGRADE_SYSTEM_PROMPT,
+      buildUpgradeUserPrompt(input),
+    );
+    return normalizeUpgrade(parseUpgradeJson(text));
   }
 }

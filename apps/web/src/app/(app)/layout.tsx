@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ArrowUpCircle,
   DraftingCompass,
   FolderKanban,
   LayoutDashboard,
@@ -22,6 +23,7 @@ const NAV = [
   { href: "/projects", label: "Projetos", icon: FolderKanban },
   { href: "/blueprints", label: "Projetar", icon: DraftingCompass },
   { href: "/aplicacao", label: "Aplicação", icon: Wrench },
+  { href: "/atualizar", label: "Atualizar", icon: ArrowUpCircle },
   { href: "/settings", label: "Configurações", icon: Settings },
 ];
 

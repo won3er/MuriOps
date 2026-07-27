@@ -24,6 +24,10 @@ import type {
   RemediationPlan,
   RemediationSummary,
   StartAnalysisRequest,
+  CreateUpgradePlanRequest,
+  UpgradeItemStatus,
+  UpgradePlan,
+  UpgradeSummary,
 } from "@qa-ai/shared";
 
 const BASE =
@@ -318,6 +322,61 @@ export const api = {
     const a = document.createElement("a");
     a.href = url;
     a.download = `aplicacao-${id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
+
+  // ---- atualizar (UpgradePlan) ----
+  listUpgradePlans: () => request<UpgradeSummary[]>("/upgrade-plans"),
+  createUpgradePlan: (body: CreateUpgradePlanRequest) =>
+    request<UpgradePlan>("/upgrade-plans", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  getUpgradePlan: (id: string) => request<UpgradePlan>(`/upgrade-plans/${id}`),
+  updateUpgradeItem: (id: string, itemId: string, status: UpgradeItemStatus) =>
+    request<UpgradePlan>(`/upgrade-plans/${id}/items/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+  deleteUpgradePlan: (id: string) =>
+    request<void>(`/upgrade-plans/${id}`, { method: "DELETE" }),
+  /** Texto do pacote da ponte universal (markdown p/ IA de dev). */
+  fetchUpgradeBridge: async (id: string): Promise<string> => {
+    const token = getToken();
+    const res = await fetch(`${BASE}/upgrade-plans/${id}/bridge.md`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new ApiError("Falha ao gerar o pacote", res.status);
+    return res.text();
+  },
+  /** Baixa o pacote da ponte universal como arquivo .md. */
+  downloadUpgradeBridge: async (id: string) => {
+    const text = await api.fetchUpgradeBridge(id);
+    const blob = new Blob([text], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `atualizacao-${id}.md`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
+  /** Baixa o relatório em PDF do plano de atualização. */
+  downloadUpgradePdf: async (id: string) => {
+    const token = getToken();
+    const res = await fetch(`${BASE}/upgrade-plans/${id}/report.pdf`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new ApiError("Falha ao gerar PDF", res.status);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `atualizacao-${id}.pdf`;
     document.body.appendChild(a);
     a.click();
     a.remove();

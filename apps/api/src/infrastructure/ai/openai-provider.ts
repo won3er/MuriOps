@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { BlueprintResult, RemediationResult } from "@qa-ai/shared";
+import type { BlueprintResult, RemediationResult, UpgradeResult } from "@qa-ai/shared";
 import { env } from "../../config/env.js";
 import {
   BLUEPRINT_SYSTEM_PROMPT,
@@ -17,6 +17,13 @@ import {
   REMEDIATION_SYSTEM_PROMPT,
   type RemediationDesignInput,
 } from "./remediation-prompt.js";
+import {
+  buildUpgradeUserPrompt,
+  normalizeUpgrade,
+  parseUpgradeJson,
+  UPGRADE_SYSTEM_PROMPT,
+  type UpgradeDesignInput,
+} from "./upgrade-prompt.js";
 
 /** Provider alternativo via OpenAI (mesma interface do engine). */
 export class OpenAiProvider implements AiProvider {
@@ -69,5 +76,19 @@ export class OpenAiProvider implements AiProvider {
 
     const text = completion.choices[0]?.message?.content ?? "{}";
     return normalizeRemediation(parseRemediationJson(text));
+  }
+
+  async buildUpgradePlan(input: UpgradeDesignInput): Promise<UpgradeResult> {
+    const completion = await this.client.chat.completions.create({
+      model: env.OPENAI_MODEL,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: UPGRADE_SYSTEM_PROMPT },
+        { role: "user", content: buildUpgradeUserPrompt(input) },
+      ],
+    });
+
+    const text = completion.choices[0]?.message?.content ?? "{}";
+    return normalizeUpgrade(parseUpgradeJson(text));
   }
 }

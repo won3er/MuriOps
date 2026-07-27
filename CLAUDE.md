@@ -55,11 +55,12 @@ elevação). Componentes em `apps/web/src/components/logo.tsx`.
 2. **Testar o fluxo "Aplicação" ponta a ponta de novo** — já foi validado uma vez,
    mas vale reconfirmar após a troca de chave (exportar projeto → gerar plano →
    copiar pacote pra IA de dev → marcar item como feito via `PATCH /apply/:token`).
-3. **Seguir polindo UI/copy** — o usuário pediu, em pedidos anteriores, que as telas
-   fiquem "mais didáticas". Já foram ajustadas: `projects/[id]`, `blueprints/[id]`,
-   `aplicacao/[id]`, e a home (`app/page.tsx`). Outras telas (ex: `/analyses/[id]`,
-   `/settings`) ainda não passaram por essa revisão — perguntar ao usuário se quer
-   continuar por lá.
+3. **Polimento de UI/copy "mais didático" — concluído.** Além de
+   `projects/[id]`, `blueprints/[id]`, `aplicacao/[id]` e a home, `/analyses/[id]`
+   e `/settings` foram revisadas em 2026-07-26 (Cowork) e já estão adequadas:
+   resumo em linguagem simples + cards de problema com severidade/categoria em
+   `/analyses/[id]`, e explicação clara de chave de IA opcional + formato
+   correto em `/settings`. Nenhuma mudança necessária nelas por enquanto.
 4. **Sandbox sem `git push`** — em ambientes de agente sem credencial de push, use
    o upload manual pela interface web do GitHub (arquivo por arquivo/pasta) em
    `github.com/won3er/Elevate-QA/upload/main/<caminho>`. Local (VSCode do usuário)

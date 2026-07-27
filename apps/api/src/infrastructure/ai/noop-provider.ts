@@ -1,4 +1,4 @@
-import type { BlueprintResult, RemediationResult } from "@qa-ai/shared";
+import type { BlueprintResult, RemediationResult, UpgradeResult } from "@qa-ai/shared";
 import type { BlueprintDesignInput } from "./blueprint-prompt.js";
 import type {
   AiAnalysisInput,
@@ -6,6 +6,7 @@ import type {
   AiProvider,
 } from "./provider.js";
 import type { RemediationDesignInput } from "./remediation-prompt.js";
+import type { UpgradeDesignInput } from "./upgrade-prompt.js";
 
 /**
  * Provider sem IA — usado quando nenhuma chave está configurada.
@@ -196,6 +197,49 @@ export class NoopProvider implements AiProvider {
           status: "pending",
         },
       ],
+    };
+  }
+
+  /**
+   * Sem IA, lista as dependências do package.json literalmente (sem saber
+   * a versão-alvo real nem breaking changes) — mantém o fluxo funcional e
+   * orienta a configurar um provider pra obter o plano de verdade.
+   */
+  async buildUpgradePlan(input: UpgradeDesignInput): Promise<UpgradeResult> {
+    let deps: Record<string, string> = {};
+    try {
+      const pkg = JSON.parse(input.packageJsonRaw) as {
+        dependencies?: Record<string, string>;
+        devDependencies?: Record<string, string>;
+      };
+      deps = { ...pkg.dependencies, ...pkg.devDependencies };
+    } catch {
+      // package.json inválido — devolve plano vazio com aviso no resumo.
+    }
+
+    const entries = Object.entries(deps);
+    return {
+      summary:
+        `Plano-base sem IA para "${input.title}". Configure um provider ` +
+        `(Claude, OpenAI ou Gemini) em Configurações para receber risco, ` +
+        `breaking changes e passo a passo de migração reais por dependência. ` +
+        `${entries.length} dependência(s) encontrada(s) no package.json.`,
+      overallRisk: "medium",
+      recommendedOrder: entries.map((_, i) => `item-${i + 1}`),
+      items: entries.map(([packageName, currentVersion], i) => ({
+        id: `item-${i + 1}`,
+        packageName,
+        currentVersion,
+        targetVersion: "verificar manualmente",
+        riskLevel: "medium" as const,
+        breakingChanges: [],
+        migrationSteps:
+          "Configure um provider de IA em Configurações e regenere este " +
+          "plano para receber a versão-alvo, o risco real e o passo a " +
+          `passo de migração de ${packageName}.`,
+        filePath: "package.json",
+        status: "pending" as const,
+      })),
     };
   }
 }
