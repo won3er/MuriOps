@@ -3,25 +3,22 @@ import { cn } from "@/lib/utils";
 /**
  * Identidade visual do Elevate QA.
  *
- * Isótipo: uma harpia em perfil, formas geométricas simples — crista dupla de
- * penas no topo da cabeça, bico curvo em gancho, olho como furo circular, e
- * corpo arredondado terminando em penas pontudas na base (estilo Octocat do
- * GitHub: um mascote que funciona sozinho como marca, de favicon a hero).
- * Desenhada em grade 0–100 e escalada pro viewBox 32×32 do resto do app.
- * Cor "Índigo" (#6366f1), fill sólido — sem gradiente. Ver DESIGN.md.
+ * Isótipo: uma harpia em perfil, formas geométricas simples e bem separadas
+ * — crista dupla, cabeça e corpo como círculos, bico em gancho, três penas
+ * na base. Desenhada numa grade 0–200 e escalada pro viewBox 32×32 do resto
+ * do app. Cor "Índigo" (#6366f1), fill sólido — sem gradiente. Ver DESIGN.md.
  */
 function isotypeShape() {
   return (
-    <g transform="scale(0.32)">
-      <polygon points="22,22 28,2 36,20" />
-      <polygon points="32,20 42,6 46,22" />
-      <circle cx="30" cy="30" r="13" />
-      <path d="M19,29 Q4,34 17,45 Q27,40 22,31 Z" />
-      <path
-        d="M22,38 Q14,50 20,64 Q26,82 46,90 Q60,94 70,84
-           L62,78 L72,86 L66,74 L78,80 L70,66 L80,70 L72,56
-           Q76,46 68,40 Q58,28 42,30 Q32,26 22,38 Z"
-      />
+    <g transform="scale(0.16)">
+      <polygon points="60,50 68,15 80,52" />
+      <polygon points="78,48 92,20 98,54" />
+      <circle cx="70" cy="75" r="28" />
+      <path d="M48,68 Q14,74 40,100 Q58,92 52,74 Z" />
+      <circle cx="115" cy="122" r="46" />
+      <polygon points="94,158 100,190 113,162" />
+      <polygon points="112,162 121,193 132,163" />
+      <polygon points="131,160 144,188 150,157" />
     </g>
   );
 }
@@ -42,7 +39,7 @@ export function LogoIsotype({
       className={cn("h-9 w-9", className)}
     >
       <g fill="#6366f1">{isotypeShape()}</g>
-      <circle cx="8.6" cy="8.3" r="0.7" fill="currentColor" className="text-background" />
+      <circle cx="9.8" cy="10.6" r="0.7" fill="currentColor" className="text-background" />
     </svg>
   );
 }
@@ -58,7 +55,7 @@ export function LogoMark({ className }: { className?: string }) {
     >
       <rect width="32" height="32" rx="7" fill="#6366f1" />
       <g fill="#fff">{isotypeShape()}</g>
-      <circle cx="8.6" cy="8.3" r="0.7" fill="#6366f1" />
+      <circle cx="9.8" cy="10.6" r="0.7" fill="#6366f1" />
     </svg>
   );
 }
