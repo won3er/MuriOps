@@ -2,30 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Paleta "Console" — estilo GitHub: quase-preto neutro, texto branco/cinza,
-   laranja Ember só como destaque mínimo (CTA, links ativos, foco). Sem
-   versão clara por enquanto (ver apps/web/DESIGN.md). Definida tanto em
-   :root quanto em .dark para não haver flash de cor errada antes do JS
-   aplicar a classe — o app roda sempre em modo escuro (forcedTheme="dark"). */
+/* Paleta "Instrument" — baseada literalmente na escala de cinza do design
+   system do Linear (via styles.refero.design): Void/Carbon/Obsidian/
+   Graphite/Smoke/Ash/Fog/Bone/Paper. Sem gradiente decorativo, sem laranja —
+   um único acento cromático (índigo) usado só em CTA/foco/link ativo. Ver
+   apps/web/DESIGN.md. Definida em :root e .dark (app roda sempre em modo
+   escuro, forcedTheme="dark"). */
 :root,
 .dark {
-  --background: 216 28% 7%;
-  --foreground: 208 35% 93%;
-  --card: 215 21% 11%;
-  --card-foreground: 208 35% 93%;
-  /* Ember — único ponto de cor da marca. Usado com parcimônia. */
-  --primary: 17 77% 52%;
-  --primary-foreground: 30 40% 97%;
-  --muted: 215 15% 15%;
-  --muted-foreground: 212 9% 58%;
-  --accent: 215 15% 15%;
-  --accent-foreground: 208 35% 93%;
-  --border: 212 12% 21%;
-  --input: 212 12% 21%;
-  --ring: 17 77% 55%;
+  --background: 210 11% 4%; /* Void #08090a */
+  --foreground: 0 0% 100%; /* Paper #ffffff */
+  --card: 210 6% 6%; /* Carbon #0f1011 */
+  --card-foreground: 0 0% 100%;
+  /* Índigo — único ponto de cor da marca/ação. Usado com parcimônia. */
+  --primary: 239 84% 67%; /* #6366f1 */
+  --primary-foreground: 0 0% 100%;
+  --muted: 210 4% 9%; /* Obsidian #161718 */
+  --muted-foreground: 219 6% 57%; /* Fog #8a8f98 */
+  --accent: 223 9% 15%; /* Graphite #23252a */
+  --accent-foreground: 0 0% 100%;
+  --border: 223 9% 15%; /* Graphite #23252a */
+  --input: 223 9% 15%;
+  --ring: 239 84% 67%;
   --destructive: 0 72% 58%;
   --destructive-foreground: 0 0% 100%;
-  --radius: 0.75rem;
+  --radius: 0.5rem;
 }
 
 * {
@@ -36,10 +37,6 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   background: hsl(var(--background));
   color: hsl(var(--foreground));
-  background-image:
-    radial-gradient(60% 60% at 50% -10%, hsl(17 77% 52% / 0.07), transparent),
-    radial-gradient(50% 50% at 100% 0%, hsl(212 20% 40% / 0.05), transparent);
-  background-attachment: fixed;
   min-height: 100vh;
 }
 
@@ -56,8 +53,7 @@ h3 {
 }
 
 .glass {
-  background: hsl(var(--card) / 0.7);
-  backdrop-filter: blur(12px);
+  background: hsl(var(--card) / 0.9);
   border: 1px solid hsl(var(--border));
 }
 
