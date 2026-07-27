@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
  * Isotipo: um "E" monograma construído com barras que crescem de baixo para
  * cima — lê-se ao mesmo tempo como a letra e como um gráfico de elevação
  * ("eleve a qualidade"). Sem texto: funciona sozinho como marca.
- * Paleta laranja (âmbar → laranja profundo), a cor da marca.
+ * Paleta "Ember" (âmbar profundo → vermelho-alaranjado), ver DESIGN.md.
  */
 function isotypePaths() {
   return (
@@ -40,8 +40,8 @@ export function LogoIsotype({
     >
       <defs>
         <linearGradient id="eqa-iso" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0%" stopColor="#ea580c" />
-          <stop offset="100%" stopColor="#fbbf24" />
+          <stop offset="0%" stopColor="#e35a26" />
+          <stop offset="100%" stopColor="#f5943f" />
         </linearGradient>
       </defs>
       <g fill="url(#eqa-iso)">{isotypePaths()}</g>
@@ -60,8 +60,8 @@ export function LogoMark({ className }: { className?: string }) {
     >
       <defs>
         <linearGradient id="eqa-badge" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0%" stopColor="#ea580c" />
-          <stop offset="100%" stopColor="#fb923c" />
+          <stop offset="0%" stopColor="#e35a26" />
+          <stop offset="100%" stopColor="#f5943f" />
         </linearGradient>
       </defs>
       <rect width="32" height="32" rx="8.5" fill="url(#eqa-badge)" />
