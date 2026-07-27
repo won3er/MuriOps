@@ -34,14 +34,17 @@ export default function OpengraphImage() {
         >
           <svg width="84" height="84" viewBox="0 0 32 32">
             <rect width="32" height="32" rx="7" fill="#6366f1" />
-            <g fill="#fff" transform="scale(0.32)">
-              <polygon points="22,22 28,2 36,20" />
-              <polygon points="32,20 42,6 46,22" />
-              <circle cx="30" cy="30" r="13" />
-              <path d="M19,29 Q4,34 17,45 Q27,40 22,31 Z" />
-              <path d="M22,38 Q14,50 20,64 Q26,82 46,90 Q60,94 70,84 L62,78 L72,86 L66,74 L78,80 L70,66 L80,70 L72,56 Q76,46 68,40 Q58,28 42,30 Q32,26 22,38 Z" />
+            <g fill="#fff" transform="scale(0.16)">
+              <polygon points="60,50 68,15 80,52" />
+              <polygon points="78,48 92,20 98,54" />
+              <circle cx="70" cy="75" r="28" />
+              <path d="M48,68 Q14,74 40,100 Q58,92 52,74 Z" />
+              <circle cx="115" cy="122" r="46" />
+              <polygon points="94,158 100,190 113,162" />
+              <polygon points="112,162 121,193 132,163" />
+              <polygon points="131,160 144,188 150,157" />
             </g>
-            <circle cx="8.6" cy="8.3" r="0.7" fill="#6366f1" />
+            <circle cx="9.8" cy="10.6" r="0.7" fill="#6366f1" />
           </svg>
           <div style={{ fontSize: 48, fontWeight: 700, color: "#ffffff", display: "flex" }}>
             Elevate&nbsp;<span style={{ color: "#6366f1" }}>QA</span>
