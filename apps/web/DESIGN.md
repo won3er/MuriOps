@@ -79,6 +79,28 @@ sem `background-image`. Essa foi a correção mais direta pedida pelo usuário
 - **Isótipo** (barras ascendentes formando "E") mantém a forma exata das
   versões anteriores; só a cor e o fill (sólido, não gradiente) mudaram.
 
+## Mascote
+
+O isótipo de barras foi substituído por uma **harpia geométrica** — cabeça
+estilizada com crista de penas angulares (a coroa característica da
+harpia-real) e bico curvo, em poucas formas planas, no espírito do Octocat
+do GitHub: um mascote simples que funciona sozinho, de favicon a hero, sem
+precisar de gradiente ou sombreamento pra ter personalidade. Fill sólido em
+índigo (`#6366f1`), olho como furo de cor inversa (índigo sobre branco no
+selo, branco/fundo sobre índigo no isótipo solto). Path em
+`components/logo.tsx`, reaproveitado em `icon.svg` e `opengraph-image.tsx`.
+
+## Página inicial — seção de destaques
+
+A home ganhou uma seção de "pills" (`components/feature-showcase.tsx`) no
+mesmo espírito da home do GitHub (Código/Planeje/Colabore/Automatize/Proteja):
+cinco abas — Analisar, Projetar, Aplicar, Automatizar, Acompanhar — cada uma
+com uma descrição curta e um **screenshot real do produto rodando**
+(`public/screens/*.jpg`, capturados da aplicação ao vivo), não uma ilustração
+genérica. O rodapé (`components/site-footer.tsx`) ganhou três colunas: guia
+rápido de uso, status de cada funcionalidade (Disponível/Beta) e links
+institucionais (Termos, Privacidade, Contato).
+
 ## Histórico
 
 - **v1 "Signal room"** — mogno quente + Ember + variante clara. Rejeitada
