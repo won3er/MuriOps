@@ -1,17 +1,14 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
   ArrowRight,
   Bot,
-  DraftingCompass,
   FileDown,
   Gauge,
   GitCompare,
   Loader2,
   Lock,
   Search,
-  ScanSearch,
   ShieldAlert,
   Sparkles,
   Terminal,
@@ -20,48 +17,13 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { FeatureShowcase } from "@/components/feature-showcase";
 import { LogoIsotype } from "@/components/logo";
+import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-
-/** Os três pilares do produto — o que o app realmente faz hoje. */
-const PILLARS = [
-  {
-    icon: ScanSearch,
-    name: "Analisar",
-    tagline: "Descobre o que está errado",
-    desc: "A IA navega no seu site como um usuário real, testa fluxos e devolve um relatório com nota de 0 a 100 por dimensão e evidências de cada problema.",
-    bullets: [
-      "Análise QA padrão: UI, UX, performance, SEO, acessibilidade, console e rede",
-      "Análise de Segurança: TLS, DNS, headers, segredos expostos e mais",
-      "Screenshots, logs e requisições anexados a cada achado",
-    ],
-  },
-  {
-    icon: DraftingCompass,
-    name: "Projetar",
-    tagline: "Planeja antes de construir",
-    desc: "Descreva o projeto que você quer tirar do papel e receba um plano técnico completo, pensado com qualidade desde o primeiro commit.",
-    bullets: [
-      "Arquitetura e stack recomendada, com o porquê de cada escolha",
-      "Marcos de entrega e foco de QA em cada etapa",
-      "Quality gates e matriz de riscos com mitigação",
-    ],
-  },
-  {
-    icon: Wrench,
-    name: "Aplicar",
-    tagline: "Transforma achado em correção",
-    desc: "Exporte suas análises e receba um plano de mudanças acionável — o que mudar, onde e como. Aplique do seu jeito, no seu ritmo.",
-    bullets: [
-      "Documento único para levar ao time de desenvolvimento",
-      "Ou envie para sua IA de dev (Claude Code, Windsurf, Codex, Cursor…)",
-      "Cada item vira “Feito” na tela em tempo real conforme é aplicado",
-    ],
-  },
-];
 
 const STEPS = [
   { n: "01", title: "Cole a URL", desc: "Sem instalar nada, sem plugin, sem acesso ao seu código." },
@@ -110,7 +72,8 @@ export default function LandingPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl flex-col px-6">
+    <div className="flex min-h-screen flex-col">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6">
       {/* O header decide na hora entre "Dashboard" e "Entrar" — usa apenas o
           token salvo no navegador, sem esperar resposta da API. */}
       <header className="flex w-full items-center justify-between py-6">
@@ -180,42 +143,16 @@ export default function LandingPage() {
         </p>
       </section>
 
-      {/* Três pilares */}
+      {/* Destaques — pills + screenshot real, no espírito da home do GitHub */}
       <section className="mt-28">
         <div className="mb-10 text-center">
-          <h2 className="text-3xl font-semibold">Três etapas, uma ferramenta</h2>
+          <h2 className="text-3xl font-semibold">Cinco frentes, uma ferramenta</h2>
           <p className="mt-2 text-muted-foreground">
-            Descobrir o problema é metade do trabalho. O Elevate QA cobre a outra
-            metade.
+            Da primeira varredura até o loop de reanálise automática — tudo
+            dentro do mesmo produto.
           </p>
         </div>
-        <div className="grid gap-5 md:grid-cols-3">
-          {PILLARS.map((p, i) => (
-            <motion.article
-              key={p.name}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ delay: 0.08 * i, duration: 0.4 }}
-              className="glass flex flex-col rounded-xl p-6"
-            >
-              <div className="mb-4 grid h-11 w-11 place-items-center rounded-lg bg-primary/15">
-                <p.icon className="h-5 w-5 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold">{p.name}</h3>
-              <p className="text-sm text-primary">{p.tagline}</p>
-              <p className="mt-3 text-sm text-muted-foreground">{p.desc}</p>
-              <ul className="mt-4 space-y-2 border-t border-border pt-4 text-sm text-muted-foreground">
-                {p.bullets.map((b) => (
-                  <li key={b} className="flex gap-2">
-                    <span aria-hidden="true" className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
-                    {b}
-                  </li>
-                ))}
-              </ul>
-            </motion.article>
-          ))}
-        </div>
+        <FeatureShowcase />
       </section>
 
       {/* Como funciona */}
@@ -332,22 +269,9 @@ export default function LandingPage() {
           </Button>
         </Link>
       </section>
-
-      <footer className="mt-20 flex flex-col items-center gap-3 border-t border-border py-8 text-sm text-muted-foreground sm:flex-row sm:justify-between">
-        <span className="flex items-center gap-2">
-          <LogoIsotype className="h-5 w-5" title="Elevate QA" />
-          Elevate QA — qualidade de site, do diagnóstico à correção.
-        </span>
-        <span className="flex gap-4">
-          <Link href="/login" className="transition-colors hover:text-foreground">
-            Entrar
-          </Link>
-          <Link href="/register" className="transition-colors hover:text-foreground">
-            Criar conta
-          </Link>
-        </span>
-      </footer>
     </main>
+    <SiteFooter />
+    </div>
   );
 }
 
