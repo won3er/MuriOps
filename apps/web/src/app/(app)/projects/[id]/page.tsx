@@ -2,11 +2,9 @@
 
 import type { Analysis, ProjectWithStats } from "@qa-ai/shared";
 import {
-  ChevronDown,
   FileSearch,
   GitBranch,
   Loader2,
-  Plug,
   ShieldAlert,
   Trash2,
   Wrench,
@@ -18,14 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AnalysisStatusBadge } from "@/components/status-badge";
-import { McpConnectionPanel } from "@/components/mcp-connection-panel";
-import { GithubConnectionPanel } from "@/components/github-connection-panel";
-import {
-  FtpConnectionPanel,
-  NuvemshopConnectionPanel,
-  ShopifyConnectionPanel,
-  WordpressConnectionPanel,
-} from "@/components/platform-connection-panels";
 import { api } from "@/lib/api";
 import { useProjectRemediationPlans } from "@/lib/queries";
 import { cn, formatDuration, scoreColor, timeAgo } from "@/lib/utils";
@@ -54,7 +44,6 @@ export default function ProjectDetailPage() {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingProject, setDeletingProject] = useState(false);
-  const [platformsOpen, setPlatformsOpen] = useState(false);
   const { data: remediationPlans = [] } = useProjectRemediationPlans(id);
 
   useEffect(() => {
@@ -314,55 +303,36 @@ export default function ProjectDetailPage() {
         )}
       </div>
 
-      {/* Conexões e integrações — administração do projeto. */}
-      <div>
-        <h2 className="mb-3 text-lg font-medium">Conexões e integrações</h2>
-        <div className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <McpConnectionPanel projectId={id} />
-            <GithubConnectionPanel projectId={id} />
-          </div>
-          <div>
-            <button
-              type="button"
-              onClick={() => setPlatformsOpen((v) => !v)}
-              className="flex w-full items-center gap-2 rounded-md border px-3 py-2.5 text-sm transition-colors hover:bg-accent"
-            >
-              <Plug className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">
-                Conectar plataforma do site (WordPress, Shopify, Nuvemshop, FTP)
-              </span>
-              <ChevronDown
-                className={cn(
-                  "ml-auto h-4 w-4 text-muted-foreground transition-transform",
-                  platformsOpen && "rotate-180",
-                )}
-              />
-            </button>
-            {platformsOpen && (
-              <div className="mt-3 grid gap-4 md:grid-cols-2">
-                <WordpressConnectionPanel projectId={id} />
-                <ShopifyConnectionPanel projectId={id} />
-                <NuvemshopConnectionPanel projectId={id} />
-                <FtpConnectionPanel projectId={id} />
+      {/* Aplicação é o executor final — conexões/integrações e orquestração ficam lá. */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Link href={`/aplicacao?projectId=${id}`}>
+          <Card className="transition-colors hover:border-primary/50">
+            <CardContent className="flex items-center gap-3 py-4">
+              <Wrench className="h-5 w-5 shrink-0 text-primary" />
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">Conexões e integrações</p>
+                <p className="text-sm text-muted-foreground">
+                  GitHub, MCP, WordPress, Shopify, Nuvemshop, FTP — tudo em
+                  Aplicação, o executor final das mudanças.
+                </p>
               </div>
-            )}
-          </div>
-          <Link href={`/aplicacao?tab=orquestracao&projectId=${id}`}>
-            <Card className="border-primary/30 transition-colors hover:border-primary/60">
-              <CardContent className="flex items-center gap-3 py-4">
-                <GitBranch className="h-5 w-5 shrink-0 text-primary" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">Orquestração deste projeto</p>
-                  <p className="text-sm text-muted-foreground">
-                    Nível de autonomia, quality gates e o loop analisar →
-                    plano → aplicar → reanalisar ficam dentro de Aplicação.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href={`/orquestracao?projectId=${id}`}>
+          <Card className="border-primary/30 transition-colors hover:border-primary/60">
+            <CardContent className="flex items-center gap-3 py-4">
+              <GitBranch className="h-5 w-5 shrink-0 text-primary" />
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">Orquestração deste projeto</p>
+                <p className="text-sm text-muted-foreground">
+                  Nível de autonomia, quality gates e o loop analisar → plano
+                  → aplicar → reanalisar, automático.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
     </div>
   );

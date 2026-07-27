@@ -142,8 +142,8 @@ export default function AnalysisDetailPage() {
             <p className="max-w-2xl text-sm text-muted-foreground">
               O score vai de 0 a 100 (quanto maior, melhor) e é calculado a
               partir dos problemas encontrados em cada dimensão. Use os
-              filtros abaixo pra focar numa categoria ou severidade, e gere
-              uma Aplicação quando quiser transformar esses achados num
+              filtros abaixo pra focar numa categoria ou severidade, e envie
+              pra Aplicação quando quiser transformar esses achados num
               checklist de correção.
             </p>
           )}
@@ -162,7 +162,7 @@ export default function AnalysisDetailPage() {
               ) : (
                 <Wrench className="h-4 w-4" />
               )}
-              Gerar Aplicação
+              Enviar para Aplicação
             </Button>
           )}
           <Button

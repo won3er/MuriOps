@@ -2,17 +2,26 @@
 
 import type { RemediationScope } from "@qa-ai/shared";
 import {
+  ChevronDown,
   FileSearch,
   GitBranch,
   Layers,
   Loader2,
+  Plug,
   ShieldAlert,
   Wrench,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { OrchestrationPanel } from "@/components/orchestration-panel";
+import { GithubConnectionPanel } from "@/components/github-connection-panel";
+import { McpConnectionPanel } from "@/components/mcp-connection-panel";
+import {
+  FtpConnectionPanel,
+  NuvemshopConnectionPanel,
+  ShopifyConnectionPanel,
+  WordpressConnectionPanel,
+} from "@/components/platform-connection-panels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,8 +31,6 @@ import {
   useRemediationPlans,
 } from "@/lib/queries";
 import { cn, timeAgo } from "@/lib/utils";
-
-type Tab = "exportar" | "orquestracao";
 
 const SCOPES: {
   value: RemediationScope;
@@ -67,6 +74,13 @@ const SCOPE_LABEL: Record<string, string> = {
   full: "Projeto completo",
 };
 
+/**
+ * Aplicação é o executor final das mudanças vindas de Análise, Projetar e
+ * Atualizar: exporta os achados num plano, conecta a plataforma real do
+ * cliente (GitHub, MCP, WordPress, Shopify, Nuvemshop, FTP...) e aplica —
+ * manualmente ou via ponte universal. Orquestração usa essas mesmas conexões
+ * pra automatizar o ciclo analisar → plano → aplicar → reanalisar.
+ */
 export default function AplicacaoPage() {
   return (
     <Suspense fallback={null}>
@@ -82,21 +96,14 @@ function AplicacaoPageInner() {
   const { data: plans = [], isLoading } = useRemediationPlans();
   const createPlan = useCreateRemediationPlan();
 
-  const [tab, setTab] = useState<Tab>("exportar");
   const [projectId, setProjectId] = useState("");
-  const [orchestrationProjectId, setOrchestrationProjectId] = useState("");
   const [scope, setScope] = useState<RemediationScope>("full");
+  const [connectionsOpen, setConnectionsOpen] = useState(false);
 
   useEffect(() => {
-    const wantedTab = searchParams.get("tab");
-    const wantedProjectId = searchParams.get("projectId");
-    if (wantedTab === "orquestracao") setTab("orquestracao");
-    if (wantedProjectId) setOrchestrationProjectId(wantedProjectId);
+    const wanted = searchParams.get("projectId");
+    if (wanted) setProjectId(wanted);
   }, [searchParams]);
-
-  const orchestrationProject = projects.find(
-    (p) => p.id === orchestrationProjectId,
-  );
 
   function exportar() {
     if (!projectId) return;
@@ -114,84 +121,10 @@ function AplicacaoPageInner() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Exporte suas análises e transforme os achados num plano de mudanças —
-          para aplicar manualmente ou direto no seu ambiente de desenvolvimento
-          via IA. Ou deixe a Orquestração rodar o ciclo completo sozinha.
+          para aplicar manualmente ou direto na plataforma real do cliente.
         </p>
       </div>
 
-      {/* Abas */}
-      <div className="flex gap-2 border-b">
-        <button
-          type="button"
-          onClick={() => setTab("exportar")}
-          className={cn(
-            "flex items-center gap-2 border-b-2 px-3 py-2 text-sm transition-colors",
-            tab === "exportar"
-              ? "border-primary font-medium text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <Wrench className="h-4 w-4" /> Exportar &amp; aplicar
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("orquestracao")}
-          className={cn(
-            "flex items-center gap-2 border-b-2 px-3 py-2 text-sm transition-colors",
-            tab === "orquestracao"
-              ? "border-primary font-medium text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <GitBranch className="h-4 w-4" /> Orquestração
-        </button>
-      </div>
-
-      {tab === "orquestracao" ? (
-        <div className="space-y-5">
-          <Card>
-            <CardContent className="space-y-2 py-6">
-              <label
-                htmlFor="orquestracao-projeto"
-                className="mb-1.5 block text-xs text-muted-foreground"
-              >
-                Projeto
-              </label>
-              <select
-                id="orquestracao-projeto"
-                value={orchestrationProjectId}
-                onChange={(e) => setOrchestrationProjectId(e.target.value)}
-                className="h-10 w-full rounded-md border border-input bg-background/60 px-3 text-sm sm:max-w-sm"
-              >
-                <option value="">Selecione um projeto…</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-muted-foreground">
-                Nível de autonomia, quality gates e o loop analisar → plano →
-                aplicar → reanalisar, tudo num só lugar.
-              </p>
-            </CardContent>
-          </Card>
-
-          {orchestrationProject ? (
-            <OrchestrationPanel
-              projectId={orchestrationProject.id}
-              autonomyLevel={orchestrationProject.autonomyLevel}
-            />
-          ) : (
-            <Card>
-              <CardContent className="py-10 text-center text-muted-foreground">
-                Selecione um projeto acima para configurar a orquestração.
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      ) : (
-        <>
       {/* Exportar análises */}
       <Card>
         <CardContent className="space-y-5 py-6">
@@ -266,6 +199,66 @@ function AplicacaoPageInner() {
         </CardContent>
       </Card>
 
+      {/* Conexões e integrações — aqui, não em Projetos: Aplicação é o executor final. */}
+      <div>
+        {!projectId ? (
+          <p className="text-sm text-muted-foreground">
+            Selecione um projeto acima pra ver ou configurar as conexões e
+            integrações dele (GitHub, MCP, WordPress, Shopify, Nuvemshop, FTP).
+          </p>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => setConnectionsOpen((v) => !v)}
+              className="flex w-full items-center gap-2 rounded-md border px-3 py-2.5 text-sm transition-colors hover:bg-accent"
+            >
+              <Plug className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">Conexões e integrações deste projeto</span>
+              <ChevronDown
+                className={cn(
+                  "ml-auto h-4 w-4 text-muted-foreground transition-transform",
+                  connectionsOpen && "rotate-180",
+                )}
+              />
+            </button>
+            {connectionsOpen && (
+              <div className="mt-3 space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <McpConnectionPanel projectId={projectId} />
+                  <GithubConnectionPanel projectId={projectId} />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Plataforma do site (apply real fora do repositório):
+                </p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <WordpressConnectionPanel projectId={projectId} />
+                  <ShopifyConnectionPanel projectId={projectId} />
+                  <NuvemshopConnectionPanel projectId={projectId} />
+                  <FtpConnectionPanel projectId={projectId} />
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Orquestração — automatiza o ciclo usando estas mesmas conexões. */}
+      <Link href={projectId ? `/orquestracao?projectId=${projectId}` : "/orquestracao"}>
+        <Card className="border-primary/30 transition-colors hover:border-primary/60">
+          <CardContent className="flex items-center gap-3 py-4">
+            <GitBranch className="h-5 w-5 shrink-0 text-primary" />
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">Enviar para Orquestração</p>
+              <p className="text-sm text-muted-foreground">
+                Deixa o ciclo analisar → plano → aplicar → reanalisar rodar
+                sozinho, usando as conexões configuradas acima.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </Link>
+
       {/* Histórico de aplicações */}
       <div>
         <h2 className="mb-3 text-lg font-medium">Suas Aplicações</h2>
@@ -312,8 +305,6 @@ function AplicacaoPageInner() {
           </div>
         )}
       </div>
-        </>
-      )}
     </div>
   );
 }

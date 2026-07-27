@@ -5,6 +5,7 @@ import {
   DraftingCompass,
   FileSearch,
   FolderKanban,
+  GitBranch,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -25,6 +26,7 @@ const NAV = [
   { href: "/analyses", label: "Análise", icon: FileSearch },
   { href: "/blueprints", label: "Projetar", icon: DraftingCompass },
   { href: "/aplicacao", label: "Aplicação", icon: Wrench },
+  { href: "/orquestracao", label: "Orquestração", icon: GitBranch },
   { href: "/atualizar", label: "Atualizar", icon: ArrowUpCircle },
   { href: "/settings", label: "Configurações", icon: Settings },
 ];

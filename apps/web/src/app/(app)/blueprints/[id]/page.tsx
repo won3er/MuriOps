@@ -127,7 +127,7 @@ export default function BlueprintDetailPage() {
               ) : (
                 <Wrench className="h-3.5 w-3.5" />
               )}
-              Aplicação
+              Enviar para Aplicação
             </Button>
           )}
           {bp.status === "READY" && (
