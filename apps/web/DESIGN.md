@@ -81,17 +81,23 @@ sem `background-image`. Essa foi a correção mais direta pedida pelo usuário
 
 ## Mascote
 
-O isótipo de barras foi substituído por uma **harpia geométrica em perfil**
-— crista dupla (dois triângulos), cabeça e corpo como dois círculos simples,
-bico em gancho e três penas pontudas na base do corpo. Formas bem separadas
-e fáceis de ler mesmo em 24px, no espírito do Octocat do GitHub: um mascote
-que funciona sozinho, de favicon a hero, sem precisar de gradiente ou
-sombreamento pra ter personalidade. Desenhado numa grade 0–200 (círculos e
-polígonos simples, sem curvas complexas) e escalado (`scale(0.16)`) pro
-viewBox 32×32 do resto do app. Fill sólido em índigo (`#6366f1`), olho como
-furo de cor inversa (índigo sobre branco no selo, branco/fundo sobre índigo
-no isótipo solto). Formas em `components/logo.tsx` (`isotypeShape()`),
+O mascote é um **texugo geométrico em perfil** — orelha e cabeça como
+círculos simples, focinho afilado, corpo arredondado. A marca registrada do
+bicho, a listra clara que atravessa o rosto escuro (e o olho), é desenhada
+como um "recorte": um path na cor de fundo por cima do preenchimento sólido,
+a mesma técnica usada antes só pro olho da harpia, agora reaproveitada pra
+listra inteira. Isso faz a peça funcionar em qualquer contexto — cutout na
+cor do background no isótipo solto, cutout na cor índigo dentro do selo —
+sem precisar de gradiente. Formas bem separadas, fáceis de ler mesmo em
+24px, no espírito do Octocat do GitHub. Desenhado numa grade 0–200 (círculos
+e paths simples) e escalado (`scale(0.16)`) pro viewBox 32×32 do resto do
+app. Fill sólido em índigo (`#6366f1`). Formas em `components/logo.tsx`
+(`isotypeShape()` pro corpo, `isotypeCutout()` pra listra/olho),
 reaproveitadas em `icon.svg` e `opengraph-image.tsx`.
+
+Trocou o mascote anterior (harpia) por pedido direto do usuário, que mandou
+uma referência visual de um texugo em círculo preto/branco — mesmo espírito
+de isótipo geométrico simples, bicho diferente.
 
 ## Página inicial — seção de destaques
 
