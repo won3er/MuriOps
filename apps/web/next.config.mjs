@@ -27,7 +27,12 @@ const nextConfig = {
             // 'unsafe-inline'/'unsafe-eval' em script-src são necessários pra
             // hidratação do Next.js funcionar; frame-ancestors 'none' já
             // cobre clickjacking (mais forte que X-Frame-Options sozinho).
-            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ${apiUrl}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`,
+            // accounts.google.com liberado em script-src/connect-src/frame-src
+            // pro botão "Entrar com Google" (Google Identity Services carrega
+            // um script de terceiro e renderiza o botão dentro de um iframe
+            // deles) — sem isso o CSP bloqueia silenciosamente o script e o
+            // botão nunca aparece (bug encontrado e corrigido em 28/07/2026).
+            value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ${apiUrl} https://accounts.google.com; frame-src https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`,
           },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
