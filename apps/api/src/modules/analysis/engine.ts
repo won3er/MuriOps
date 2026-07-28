@@ -24,7 +24,11 @@ export interface EngineInput {
   categories: AnalysisCategory[];
   maxDepth: number;
   maxPages: number;
-  /** Chave de IA própria da organização; se ausente, usa a configuração do servidor. */
+  /**
+   * Chave de IA própria da organização. Se ausente, `createAiProvider`
+   * degrada pro NoopProvider (resultado determinístico, sem IA de verdade) —
+   * NÃO existe chave padrão do servidor como fallback.
+   */
   aiOverride?: AiOverride | null;
   onStatus?: (status: AnalysisStatus, meta?: Record<string, unknown>) => Promise<void>;
 }
@@ -121,7 +125,18 @@ export async function runEngine(input: EngineInput): Promise<EngineResult> {
       }
 
       for (const analyzer of pageAnalyzers) {
-        const detected = await analyzer.analyze(ctx).catch(() => []);
+        const detected = await analyzer.analyze(ctx).catch((err) => {
+          // Falha de analyzer é engolida de propósito (um módulo quebrado não
+          // pode derrubar a análise inteira), mas NUNCA em silêncio: sem log,
+          // uma categoria que quebrou fica indistinguível de uma categoria
+          // que rodou e não achou nada — o relatório diria "sem problemas"
+          // pra uma checagem que na verdade nem executou.
+          console.error(
+            `⚠️  Analyzer "${analyzer.id}" falhou em ${ctx.url}:`,
+            err instanceof Error ? err.message : err,
+          );
+          return [];
+        });
         for (const d of detected) {
           merge(d);
           const issue = byFingerprint.get(d.fingerprint)!;
@@ -153,7 +168,14 @@ export async function runEngine(input: EngineInput): Promise<EngineResult> {
     // com dados já capturados no crawl (hasNav, responseHeaders etc.), sem
     // precisar de nenhuma página aberta.
     for (const analyzer of siteAnalyzers) {
-      const detected = await analyzer.analyze(pages, siteUrl).catch(() => []);
+      // Mesmo motivo do catch com log nos analyzers por-página acima.
+      const detected = await analyzer.analyze(pages, siteUrl).catch((err) => {
+        console.error(
+          `⚠️  Analyzer de site "${analyzer.id}" falhou:`,
+          err instanceof Error ? err.message : err,
+        );
+        return [];
+      });
       for (const d of detected) {
         merge(d);
         const issue = byFingerprint.get(d.fingerprint)!;

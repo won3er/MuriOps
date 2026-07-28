@@ -125,7 +125,16 @@ export async function probeAllowedMethods(url: string): Promise<string[]> {
   try {
     const controller = new AbortController();
     const t = setTimeout(() => controller.abort(), 5000);
-    const res = await fetch(url, { method: "OPTIONS", signal: controller.signal });
+    // `redirect: "manual"` pelo mesmo motivo do probeGet acima: o padrão do
+    // fetch é seguir redirect, e a URL analisada é escolhida por quem usa o
+    // app. Sem isso, um site que responde 30x apontando pra rede interna
+    // faria esta sonda seguir pra lá — furando a checagem de IP privado que
+    // `infrastructure/security/url-guard.ts` faz só na URL inicial.
+    const res = await fetch(url, {
+      method: "OPTIONS",
+      signal: controller.signal,
+      redirect: "manual",
+    });
     clearTimeout(t);
     const allow = res.headers.get("allow");
     return allow ? allow.split(",").map((m) => m.trim().toUpperCase()) : [];
