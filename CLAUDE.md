@@ -144,10 +144,43 @@ anterior incompleta:
    Só retomar quando o usuário pedir explicitamente ("me lembre depois").
 5. **Sandbox sem `git push`** — em ambientes de agente sem credencial de push, use
    o upload manual pela interface web do GitHub (arquivo por arquivo/pasta) em
-   `github.com/won3er/Elevate-QA/upload/main/<caminho>`. **28/07/2026:** no Cowork
-   isso deixou de ser necessário — `git push` funciona direto (ver nota na seção
-   Stack sobre `git add` seletivo por causa do trabalho de design em paralelo).
-6. **[Removido em 28/07/2026] Adapter Nuvemshop** — a loja de teste real
+   `github.com/won3er/Elevate-QA/upload/main/<caminho>`. **28/07/2026, corrigido:**
+   no Cowork `git add`/`git commit` funcionam (ver nota na seção Stack sobre o
+   workaround de lock file e `git add` seletivo), **mas `git push` continua sem
+   funcionar** — sem credencial configurada nesse sandbox. Os commits ficam prontos
+   localmente esperando o usuário rodar `git push` no terminal dele.
+6. **[Fase 3] Revisão de bugs/segurança (Enxugar) — sessão autônoma 28/07/2026 à
+   noite:** revisão de código (sem reprodução ao vivo — sandbox sem `tsc`
+   funcional, ver nota na seção Stack) encontrou e corrigiu 5 bugs reais,
+   todos commitados localmente (faltando só `git push` do usuário):
+   - Duas condições de corrida na Orquestração (`enqueueOrchestrationRun` sem
+     dedupe por runId; `approve`/`onObservation`/`maybeAutoResumeFromPlan`
+     com `update()` incondicional em vez de `updateMany()` guardado por
+     status) — dois triggers quase simultâneos podiam processar o mesmo run
+     em paralelo e gerar planos duplicados.
+   - `wordpress-adapter.ts`/`shopify-adapter.ts` não escapavam HTML dos
+     campos do `RemediationItem` ao criar a página de rascunho no site real
+     do cliente — um achado de Análise de Segurança citando um payload tipo
+     `<script>` reintroduzia esse XSS na página publicada. Corrigido com
+     `escapeHtml()`.
+   - `mcp-server.ts`: um `planId` explícito nos tools MCP não validava que o
+     plano pertencia ao projeto da conexão — permitia ler/marcar itens de
+     Aplicações de outros projetos da mesma organização. Corrigido validando
+     `plan.projectId === scope.projectId`.
+   - `auth.service.ts`: `loginWithGoogle` vinculava a conta por e-mail sem
+     zerar a senha existente — como o cadastro comum não verifica
+     propriedade do e-mail, alguém podia pré-cadastrar o e-mail de outra
+     pessoa com senha própria e reter acesso permanente à conta depois do
+     dono de verdade vincular o Google (sem fluxo de "esqueci a senha" pra
+     revogar). Corrigido zerando a senha no vínculo.
+   Revisados sem bug: `app.ts`, `remediation-bridge.ts`, rotas da ponte
+   universal, `remediation.service.ts` (parcial), `secret-box.ts`,
+   `webhooks.routes.ts`, `ftp-adapter.ts`, `github-adapter.ts`, `index.ts`
+   dos adapters, `manual-bridge.adapter.ts`, `adapter-connection.service.ts`,
+   `settings.routes.ts`. **Ainda não revisados:** analysis-runner/crawler,
+   blueprint.service.ts, upgrade.service.ts, project.service.ts, rotas de
+   dashboard. Retomar a partir daqui quando continuar a Fase 3.
+7. **[Removido em 28/07/2026] Adapter Nuvemshop** — a loja de teste real
    (`qateste.lojavirtualnuvem.com.br`) estourava consistentemente os 512MB do
    Render free tier no crawl, mesmo após 3 rodadas de otimização de memória
    (flags do Chromium, fechamento progressivo de páginas, bloqueio de
