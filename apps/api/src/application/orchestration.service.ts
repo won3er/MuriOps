@@ -37,6 +37,23 @@ export const orchestrationService = {
     });
     if (!project) throw new NotFoundError("Projeto não encontrado");
 
+    // `adapterConnectionId` vem cru do request (z.string().optional() na
+    // rota). Sem esta validação, dava pra criar um run no PRÓPRIO projeto
+    // passando o id de uma conexão de OUTRA organização — e o
+    // `applyViaAdapter()` usaria as credenciais dela (token do GitHub, senha
+    // de aplicativo do WordPress, access token da Shopify, senha de FTP) pra
+    // escrever de verdade no sistema de produção da vítima. Amarra a conexão
+    // ao mesmo projeto e organização do run.
+    let adapterConnectionId: string | null = null;
+    if (input.adapterConnectionId) {
+      const connection = await prisma.adapterConnection.findFirst({
+        where: { id: input.adapterConnectionId, projectId, organizationId },
+        select: { id: true },
+      });
+      if (!connection) throw new NotFoundError("Conexão não encontrada para este projeto");
+      adapterConnectionId = connection.id;
+    }
+
     const run = await prisma.orchestrationRun.create({
       data: {
         projectId,
@@ -45,7 +62,7 @@ export const orchestrationService = {
         maxIterations: input.maxIterations ?? 3,
         // Snapshot do nível de autonomia do projeto no início do run.
         autonomyLevel: project.autonomyLevel,
-        adapterConnectionId: input.adapterConnectionId ?? null,
+        adapterConnectionId,
       },
     });
     await logEvent(run.id, "RUN_STARTED", "Execução criada, aguardando análise mais recente.");
@@ -364,7 +381,13 @@ export async function advance(runId: string): Promise<void> {
 
     // ---- APPLYING ----
     if (run.adapterConnectionId) {
-      await applyViaAdapter(runId, run.adapterConnectionId, readyPlan.result?.items ?? []);
+      await applyViaAdapter(
+        runId,
+        run.adapterConnectionId,
+        run.organizationId,
+        run.projectId,
+        readyPlan.result?.items ?? [],
+      );
     } else {
       await logEvent(
         runId,
@@ -384,13 +407,28 @@ export async function advance(runId: string): Promise<void> {
   }
 }
 
-/** Chama `adapter.apply()` por item pendente — best-effort, um item falhar não impede os demais. */
+/**
+ * Chama `adapter.apply()` por item pendente — best-effort, um item falhar não
+ * impede os demais.
+ *
+ * A busca da conexão é filtrada por `organizationId`/`projectId` do run (não
+ * só pelo id): esta função decripta credenciais reais e escreve no sistema de
+ * produção do cliente, então é o último ponto onde dá pra impedir que um
+ * `adapterConnectionId` de outra organização — persistido antes desta
+ * correção, ou por qualquer caminho futuro que esqueça de validar na
+ * entrada — seja usado aqui. Defesa em profundidade junto com a checagem em
+ * `create()`.
+ */
 async function applyViaAdapter(
   runId: string,
   adapterConnectionId: string,
+  organizationId: string,
+  projectId: string,
   items: RemediationItem[],
 ): Promise<void> {
-  const connection = await prisma.adapterConnection.findUnique({ where: { id: adapterConnectionId } });
+  const connection = await prisma.adapterConnection.findFirst({
+    where: { id: adapterConnectionId, organizationId, projectId },
+  });
   if (!connection) {
     await logEvent(runId, "APPLY_REQUESTED", "Conexão de adapter não encontrada — pulando aplicação automática.");
     return;

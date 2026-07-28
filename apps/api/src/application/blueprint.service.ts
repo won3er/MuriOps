@@ -32,11 +32,29 @@ export const blueprintService = {
     const mode = input.input.mode;
     const provider = await resolveProviderName(organizationId, input.provider);
 
+    // `projectId` vem cru do request (z.string().optional() na rota) — sem
+    // esta checagem dava pra vincular um Blueprint a um projeto de OUTRA
+    // organização, só sabendo o id. O Blueprint continuaria sendo lido pelo
+    // organizationId de quem criou, mas a referência cruzada vazava pra
+    // frente: `remediation.service.ts` → `loadSource()` copia
+    // `blueprint.projectId` direto pro `RemediationPlan.projectId`, criando
+    // um plano de uma org apontando pro projeto de outra. Mesma validação
+    // que `upgrade.service.ts.create()` já fazia.
+    let projectId: string | null = null;
+    if (input.projectId) {
+      const project = await prisma.project.findFirst({
+        where: { id: input.projectId, organizationId },
+        select: { id: true },
+      });
+      if (!project) throw new NotFoundError("Projeto não encontrado");
+      projectId = project.id;
+    }
+
     const created = await prisma.blueprint.create({
       data: {
         organizationId,
         createdById: userId,
-        projectId: input.projectId ?? null,
+        projectId,
         title: input.title,
         mode,
         provider,
