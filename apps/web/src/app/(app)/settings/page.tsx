@@ -1,6 +1,13 @@
 "use client";
 
-import { Check, Loader2, ShieldCheck, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  Download,
+  Loader2,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
@@ -9,6 +16,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { GoogleReauthButton } from "@/components/google-reauth-button";
 
 type Provider = "claude" | "openai" | "gemini";
 
@@ -19,6 +28,7 @@ const PROVIDERS: { value: Provider; label: string; hint: string }[] = [
 ];
 
 export default function SettingsPage() {
+  const { user, logout } = useAuth();
   const [configured, setConfigured] = useState(false);
   const [maskedKey, setMaskedKey] = useState<string | null>(null);
   const [provider, setProvider] = useState<Provider>("claude");
@@ -29,6 +39,15 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [loadError, setLoadError] = useState<unknown>(null);
   const [actionError, setActionError] = useState<unknown>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<unknown>(null);
+  const [showDelete, setShowDelete] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState("");
+  const [confirmationPhrase, setConfirmationPhrase] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [googleCredential, setGoogleCredential] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<unknown>(null);
 
   async function loadSettings() {
     setLoading(true);
@@ -85,6 +104,41 @@ export default function SettingsPage() {
       setActionError(error);
     } finally {
       setRemoving(false);
+    }
+  }
+
+  async function downloadData() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      await api.downloadAccountData();
+    } catch (error) {
+      setExportError(error);
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function deleteAccount() {
+    if (!user) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await api.deleteAccount({
+        confirmationEmail: confirmationEmail.trim(),
+        confirmationPhrase: confirmationPhrase.trim(),
+        ...(user.hasPassword && currentPassword
+          ? { password: currentPassword }
+          : {}),
+        ...(!user.hasPassword && googleCredential
+          ? { googleCredential }
+          : {}),
+      });
+      logout();
+    } catch (error) {
+      setDeleteError(error);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -260,6 +314,193 @@ export default function SettingsPage() {
           </aside>
         </div>
       )}
+
+      <Card>
+        <CardContent className="space-y-6 py-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-lg font-medium">Privacidade e dados</h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Baixe uma cópia estruturada dos dados do workspace. Senhas,
+                credenciais, chaves de IA, tokens e segredos nunca entram no
+                arquivo.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={downloadData}
+              disabled={exporting}
+              className="shrink-0"
+            >
+              {exporting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              Baixar meus dados
+            </Button>
+          </div>
+          <ActionError
+            error={exportError}
+            message="Não foi possível preparar a cópia dos seus dados."
+          />
+
+          <div className="border-t pt-6">
+            {!showDelete ? (
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-destructive">
+                    Excluir conta
+                  </h3>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    A exclusão é permanente. Se você for a única pessoa do
+                    workspace, projetos, análises, evidências, planos e
+                    configurações também serão removidos.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                  onClick={() => setShowDelete(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Iniciar exclusão
+                </Button>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 sm:p-5">
+                <div className="flex gap-3">
+                  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+                  <div>
+                    <h3 className="font-semibold">
+                      Confirme a exclusão permanente
+                    </h3>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      Antes de continuar, recomendamos baixar seus dados e
+                      revogar credenciais também nos provedores conectados.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="delete-email" className="text-sm font-medium">
+                      Confirme seu e-mail
+                    </label>
+                    <Input
+                      id="delete-email"
+                      type="email"
+                      value={confirmationEmail}
+                      onChange={(event) =>
+                        setConfirmationEmail(event.target.value)
+                      }
+                      placeholder={user?.email ?? "voce@empresa.com"}
+                      autoComplete="email"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="delete-phrase"
+                      className="text-sm font-medium"
+                    >
+                      Digite{" "}
+                      <code className="rounded bg-background px-1.5 py-0.5">
+                        EXCLUIR MINHA CONTA
+                      </code>
+                    </label>
+                    <Input
+                      id="delete-phrase"
+                      value={confirmationPhrase}
+                      onChange={(event) =>
+                        setConfirmationPhrase(event.target.value)
+                      }
+                      autoComplete="off"
+                    />
+                  </div>
+                  {user?.hasPassword && (
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="delete-password"
+                        className="text-sm font-medium"
+                      >
+                        Senha atual
+                      </label>
+                      <Input
+                        id="delete-password"
+                        type="password"
+                        value={currentPassword}
+                        onChange={(event) =>
+                          setCurrentPassword(event.target.value)
+                        }
+                        autoComplete="current-password"
+                      />
+                    </div>
+                  )}
+                  {user && !user.hasPassword && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">
+                        Confirme novamente com o Google
+                      </p>
+                      {googleCredential ? (
+                        <p className="flex items-center gap-2 text-sm text-emerald-500">
+                          <Check className="h-4 w-4" />
+                          Identidade confirmada
+                        </p>
+                      ) : (
+                        <GoogleReauthButton
+                          onCredential={setGoogleCredential}
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <ActionError
+                  error={deleteError}
+                  message="Não foi possível excluir a conta."
+                />
+                <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setShowDelete(false);
+                      setDeleteError(null);
+                      setCurrentPassword("");
+                      setGoogleCredential("");
+                    }}
+                    disabled={deleting}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={deleteAccount}
+                    disabled={
+                      deleting ||
+                      confirmationEmail.trim().toLowerCase() !==
+                        user?.email.toLowerCase() ||
+                      confirmationPhrase.trim() !== "EXCLUIR MINHA CONTA" ||
+                      (Boolean(user?.hasPassword) && !currentPassword) ||
+                      (!user?.hasPassword && !googleCredential)
+                    }
+                  >
+                    {deleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                    Excluir permanentemente
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

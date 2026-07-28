@@ -105,6 +105,7 @@ function serialize(
     email: string;
     organizationId: string;
     createdAt: Date;
+    passwordHash?: string | null;
     organization?: { subscription?: { plan: string } | null };
   },
   token: string,
@@ -117,6 +118,7 @@ function serialize(
       email: user.email,
       organizationId: user.organizationId,
       createdAt: user.createdAt.toISOString(),
+      hasPassword: Boolean(user.passwordHash),
     },
     plan: user.organization?.subscription?.plan ?? "FREE",
   };

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { mkdir, rm, writeFile } from "node:fs/promises";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import { env } from "../../config/env.js";
 
 /**
@@ -12,6 +12,8 @@ export interface EvidenceStorage {
   save(analysisId: string, fileName: string, data: Buffer | string): Promise<string>;
   /** Caminho absoluto no disco para servir o arquivo. */
   absolutePath(relativePath: string): string;
+  /** Remove todos os artefatos de uma análise. */
+  removeAnalysis(analysisId: string): Promise<void>;
 }
 
 class LocalEvidenceStorage implements EvidenceStorage {
@@ -32,10 +34,16 @@ class LocalEvidenceStorage implements EvidenceStorage {
   absolutePath(relativePath: string): string {
     // Impede path traversal — resolve e confirma que fica dentro do root.
     const abs = resolve(this.root, relativePath);
-    if (!abs.startsWith(this.root)) {
+    const fromRoot = relative(this.root, abs);
+    if (fromRoot.startsWith("..") || isAbsolute(fromRoot)) {
       throw new Error("Caminho de evidência inválido");
     }
     return abs;
+  }
+
+  async removeAnalysis(analysisId: string): Promise<void> {
+    const dir = this.absolutePath(analysisId);
+    await rm(dir, { recursive: true, force: true });
   }
 }
 

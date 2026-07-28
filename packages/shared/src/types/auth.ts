@@ -6,6 +6,7 @@ export interface User {
   email: string;
   organizationId: string;
   createdAt: string;
+  hasPassword: boolean;
 }
 
 export interface AuthSession {

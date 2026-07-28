@@ -4,6 +4,7 @@ import Link from "next/link";
 import { LogoFull } from "@/components/logo";
 import { PUBLIC_COPY } from "@/lib/i18n";
 import { useLocale } from "@/lib/locale-context";
+import { PRIVACY_EMAIL } from "@/lib/privacy";
 
 export function SiteFooter() {
   const { locale, href } = useLocale();
@@ -31,7 +32,7 @@ export function SiteFooter() {
         { href: "/termos", label: copy.footer.terms },
         { href: "/privacidade", label: copy.footer.privacy },
         {
-          href: "mailto:jadsonpavia@gmail.com",
+          href: `mailto:${PRIVACY_EMAIL}`,
           label: copy.footer.contact,
         },
       ],

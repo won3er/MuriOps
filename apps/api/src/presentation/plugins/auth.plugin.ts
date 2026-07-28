@@ -3,6 +3,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import fp from "fastify-plugin";
 import type { JwtPayload } from "@qa-ai/shared";
 import { env } from "../../config/env.js";
+import { prisma } from "../../infrastructure/database/prisma.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -29,8 +30,19 @@ export const authPlugin = fp(async (app) => {
     async (req: FastifyRequest, reply: FastifyReply) => {
       try {
         await req.jwtVerify();
+        const user = await prisma.user.findUnique({
+          where: { id: req.user.sub },
+          select: { organizationId: true, email: true },
+        });
+        if (
+          !user ||
+          user.organizationId !== req.user.organizationId ||
+          user.email !== req.user.email
+        ) {
+          throw new Error("Sessão revogada");
+        }
       } catch {
-        await reply.status(401).send({
+        return reply.status(401).send({
           statusCode: 401,
           error: "Unauthorized",
           message: "Token ausente ou inválido",

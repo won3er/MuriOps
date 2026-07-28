@@ -3,6 +3,7 @@
 import { LegalSection, LegalShell } from "@/components/legal-shell";
 import { useLocale } from "@/lib/locale-context";
 import { LEGAL_COPY } from "@/lib/legal-copy";
+import { PRIVACY_EMAIL } from "@/lib/privacy";
 
 export default function PrivacidadePage() {
   const { locale } = useLocale();
@@ -14,15 +15,15 @@ export default function PrivacidadePage() {
         <LegalSection key={section.title} title={section.title}>
           {section.paragraphs.map((paragraph) => (
             <p key={paragraph}>
-              {paragraph.includes("jadsonpavia@gmail.com")
-                ? paragraph.replace("jadsonpavia@gmail.com", "")
+              {paragraph.includes(PRIVACY_EMAIL)
+                ? paragraph.replace(PRIVACY_EMAIL, "")
                 : paragraph}
-              {paragraph.includes("jadsonpavia@gmail.com") && (
+              {paragraph.includes(PRIVACY_EMAIL) && (
                 <a
                   className="text-primary hover:underline"
-                  href="mailto:jadsonpavia@gmail.com"
+                  href={`mailto:${PRIVACY_EMAIL}`}
                 >
-                  jadsonpavia@gmail.com
+                  {PRIVACY_EMAIL}
                 </a>
               )}
             </p>

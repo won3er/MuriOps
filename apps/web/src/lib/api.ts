@@ -87,10 +87,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 /** URL absoluta para servir evidências (screenshots etc.). */
-export function evidenceUrl(relativeUrl: string): string {
-  return `${BASE}${relativeUrl}`;
-}
-
 export const api = {
   // ---- auth ----
   register: (body: RegisterRequest) =>
@@ -109,6 +105,42 @@ export const api = {
       body: JSON.stringify({ credential }),
     }),
   me: () => request<AuthSession>("/auth/me"),
+  downloadAccountData: async () => {
+    const token = getToken();
+    const res = await fetch(`${BASE}/account/export`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      let message = "Falha ao exportar os dados";
+      try {
+        const body = await res.json();
+        message = body.message ?? message;
+      } catch {
+        /* resposta sem JSON */
+      }
+      throw new ApiError(message, res.status);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `muriops-dados-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
+  deleteAccount: (body: {
+    confirmationEmail: string;
+    confirmationPhrase: string;
+    password?: string;
+    googleCredential?: string;
+  }) =>
+    request<void>("/account", {
+      method: "DELETE",
+      body: JSON.stringify(body),
+    }),
 
   // ---- projects ----
   listProjects: () => request<ProjectWithStats[]>("/projects"),
@@ -285,6 +317,20 @@ export const api = {
     request<AnalysisComparison>(`/analyses/${fromId}/compare/${toId}`),
   deleteAnalysis: (id: string) =>
     request<void>(`/analyses/${id}`, { method: "DELETE" }),
+  openEvidence: async (relativeUrl: string) => {
+    if (!relativeUrl.startsWith("/evidence/")) {
+      throw new ApiError("Endereço de evidência inválido", 400);
+    }
+    const token = getToken();
+    const res = await fetch(`${BASE}${relativeUrl}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      cache: "no-store",
+    });
+    if (!res.ok) throw new ApiError("Falha ao abrir a evidência", res.status);
+    const blobUrl = URL.createObjectURL(await res.blob());
+    window.open(blobUrl, "_blank", "noopener,noreferrer");
+    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  },
   /** Baixa o relatório em PDF (requer auth via header, por isso não é um <a href> direto). */
   downloadReportPdf: async (id: string, version: number) => {
     const token = getToken();

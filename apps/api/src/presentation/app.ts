@@ -1,16 +1,16 @@
-import { resolve } from "node:path";
 import fastifyCors from "@fastify/cors";
 import fastifyHelmet from "@fastify/helmet";
 import fastifyRateLimit from "@fastify/rate-limit";
-import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
 import { ZodError } from "zod";
 import { env } from "../config/env.js";
 import { authPlugin } from "./plugins/auth.plugin.js";
 import { analysisRoutes } from "./routes/analysis.routes.js";
 import { authRoutes } from "./routes/auth.routes.js";
+import { accountRoutes } from "./routes/account.routes.js";
 import { blueprintRoutes } from "./routes/blueprint.routes.js";
 import { dashboardRoutes } from "./routes/dashboard.routes.js";
+import { evidenceRoutes } from "./routes/evidence.routes.js";
 import { mcpBridgeRoutes } from "./routes/mcp.routes.js";
 import { orchestrationRoutes } from "./routes/orchestration.routes.js";
 import { projectRoutes } from "./routes/project.routes.js";
@@ -61,11 +61,6 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(authPlugin);
 
   // Serve evidências (screenshots, logs) sob /evidence/<analysisId>/<arquivo>.
-  await app.register(fastifyStatic, {
-    root: resolve(env.STORAGE_DIR),
-    prefix: "/evidence/",
-    decorateReply: false,
-  });
 
   // Tratamento centralizado de erros (validação Zod -> 400).
   app.setErrorHandler((error: FastifyError, _req, reply) => {
@@ -96,6 +91,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.get("/health", async () => ({ status: "ok" }));
 
   await app.register(authRoutes);
+  await app.register(accountRoutes);
+  await app.register(evidenceRoutes);
   await app.register(projectRoutes);
   await app.register(analysisRoutes);
   await app.register(blueprintRoutes);

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { SeverityBadge } from "@/components/severity-badge";
 import { Badge } from "@/components/ui/badge";
-import { evidenceUrl } from "@/lib/api";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -110,14 +110,13 @@ export function IssueCard({ issue }: { issue: Issue }) {
             </details>
           )}
           {screenshot && (
-            <a
-              href={evidenceUrl(screenshot.url)}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              type="button"
+              onClick={() => void api.openEvidence(screenshot.url)}
               className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
             >
               <ExternalLink className="h-3 w-3" /> Ver screenshot da página
-            </a>
+            </button>
           )}
         </CardContent>
       )}

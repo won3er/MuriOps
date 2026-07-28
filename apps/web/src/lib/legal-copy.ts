@@ -1,4 +1,5 @@
 import type { Locale } from "@/lib/i18n";
+import { PRIVACY_EMAIL } from "@/lib/privacy";
 
 export const LEGAL_COPY = {
   en: {
@@ -36,12 +37,13 @@ export const LEGAL_COPY = {
           title: "5. Availability and responsibility",
           paragraphs: [
             "The service is provided “as is” and may experience outages, changes or limitations. Keep backups, use test environments when possible and validate every change before publication. You remain responsible for decisions based on reports and for the effects of integrations you authorize.",
+            "You are also responsible for the lawfulness and accuracy of the content and personal data submitted, for obtaining required permissions, and for complying with the terms of each connected platform. Do not treat automated output as legal, security or professional advice.",
           ],
         },
         {
           title: "6. Contact",
           paragraphs: [
-            "Questions about these terms can be sent to jadsonpavia@gmail.com.",
+            `Questions about these terms can be sent to ${PRIVACY_EMAIL}.`,
           ],
         },
       ],
@@ -55,6 +57,7 @@ export const LEGAL_COPY = {
           title: "1. Account and organization data",
           paragraphs: [
             "We store information required for authentication and workspace operation, such as name, email, Google identifier when used and organization membership. Passwords are stored as derived values, not plain text.",
+            "The browser stores the authenticated session token locally and a strictly functional cookie remembers the selected interface language. MuriOps currently does not use advertising or behavioral analytics cookies.",
           ],
         },
         {
@@ -74,20 +77,27 @@ export const LEGAL_COPY = {
         {
           title: "4. Integration credentials",
           paragraphs: [
-            "AI keys, tokens and integration passwords are encrypted before database storage. They are decrypted only when needed for the requested operation. Even so, use minimum-scope credentials and revoke them at the source when disconnecting a service.",
+            "AI keys and third-party integration credentials are encrypted before database storage and decrypted only for the requested operation. MuriOps-generated bridge tokens are access credentials stored for exact lookup; protect and regenerate them if exposed. Always use minimum-scope credentials and revoke third-party access at the source when disconnecting a service.",
           ],
         },
         {
           title: "5. Sharing and retention",
           paragraphs: [
             "We do not sell personal data. Data may be processed by essential hosting, database, authentication and user-selected provider services only as needed to deliver the product.",
-            "Projects, analyses and blueprints can be deleted in their respective areas. For account deletion or data requests, use the contact below.",
+            "Projects, analyses and blueprints can be deleted in their respective areas. An authenticated user can download an account data copy or permanently delete the account under Settings. Some records may be retained only when required by law, to exercise legal rights or to prevent fraud and abuse.",
           ],
         },
         {
-          title: "6. Contact",
+          title: "6. Your data rights",
           paragraphs: [
-            "Privacy requests can be sent to jadsonpavia@gmail.com.",
+            "Subject to applicable law, you may request confirmation of processing, access, correction, portability, anonymization, blocking or deletion of eligible data, information about sharing, and review of consent choices.",
+            "Account export deliberately excludes passwords, credential material, AI keys, bridge tokens and webhook secrets. These secrets are never included in download links or query parameters.",
+          ],
+        },
+        {
+          title: "7. Contact",
+          paragraphs: [
+            `Privacy requests can be sent to ${PRIVACY_EMAIL}.`,
           ],
         },
       ],
@@ -129,12 +139,13 @@ export const LEGAL_COPY = {
           title: "5. Disponibilidade e responsabilidade",
           paragraphs: [
             "O serviço é fornecido “como está” e pode passar por indisponibilidades, alterações ou limitações. Faça backup, use ambientes de teste quando possível e valide toda mudança antes de publicá-la. Você permanece responsável pelas decisões tomadas a partir dos relatórios e pelos efeitos das integrações que autorizar.",
+            "Você também responde pela licitude e exatidão do conteúdo e dos dados pessoais enviados, pela obtenção das autorizações necessárias e pelo cumprimento dos termos de cada plataforma conectada. Não trate resultados automatizados como aconselhamento jurídico, de segurança ou profissional.",
           ],
         },
         {
           title: "6. Contato",
           paragraphs: [
-            "Dúvidas sobre estes termos podem ser enviadas para jadsonpavia@gmail.com.",
+            `Dúvidas sobre estes termos podem ser enviadas para ${PRIVACY_EMAIL}.`,
           ],
         },
       ],
@@ -148,6 +159,7 @@ export const LEGAL_COPY = {
           title: "1. Dados de conta e organização",
           paragraphs: [
             "Armazenamos informações necessárias para autenticação e operação do workspace, como nome, e-mail, identificador do Google quando usado e vínculo com a organização. Senhas são armazenadas de forma derivada, não em texto puro.",
+            "O navegador armazena localmente o token da sessão autenticada e um cookie estritamente funcional memoriza o idioma escolhido para a interface. O MuriOps atualmente não usa cookies de publicidade nem de análise comportamental.",
           ],
         },
         {
@@ -167,20 +179,27 @@ export const LEGAL_COPY = {
         {
           title: "4. Credenciais de integrações",
           paragraphs: [
-            "Chaves de IA, tokens e senhas de integração são criptografados antes de serem armazenados no banco. Eles são descriptografados somente quando necessários para a operação solicitada. Ainda assim, use credenciais de escopo mínimo e revogue-as na origem ao desconectar um serviço.",
+            "Chaves de IA e credenciais de integrações de terceiros são criptografadas antes do armazenamento e descriptografadas somente para a operação solicitada. Tokens de ponte gerados pelo MuriOps são credenciais de acesso armazenadas para busca exata; proteja-os e regenere-os se houver exposição. Use sempre o menor escopo necessário e revogue acessos de terceiros na origem ao desconectar um serviço.",
           ],
         },
         {
           title: "5. Compartilhamento e retenção",
           paragraphs: [
             "Não vendemos dados pessoais. Dados podem ser processados por serviços essenciais de hospedagem, banco, autenticação e provedores escolhidos por você, na medida necessária para entregar o produto.",
-            "Projetos, análises e blueprints podem ser apagados nas áreas correspondentes. Para exclusão da conta ou solicitações relativas aos seus dados, use o contato abaixo.",
+            "Projetos, análises e blueprints podem ser apagados nas áreas correspondentes. A pessoa autenticada pode baixar uma cópia dos dados da conta ou excluir a conta permanentemente em Configurações. Alguns registros poderão ser conservados somente quando a lei exigir, para o exercício regular de direitos ou para prevenção a fraude e abuso.",
           ],
         },
         {
-          title: "6. Contato",
+          title: "6. Seus direitos sobre os dados",
           paragraphs: [
-            "Solicitações de privacidade podem ser enviadas para jadsonpavia@gmail.com.",
+            "Nos termos da legislação aplicável, você pode solicitar confirmação do tratamento, acesso, correção, portabilidade, anonimização, bloqueio ou eliminação dos dados cabíveis, informações sobre compartilhamento e revisão das escolhas de consentimento.",
+            "A exportação exclui deliberadamente senhas, credenciais, chaves de IA, tokens de ponte e segredos de webhook. Esses segredos nunca são incluídos em links de download ou parâmetros de URL.",
+          ],
+        },
+        {
+          title: "7. Contato",
+          paragraphs: [
+            `Solicitações de privacidade podem ser enviadas para ${PRIVACY_EMAIL}.`,
           ],
         },
       ],
@@ -222,12 +241,13 @@ export const LEGAL_COPY = {
           title: "5. Disponibilidad y responsabilidad",
           paragraphs: [
             "El servicio se proporciona “tal cual” y puede experimentar indisponibilidad, cambios o limitaciones. Mantén copias de seguridad, usa entornos de prueba cuando sea posible y valida cada cambio antes de publicarlo. Sigues siendo responsable de las decisiones tomadas a partir de los informes y de los efectos de las integraciones autorizadas.",
+            "También eres responsable de la legalidad y exactitud del contenido y de los datos personales enviados, de obtener las autorizaciones necesarias y de cumplir los términos de cada plataforma conectada. No consideres los resultados automatizados como asesoramiento legal, de seguridad o profesional.",
           ],
         },
         {
           title: "6. Contacto",
           paragraphs: [
-            "Las preguntas sobre estos términos pueden enviarse a jadsonpavia@gmail.com.",
+            `Las preguntas sobre estos términos pueden enviarse a ${PRIVACY_EMAIL}.`,
           ],
         },
       ],
@@ -241,6 +261,7 @@ export const LEGAL_COPY = {
           title: "1. Datos de cuenta y organización",
           paragraphs: [
             "Almacenamos información necesaria para la autenticación y operación del workspace, como nombre, email, identificador de Google cuando se usa y vínculo con la organización. Las contraseñas se almacenan como valores derivados, no en texto plano.",
+            "El navegador almacena localmente el token de la sesión autenticada y una cookie estrictamente funcional recuerda el idioma elegido para la interfaz. MuriOps actualmente no utiliza cookies publicitarias ni de analítica del comportamiento.",
           ],
         },
         {
@@ -260,20 +281,27 @@ export const LEGAL_COPY = {
         {
           title: "4. Credenciales de integraciones",
           paragraphs: [
-            "Las claves de IA, tokens y contraseñas de integración se cifran antes de almacenarse en la base de datos. Se descifran solo cuando son necesarias para la operación solicitada. Aun así, usa credenciales de alcance mínimo y revócalas en el origen al desconectar un servicio.",
+            "Las claves de IA y credenciales de integraciones de terceros se cifran antes del almacenamiento y se descifran solo para la operación solicitada. Los tokens de puente generados por MuriOps son credenciales de acceso almacenadas para búsqueda exacta; protégelos y regenéralos si quedan expuestos. Usa siempre el menor alcance necesario y revoca accesos de terceros en el origen al desconectar un servicio.",
           ],
         },
         {
           title: "5. Compartición y retención",
           paragraphs: [
             "No vendemos datos personales. Los datos pueden ser procesados por servicios esenciales de alojamiento, base de datos, autenticación y proveedores elegidos por ti, solo en la medida necesaria para entregar el producto.",
-            "Los proyectos, análisis y blueprints pueden eliminarse en sus áreas correspondientes. Para eliminar la cuenta o realizar solicitudes sobre tus datos, utiliza el contacto indicado abajo.",
+            "Los proyectos, análisis y blueprints pueden eliminarse en sus áreas correspondientes. La persona autenticada puede descargar una copia de los datos de la cuenta o eliminarla permanentemente en Configuración. Algunos registros podrán conservarse solo cuando la ley lo exija, para ejercer derechos legales o prevenir fraude y abuso.",
           ],
         },
         {
-          title: "6. Contacto",
+          title: "6. Tus derechos sobre los datos",
           paragraphs: [
-            "Las solicitudes de privacidad pueden enviarse a jadsonpavia@gmail.com.",
+            "Sujeto a la legislación aplicable, puedes solicitar confirmación del tratamiento, acceso, corrección, portabilidad, anonimización, bloqueo o eliminación de los datos correspondientes, información sobre transferencias y revisión de las opciones de consentimiento.",
+            "La exportación excluye deliberadamente contraseñas, credenciales, claves de IA, tokens de puente y secretos de webhook. Estos secretos nunca se incluyen en enlaces de descarga ni parámetros de URL.",
+          ],
+        },
+        {
+          title: "7. Contacto",
+          paragraphs: [
+            `Las solicitudes de privacidad pueden enviarse a ${PRIVACY_EMAIL}.`,
           ],
         },
       ],
