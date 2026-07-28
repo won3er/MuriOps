@@ -177,9 +177,21 @@ anterior incompleta:
    universal, `remediation.service.ts` (parcial), `secret-box.ts`,
    `webhooks.routes.ts`, `ftp-adapter.ts`, `github-adapter.ts`, `index.ts`
    dos adapters, `manual-bridge.adapter.ts`, `adapter-connection.service.ts`,
-   `settings.routes.ts`. **Ainda não revisados:** analysis-runner/crawler,
-   blueprint.service.ts, upgrade.service.ts, project.service.ts, rotas de
-   dashboard. Retomar a partir daqui quando continuar a Fase 3.
+   `settings.routes.ts`, `upgrade.service.ts`, `project.service.ts`.
+   **Achado, mas NÃO corrigido (precisa de decisão/teste, não é fix
+   trivial):** `project.service.ts` → `normalizeUrl()` não valida a URL do
+   projeto contra IPs internos/privados (`localhost`, `127.0.0.1`,
+   `169.254.169.254` metadata de nuvem, `10.x`/`192.168.x`) antes do crawler
+   (Playwright) acessá-la de verdade no servidor — SSRF clássico: alguém
+   pode cadastrar um projeto apontando pra rede interna do Render e ver o
+   conteúdo retornado no relatório de análise. Não tentei corrigir essa
+   madrugada porque um filtro correto precisa resolver DNS, checar faixas de
+   IP e cobrir redirects durante o crawl (não só a URL inicial) — um fix
+   apressado sem poder testar o crawler de ponta a ponta arriscava quebrar
+   análises legítimas. Fica como próximo item prioritário da Fase 3.
+   **Ainda não revisados:** analysis-runner/crawler (o resto — fora do ponto
+   de SSRF já achado), blueprint.service.ts, rotas de dashboard. Retomar a
+   partir daqui quando continuar a Fase 3.
 7. **[Removido em 28/07/2026] Adapter Nuvemshop** — a loja de teste real
    (`qateste.lojavirtualnuvem.com.br`) estourava consistentemente os 512MB do
    Render free tier no crawl, mesmo após 3 rodadas de otimização de memória
