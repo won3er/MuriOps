@@ -17,6 +17,14 @@ export interface CrawlOptions {
   /** Timeout de navegação por página (ms). */
   navTimeoutMs?: number;
   onPage?: (url: string, index: number, total: number) => void;
+  /**
+   * Chamado assim que uma página termina de ser coletada, com a aba do
+   * Chromium ainda aberta — o chamador roda os analyzers por-página aqui.
+   * Logo depois, a aba é fechada (exceto a primeira, mantida até o fim para
+   * os analyzers de nível-site). Mantém o pico de memória em ~2 abas
+   * simultâneas em vez de uma por página descoberta.
+   */
+  onPageReady?: (ctx: PageContext) => Promise<void>;
 }
 
 export interface CrawlResult {
@@ -45,8 +53,10 @@ try {
  * Descobre páginas por BFS (mesma origem), navegando como um usuário real e
  * coletando console, network, métricas de performance e screenshot por página.
  *
- * As páginas retornadas permanecem abertas para que os analyzers inspecionem o
- * DOM ao vivo; o chamador (engine) deve fechar o browser ao terminar.
+ * Cada página é fechada assim que o callback `onPageReady` termina (exceto a
+ * primeira, mantida aberta para os analyzers de nível-site) — evita acumular
+ * uma aba de Chromium por página descoberta. O chamador (engine) ainda deve
+ * fechar o `browser` ao terminar, no `finally`.
  */
 export async function crawl(options: CrawlOptions): Promise<CrawlResult> {
   const { siteUrl, maxDepth, maxPages } = options;
@@ -152,8 +162,11 @@ export async function crawl(options: CrawlOptions): Promise<CrawlResult> {
       item.url,
       options.storagePrefix,
     );
+    const hasNav = await page
+      .evaluate(() => !!document.querySelector("nav, [role=navigation]"))
+      .catch(() => false);
 
-    results.push({
+    const ctx: PageContext = {
       url: item.url,
       title,
       depth: item.depth,
@@ -165,9 +178,11 @@ export async function crawl(options: CrawlOptions): Promise<CrawlResult> {
       page,
       mainResponse: null,
       screenshotPath,
-    });
+      hasNav,
+    };
 
-    // Descobre links internos para continuar o BFS.
+    // Descobre links internos para continuar o BFS — precisa da página ainda
+    // aberta, então roda antes do callback/fechamento abaixo.
     if (item.depth < maxDepth) {
       const links = await extractLinks(page, origin);
       for (const link of links) {
@@ -175,6 +190,20 @@ export async function crawl(options: CrawlOptions): Promise<CrawlResult> {
           queue.push({ url: link, depth: item.depth + 1, linkedFrom: item.url });
         }
       }
+    }
+
+    results.push(ctx);
+
+    // Roda os analyzers por-página (chamador) com a aba ainda aberta.
+    await options.onPageReady?.(ctx).catch(() => {});
+
+    // Fecha a aba assim que possível — exceto a primeira página, mantida
+    // aberta até o fim para os analyzers de nível-site (SiteSeo,
+    // DeepSecurity) que precisam de um Page vivo. Isso é o que evita
+    // acumular uma aba de Chromium por página descoberta durante o crawl,
+    // que era a causa do estouro de memória em sites pesados.
+    if (results.length > 1) {
+      await page.close().catch(() => {});
     }
   }
 

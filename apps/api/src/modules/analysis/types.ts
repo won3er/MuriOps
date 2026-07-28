@@ -42,11 +42,20 @@ export interface PageContext {
   console: ConsoleEntry[];
   network: NetworkEntry[];
   perf: PerfMetrics;
-  /** Referência viva à página Playwright (válida apenas durante a análise). */
+  /**
+   * Referência à página Playwright. Só é garantida como "viva" (não fechada)
+   * para a página em processamento no momento e para a primeira página do
+   * crawl (mantida aberta até o fim para os analyzers de nível-site que
+   * precisam dela — SiteSeo, DeepSecurity). Demais páginas são fechadas
+   * logo após seus analyzers por-página rodarem, pra não acumular Chromium
+   * aberto em memória durante análises de sites com muitas páginas.
+   */
   page: Page;
   mainResponse: Response | null;
   /** Nome do arquivo de screenshot salvo (relativo ao storage). */
   screenshotPath: string | null;
+  /** Se a página tem <nav>/role="navigation" — capturado no crawl pra o UxAnalyzer não precisar da página ainda aberta depois. */
+  hasNav: boolean;
 }
 
 /**

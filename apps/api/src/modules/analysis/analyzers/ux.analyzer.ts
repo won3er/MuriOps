@@ -31,15 +31,10 @@ export class UxAnalyzer implements SiteAnalyzer {
       );
     }
 
-    // Navegação consistente: procura <nav> na maioria das páginas.
-    const navResults = await Promise.all(
-      pages.map(async (p) => ({
-        url: p.url,
-        hasNav: await p.page
-          .evaluate(() => !!document.querySelector("nav, [role=navigation]"))
-          .catch(() => false),
-      })),
-    );
+    // Navegação consistente: procura <nav> na maioria das páginas. hasNav é
+    // capturado no crawl (não depende da página ainda estar aberta aqui —
+    // a maioria já foi fechada assim que seus analyzers por-página rodaram).
+    const navResults = pages.map((p) => ({ url: p.url, hasNav: p.hasNav }));
     const withoutNav = navResults.filter((r) => !r.hasNav);
     if (pages.length > 1 && withoutNav.length / pages.length > 0.4) {
       const examples = withoutNav.slice(0, 5).map((r) => r.url);

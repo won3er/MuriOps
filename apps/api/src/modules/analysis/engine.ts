@@ -78,8 +78,29 @@ export async function runEngine(input: EngineInput): Promise<EngineResult> {
     onStatus,
   } = input;
 
+  const evidence: EngineEvidence[] = [];
+  const pageAnalyzers = selectPageAnalyzers(categories);
+  const siteAnalyzers = selectSiteAnalyzers(categories);
+
+  // Mapa fingerprint -> issue agregada (deduplicação entre páginas).
+  const byFingerprint = new Map<string, EngineIssue>();
+  const merge = (detected: DetectedIssue) => {
+    if (byFingerprint.has(detected.fingerprint)) return;
+    byFingerprint.set(detected.fingerprint, {
+      ...detected,
+      evidencePaths: [],
+      status: IssueStatus.OPEN,
+    });
+  };
+
   await onStatus?.(AnalysisStatus.CRAWLING);
 
+  // Analyzers por-página rodam aqui, ainda durante o crawl (via callback),
+  // com a aba daquela página ainda aberta — o crawler fecha cada uma logo
+  // em seguida (exceto a primeira). Isso mantém o pico de memória do
+  // Chromium em ~2 abas simultâneas em vez de uma por página descoberta,
+  // que era a causa do estouro de memória (>512MB) no Render free tier em
+  // sites com bastante JS/trackers (ex.: lojas Nuvemshop/Shopify).
   const crawlResult = await crawl({
     siteUrl,
     maxDepth,
@@ -88,38 +109,7 @@ export async function runEngine(input: EngineInput): Promise<EngineResult> {
     onPage: (url, i, total) => {
       void onStatus?.(AnalysisStatus.CRAWLING, { url, i, total });
     },
-  });
-
-  const { browser, pages } = crawlResult;
-  const evidence: EngineEvidence[] = [];
-
-  if (pages.length === 0) {
-    await browser.close().catch(() => {});
-    throw new Error(
-      "Não foi possível abrir nenhuma página do site — verifique se a URL está acessível e tente novamente.",
-    );
-  }
-
-  try {
-    await onStatus?.(AnalysisStatus.ANALYZING, { pages: pages.length });
-
-    const pageAnalyzers = selectPageAnalyzers(categories);
-    const siteAnalyzers = selectSiteAnalyzers(categories);
-
-    // Mapa fingerprint -> issue agregada (deduplicação entre páginas).
-    const byFingerprint = new Map<string, EngineIssue>();
-    const merge = (detected: DetectedIssue) => {
-      if (byFingerprint.has(detected.fingerprint)) return;
-      byFingerprint.set(detected.fingerprint, {
-        ...detected,
-        evidencePaths: [],
-        status: IssueStatus.OPEN,
-      });
-    };
-
-    // Analyzers por página (DOM ao vivo).
-    for (const ctx of pages) {
-      // Evidência: screenshot da página.
+    onPageReady: async (ctx) => {
       if (ctx.screenshotPath) {
         evidence.push({
           type: EvidenceType.SCREENSHOT,
@@ -141,14 +131,27 @@ export async function runEngine(input: EngineInput): Promise<EngineResult> {
         }
       }
 
-      // Evidência: console e network por página.
       await saveLogEvidence(analysisId, ctx, evidence);
-    }
+    },
+  });
 
-    // Analyzers de nível site. Diferente dos por-página, esses não visitam
-    // uma página específica dentro do loop acima — sem isso, o problema
-    // nunca ganhava evidência (a análise de Segurança Avançada é 100%
-    // nível-site, então nenhum achado dela tinha screenshot).
+  const { browser, pages } = crawlResult;
+
+  if (pages.length === 0) {
+    await browser.close().catch(() => {});
+    throw new Error(
+      "Não foi possível abrir nenhuma página do site — verifique se a URL está acessível e tente novamente.",
+    );
+  }
+
+  try {
+    await onStatus?.(AnalysisStatus.ANALYZING, { pages: pages.length });
+
+    // Analyzers de nível site — rodam depois do crawl. Só a primeira página
+    // (pages[0]) tem o Page do Playwright ainda vivo (SiteSeo/DeepSecurity
+    // usam isso); os demais analyzers de site (UX, Security) trabalham só
+    // com dados já capturados no crawl (hasNav, responseHeaders etc.), sem
+    // precisar de nenhuma página aberta.
     for (const analyzer of siteAnalyzers) {
       const detected = await analyzer.analyze(pages, siteUrl).catch(() => []);
       for (const d of detected) {
