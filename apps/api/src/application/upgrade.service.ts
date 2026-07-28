@@ -19,6 +19,11 @@ import type { UpgradeDesignInput } from "../infrastructure/ai/upgrade-prompt.js"
 import { decryptSecret } from "../infrastructure/crypto/secret-box.js";
 import { prisma } from "../infrastructure/database/prisma.js";
 import {
+  MAX_MANIFESTS,
+  scanGithubManifests,
+  type ScanResult,
+} from "../modules/upgrade/github-manifest-scanner.js";
+import {
   detectManifest,
   ecosystemLabel,
   ecosystemManifestFile,
@@ -176,9 +181,219 @@ export const upgradeService = {
     });
     return toDto(updated);
   },
+
+  /**
+   * Cria um plano varrendo o repositório GitHub do projeto em vez de exigir
+   * que o usuário cole o manifesto. Cobre projeto poliglota: acha todos os
+   * manifestos (package.json, requirements.txt, pom.xml, .csproj...) e gera
+   * um plano consolidado, com cada item sabendo de qual arquivo veio.
+   *
+   * Usa a conexão GITHUB já cadastrada do projeto (mesma credencial do
+   * adapter de aplicação) — não pede token de novo.
+   */
+  async createFromGithub(
+    organizationId: string,
+    userId: string,
+    projectId: string,
+    provider?: UpgradeProviderName,
+  ): Promise<UpgradePlan> {
+    // Escopo: projeto tem que ser da organização de quem pediu, e a conexão
+    // tem que ser desse mesmo projeto — mesma checagem que a Orquestração faz
+    // antes de usar credencial de adapter.
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, organizationId },
+      select: { id: true, name: true },
+    });
+    if (!project) throw new NotFoundError("Projeto não encontrado");
+
+    const connection = await prisma.adapterConnection.findFirst({
+      where: { projectId, organizationId, kind: "GITHUB", isActive: true },
+    });
+    if (!connection?.credentialEncrypted) {
+      throw new NotFoundError(
+        "Este projeto não tem uma conexão GitHub ativa. Configure-a em Aplicação → Conexões e integrações antes de investigar pelo repositório.",
+      );
+    }
+    const config = connection.config as { owner?: string; repo?: string } | null;
+    if (!config?.owner || !config.repo) {
+      throw new NotFoundError("Conexão GitHub incompleta (owner ou repo ausente).");
+    }
+
+    const scan = await scanGithubManifests(
+      decryptSecret(connection.credentialEncrypted),
+      config.owner,
+      config.repo,
+    );
+
+    if (scan.manifests.length === 0) {
+      throw new InvalidPackageJsonError(
+        `Nenhum manifesto de dependências encontrado em ${scan.owner}/${scan.repo}@${scan.branch}. ` +
+          `São procurados package.json, requirements.txt, pyproject.toml, Gemfile, pom.xml, build.gradle, go.mod, .csproj, composer.json e Cargo.toml.`,
+      );
+    }
+
+    const providerName = await resolveProviderName(organizationId, provider);
+    const ecossistemas = [...new Set(scan.manifests.map((m) => m.ecosystem))];
+    const title = `Atualização — ${project.name} (${scan.owner}/${scan.repo}, ${scan.manifests.length} manifesto(s))`;
+
+    const created = await prisma.upgradePlan.create({
+      data: {
+        organizationId,
+        projectId,
+        createdById: userId,
+        title,
+        // Guarda o índice do que foi varrido (auditoria) — o conteúdo de cada
+        // manifesto vai pra IA, mas gravar tudo aqui inflaria a linha à toa.
+        packageJsonRaw: scan.manifests
+          .map((m) => `# ${m.path} (${m.ecosystem})`)
+          .join("\n"),
+        // Num repo poliglota não existe UM ecossistema; grava o do manifesto
+        // principal (o mais raso) e cada item carrega o seu.
+        ecosystem: scan.manifests[0]!.ecosystem,
+        provider: providerName,
+        status: "PENDING",
+        apiToken: randomBytes(24).toString("base64url"),
+      },
+    });
+
+    void generateFromScan(created.id, organizationId, scan, ecossistemas);
+    return toDto(created);
+  },
 };
 
 // ---------- geração em background ----------
+
+/**
+ * Gera o plano de um repositório inteiro: uma chamada de IA POR MANIFESTO,
+ * mescladas num plano só.
+ *
+ * Por que uma chamada por manifesto em vez de uma só com tudo junto: cada
+ * ecossistema tem prompt e comandos próprios (e o legado tem a trava
+ * anti-migração de tecnologia). Jogar dez manifestos de linguagens
+ * diferentes num prompt único diluiria essas regras e produziria passo a
+ * passo genérico — exatamente o que esta funcionalidade não pode entregar.
+ * O custo é limitado pelo teto de manifestos do scanner.
+ */
+async function generateFromScan(
+  id: string,
+  organizationId: string,
+  scan: ScanResult,
+  ecossistemas: UpgradeEcosystem[],
+): Promise<void> {
+  try {
+    const plan = await prisma.upgradePlan.findUnique({ where: { id } });
+    if (!plan) return;
+
+    const providerName = (
+      AI_PROVIDER_NAMES.includes(plan.provider as never) ? plan.provider : "claude"
+    ) as AiProviderName;
+    const override = await loadAiOverride(organizationId);
+    const ai = createAiProviderFor(providerName, override);
+
+    const items: UpgradeResult["items"] = [];
+    const resumos: string[] = [];
+    const scopeNotes: string[] = [];
+    const falhas: string[] = [];
+    let piorRisco: UpgradeResult["overallRisk"] = "low";
+
+    for (const manifest of scan.manifests) {
+      try {
+        const parcial = await ai.buildUpgradePlan({
+          title: `${plan.title} — ${manifest.path}`,
+          manifestRaw: manifest.content,
+          ecosystem: manifest.ecosystem,
+          ecosystemLabel: ecosystemLabel(manifest.ecosystem),
+          // filePath dos itens aponta pro caminho REAL no repo, não pro nome
+          // genérico do manifesto — é o que torna o plano aplicável direto.
+          manifestFile: manifest.path,
+          detectionConfidence: "high",
+        });
+
+        for (const item of parcial.items) {
+          items.push({
+            ...item,
+            // Reindexa: cada chamada devolve item-1, item-2... e sem isso os
+            // ids colidiriam entre manifestos, quebrando o marcar-como-feito.
+            id: `item-${items.length + 1}`,
+            filePath: item.filePath ?? manifest.path,
+            ecosystem: manifest.ecosystem,
+          });
+        }
+        if (parcial.summary.trim()) {
+          resumos.push(`**${manifest.path}** (${ecosystemLabel(manifest.ecosystem)}): ${parcial.summary}`);
+        }
+        for (const note of parcial.scopeNotes ?? []) {
+          scopeNotes.push(`${manifest.path}: ${note}`);
+        }
+        piorRisco = maiorRisco(piorRisco, parcial.overallRisk);
+      } catch (err) {
+        // Um manifesto que falha não pode derrubar o plano inteiro — registra
+        // e segue, igual à política dos analyzers da Análise.
+        const motivo = err instanceof Error ? err.message : String(err);
+        falhas.push(`${manifest.path}: ${motivo}`);
+        console.error(`⚠️  Atualização ${id}: falha em ${manifest.path}:`, motivo);
+      }
+    }
+
+    if (scan.treeTruncated) {
+      scopeNotes.push(
+        "O repositório é grande e a listagem de arquivos veio truncada pela API do GitHub — pode haver manifestos não descobertos.",
+      );
+    }
+    if (scan.skipped.length > 0) {
+      scopeNotes.push(
+        `${scan.skipped.length} manifesto(s) além do limite de ${MAX_MANIFESTS} não foram analisados: ${scan.skipped.join(", ")}.`,
+      );
+    }
+    for (const falha of falhas) {
+      scopeNotes.push(`Falha ao analisar ${falha}`);
+    }
+
+    const result: UpgradeResult = {
+      summary:
+        `Plano consolidado de ${scan.owner}/${scan.repo}@${scan.branch}: ` +
+        `${scan.manifests.length} manifesto(s) analisado(s) ` +
+        `(${ecossistemas.map(ecosystemLabel).join(", ")}), ${items.length} dependência(s).\n\n` +
+        resumos.join("\n\n"),
+      overallRisk: piorRisco,
+      recommendedOrder: items.map((i) => i.id),
+      items,
+      scopeNotes,
+    };
+
+    await prisma.upgradePlan.update({
+      where: { id },
+      data: {
+        status: "READY",
+        provider: ai.name,
+        result: result as unknown as Prisma.InputJsonValue,
+      },
+    });
+    console.log(`✅ Atualização ${id} gerada de ${scan.owner}/${scan.repo} (${ai.name})`);
+  } catch (err) {
+    await prisma.upgradePlan
+      .update({
+        where: { id },
+        data: {
+          status: "FAILED",
+          error: err instanceof Error ? err.message : String(err),
+        },
+      })
+      .catch(() => {});
+    console.error(
+      `❌ Atualização ${id} (GitHub) falhou:`,
+      err instanceof Error ? err.message : err,
+    );
+  }
+}
+
+const ORDEM_RISCO: UpgradeResult["overallRisk"][] = ["low", "medium", "high", "critical"];
+function maiorRisco(
+  a: UpgradeResult["overallRisk"],
+  b: UpgradeResult["overallRisk"],
+): UpgradeResult["overallRisk"] {
+  return ORDEM_RISCO.indexOf(b) > ORDEM_RISCO.indexOf(a) ? b : a;
+}
 
 async function generate(
   id: string,

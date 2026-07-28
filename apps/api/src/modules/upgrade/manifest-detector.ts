@@ -198,7 +198,9 @@ const LEGACY_HINTS = [
   "cobol",
   "vb6",
   "visual basic 6",
-  "vbproj",
+  // .vbp é o projeto do VB6 (legado). NÃO confundir com .vbproj, que é
+  // VB.NET moderno e resolve pra NuGet — por isso "vbproj" não entra aqui.
+  ".vbp",
   "delphi",
   "powerbuilder",
   "pl/sql",

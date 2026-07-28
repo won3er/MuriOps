@@ -4,6 +4,7 @@ import { NotFoundError } from "../../application/analysis.service.js";
 import { InvalidPackageJsonError, upgradeService } from "../../application/upgrade.service.js";
 import { env } from "../../config/env.js";
 import { buildUpgradeBridgeMarkdown } from "../../infrastructure/bridge/upgrade-bridge.js";
+import { GithubScanError } from "../../modules/upgrade/github-manifest-scanner.js";
 import { generateUpgradeReportPdf } from "../../infrastructure/pdf/upgrade-report.js";
 
 const providerSchema = z.enum(["claude", "openai", "gemini"]);
@@ -40,6 +41,10 @@ const createSchema = z
     path: ["manifest"],
   });
 
+const fromGithubSchema = z.object({
+  provider: providerSchema.optional(),
+});
+
 const itemStatusSchema = z.object({
   status: z.enum(["pending", "done"]),
 });
@@ -75,6 +80,39 @@ export async function upgradeRoutes(app: FastifyInstance): Promise<void> {
         return reply
           .status(404)
           .send({ statusCode: 404, error: "NotFound", message: err.message });
+      throw err;
+    }
+  });
+
+  /**
+   * Investiga as atualizações necessárias direto do repositório GitHub do
+   * projeto — varre todos os manifestos (monorepo poliglota incluso) usando a
+   * conexão GitHub já cadastrada, sem o usuário colar arquivo nenhum.
+   */
+  app.post("/projects/:id/upgrade-plans/from-github", async (req, reply) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const body = fromGithubSchema.parse(req.body ?? {});
+    try {
+      const plan = await upgradeService.createFromGithub(
+        req.user.organizationId,
+        req.user.sub,
+        id,
+        body.provider,
+      );
+      return reply.status(202).send(plan);
+    } catch (err) {
+      if (err instanceof InvalidPackageJsonError)
+        return reply
+          .status(400)
+          .send({ statusCode: 400, error: "ValidationError", message: err.message });
+      if (err instanceof NotFoundError)
+        return reply
+          .status(404)
+          .send({ statusCode: 404, error: "NotFound", message: err.message });
+      if (err instanceof GithubScanError)
+        return reply
+          .status(502)
+          .send({ statusCode: 502, error: "BadGateway", message: err.message });
       throw err;
     }
   });
