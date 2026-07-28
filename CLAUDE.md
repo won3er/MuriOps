@@ -200,9 +200,35 @@ anterior incompleta:
    documentado no comentário do arquivo, não é bloqueante pra usar a
    correção atual (cobre o caso comum: registrar/pedir análise de uma URL
    interna direto).
-   **Ainda não revisados:** analysis-runner/crawler (o resto — fora do ponto
-   de SSRF já corrigido), blueprint.service.ts, rotas de dashboard. Retomar a
-   partir daqui quando continuar a Fase 3.
+   **Rodada 2 (29/07/2026, commit `32c32bc`) — 2 falhas de autorização
+   cross-tenant, mesma classe (id vindo cru do request, gravado sem checar
+   dono):**
+   - **`orchestration.service.ts` (a mais grave de toda a revisão):**
+     `create()` aceitava qualquer `adapterConnectionId` e
+     `applyViaAdapter()` buscava a conexão com `findUnique({where:{id}})`,
+     **sem filtro de organização/projeto**. Dava pra criar uma execução no
+     próprio projeto passando o id de uma conexão de OUTRA organização — o
+     orquestrador decriptava as credenciais dela (token do GitHub, senha de
+     aplicativo do WordPress, access token da Shopify, senha do FTP) e
+     chamava `apply()`, escrevendo de verdade no sistema de produção da
+     vítima. Corrigido em duas camadas: validação na entrada (`create()` só
+     aceita conexão do mesmo projeto+organização) e filtro por
+     `organizationId`/`projectId` no próprio `applyViaAdapter()` — este
+     segundo também fecha qualquer id cruzado já gravado no banco antes da
+     correção.
+   - **`blueprint.service.ts`:** `create()` gravava `input.projectId` sem
+     validar dono; a referência cruzada vazava adiante porque
+     `remediation.service.ts` → `loadSource()` copia `blueprint.projectId`
+     direto pro `RemediationPlan.projectId`. Corrigido com a mesma validação
+     que `upgrade.service.ts.create()` já fazia.
+   Revisados sem bug na rodada 2: `dashboard.routes.ts`,
+   `orchestration.routes.ts` (camada de rota estava correta — o furo era no
+   service), `crawler.ts` (o BFS já restringe descoberta de links a
+   `u.origin === origin`, então o crawl não passeia pra host interno por
+   link de página — o gap de SSRF por redirect é mais estreito do que a
+   nota anterior sugeria: sobra só um redirect na navegação inicial).
+   **Ainda não revisados:** `engine.ts` e os analyzers, resto de
+   `analysis-runner.ts`. Retomar a partir daqui quando continuar a Fase 3.
 7. **[Removido em 28/07/2026] Adapter Nuvemshop** — a loja de teste real
    (`qateste.lojavirtualnuvem.com.br`) estourava consistentemente os 512MB do
    Render free tier no crawl, mesmo após 3 rodadas de otimização de memória
