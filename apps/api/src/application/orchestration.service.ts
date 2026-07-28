@@ -1,4 +1,5 @@
 import type {
+  AnalysisCategory,
   CreateOrchestrationRunRequest,
   OrchestrationEvent,
   OrchestrationRun,
@@ -11,7 +12,7 @@ import { createAdapterFor } from "../infrastructure/adapters/index.js";
 import { prisma } from "../infrastructure/database/prisma.js";
 import { enqueueOrchestrationRun } from "../infrastructure/queue/orchestration-runner.js";
 import { evaluateQualityGates } from "../modules/analysis/quality-gates.js";
-import { NotFoundError } from "./analysis.service.js";
+import { analysisService, NotFoundError } from "./analysis.service.js";
 import { remediationService } from "./remediation.service.js";
 
 /** Sentinela de autoria — RemediationPlan.createdById é campo solto (sem FK), mesmo padrão de prisma/seed.ts ("seed"). */
@@ -229,12 +230,53 @@ export async function advance(runId: string): Promise<void> {
       where: { id: runId },
       data: { status: "ANALYZING", startedAt: run.startedAt ?? new Date() },
     });
-    await logEvent(runId, "ANALYSIS_STARTED", "Buscando a análise mais recente do projeto.");
 
-    const analysis = await prisma.analysis.findFirst({
-      where: { projectId: run.projectId, status: "COMPLETED" },
-      orderBy: { version: "desc" },
-    });
+    // Iteração 1 reaproveita a análise mais recente do projeto (o usuário
+    // acabou de rodar uma antes de iniciar a execução). Da 2ª em diante o
+    // ciclo exige uma análise NOVA — é justamente o "reanalisar" do fluxo
+    // analisar → gates → plano → aplicar → reanalisar. Sem isso a execução
+    // reavaliava a mesma análise velha a cada iteração, gerando planos
+    // duplicados e nunca refletindo as correções aplicadas.
+    let analysis: Awaited<ReturnType<typeof prisma.analysis.findFirst>>;
+
+    if (run.iteration > 1) {
+      await logEvent(
+        runId,
+        "ANALYSIS_STARTED",
+        `Reanalisando o site pra medir o efeito das correções (iteração ${run.iteration}).`,
+      );
+      const previous = run.currentAnalysisId
+        ? await prisma.analysis.findUnique({ where: { id: run.currentAnalysisId } })
+        : null;
+      const previousConfig = (previous?.config ?? {}) as {
+        categories?: AnalysisCategory[];
+        maxDepth?: number;
+        maxPages?: number;
+      };
+
+      // Reusa a mesma configuração (categorias/profundidade) da análise
+      // anterior — comparar iterações só faz sentido medindo o mesmo escopo.
+      const started = await analysisService.start(run.organizationId, run.projectId, {
+        categories: previousConfig.categories,
+        maxDepth: previousConfig.maxDepth,
+        maxPages: previousConfig.maxPages,
+      });
+      analysis = await waitForAnalysisCompleted(started.id);
+      if (!analysis) {
+        await stop(
+          runId,
+          "A reanálise não concluiu a tempo — rode uma análise manualmente e inicie uma nova execução.",
+        );
+        return;
+      }
+    } else {
+      await logEvent(runId, "ANALYSIS_STARTED", "Buscando a análise mais recente do projeto.");
+      analysis = await prisma.analysis.findFirst({
+        where: { projectId: run.projectId, status: "COMPLETED" },
+        orderBy: { version: "desc" },
+      });
+    }
+
     if (!analysis || !analysis.score) {
       await stop(
         runId,
@@ -389,6 +431,28 @@ async function waitForPlanReady(
     await sleep(intervalMs);
   }
   throw new Error("Tempo esgotado esperando o plano de remediação ficar pronto.");
+}
+
+/**
+ * Espera uma análise disparada pelo orquestrador terminar. Timeout generoso
+ * (10 min): um crawl completo de site grande é bem mais lento que a geração
+ * de um plano por IA. Devolve `null` se estourar o tempo ou a análise falhar
+ * — o chamador para a execução com mensagem amigável em vez de travar.
+ */
+async function waitForAnalysisCompleted(
+  analysisId: string,
+  timeoutMs = 600_000,
+  intervalMs = 5000,
+): Promise<Awaited<ReturnType<typeof prisma.analysis.findUnique>>> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const row = await prisma.analysis.findUnique({ where: { id: analysisId } });
+    if (!row) return null;
+    if (row.status === "COMPLETED") return row;
+    if (row.status === "FAILED") return null;
+    await sleep(intervalMs);
+  }
+  return null;
 }
 
 function sleep(ms: number): Promise<void> {
