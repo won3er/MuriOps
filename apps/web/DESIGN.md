@@ -84,11 +84,11 @@ elementos, geometria forte e leitura preservada em 16–32 px. O rosto branco,
 as orelhas laterais compactas e o focinho estreito diferenciam o rato de um
 camundongo cartunesco.
 
-Arquivo principal: `public/atlas-rat-logo.png`, com fundo transparente.
+Arquivo principal: `public/atlas-rat-logo-negative.png`, com fundo transparente.
 Derivações:
 
-- `public/atlas-rat-logo-512.png` — marca usada pelos componentes de produto;
-- `public/atlas-rat-icon-180.png` — ícone para superfícies externas;
+- `public/atlas-rat-logo-negative-512.png` — marca usada pelos componentes de produto;
+- `public/atlas-rat-icon-negative-180.png` — ícone para superfícies externas;
 - `app/icon.png` — favicon de 32 px;
 - `app/opengraph-image.tsx` — importa a marca estática na imagem social.
 

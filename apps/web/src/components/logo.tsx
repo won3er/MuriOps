@@ -16,7 +16,7 @@ export function LogoIsotype({
 }) {
   return (
     <Image
-      src="/atlas-rat-logo-512.png"
+      src="/atlas-rat-logo-negative-512.png"
       alt={title}
       width={512}
       height={512}
@@ -30,7 +30,7 @@ export function LogoIsotype({
 export function LogoMark({ className }: { className?: string }) {
   return (
     <Image
-      src="/atlas-rat-logo-512.png"
+      src="/atlas-rat-logo-negative-512.png"
       alt=""
       width={512}
       height={512}

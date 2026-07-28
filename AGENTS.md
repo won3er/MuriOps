@@ -30,7 +30,7 @@ aplicar de verdade na plataforma real do cliente ou automatizar o ciclo inteiro.
    Atualizar produzem. Duas responsabilidades:
    - Exporta análises/blueprints num plano de remediação (checklist), aplicável via
      documento PDF, "ponte universal" (`GET /apply/:token`, `PATCH
-     /apply/:token/items/:itemId` — qualquer IA de dev como Codex/Cursor/
+/apply/:token/items/:itemId` — qualquer IA de dev como Codex/Cursor/
      Windsurf lê e marca itens via `curl`, tela atualiza em tempo real por polling),
      ou MCP (servidor MCP por projeto, mesmas ações via protocolo).
    - **Conexões e integrações** (movidas de Projetos pra cá): MCP, GitHub, e os
@@ -43,7 +43,7 @@ aplicar de verdade na plataforma real do cliente ou automatizar o ciclo inteiro.
    → aplicar → reanalisar. Depende de Análise (pra analisar/reanalisar) e de
    Aplicação (usa as conexões de lá pra aplicar) — não tem lógica própria de apply.
    Autonomia MANUAL é a única implementada (Supervisionado/Autônomo ainda faltam).
-   Ao criar uma execução dá pra escolher qual conexão usar: com adapter *push*
+   Ao criar uma execução dá pra escolher qual conexão usar: com adapter _push_
    (GitHub/WordPress/Shopify/Nuvemshop/FTP) ela aplica sozinha a cada iteração; sem
    conexão ou com MCP, quem aplica é a IA de dev do próprio usuário (ex.: Codex Pro
    via Codex conectado por MCP — sem precisar de API key nenhuma do Elevate
@@ -57,8 +57,9 @@ aplicar de verdade na plataforma real do cliente ou automatizar o ciclo inteiro.
    como caminho alternativo, já que os dois convivem sem conflito.
 
 Identidade visual: plataforma técnica inspirada na densidade e clareza do GitHub/
-Primer, com superfícies neutras e índigo como acento. Mascote: rato branco em
-negativo dentro de selo circular preto (`apps/web/public/atlas-rat-logo-512.png`).
+Primer, com superfícies neutras e índigo como acento. Mascote: rato preto em
+negativo dentro de selo circular branco
+(`apps/web/public/atlas-rat-logo-negative-512.png`).
 Componentes em `apps/web/src/components/logo.tsx`.
 
 ## Provider de IA (`apps/api/src/infrastructure/ai/`)
@@ -69,7 +70,7 @@ Componentes em `apps/web/src/components/logo.tsx`.
   `createAiProviderFor` degradam pro `NoopProvider` (resultado determinístico, sem IA
   de verdade) — nunca existe fallback silencioso pra uma chave compartilhada. As
   variáveis `CLAUDE_MODEL`/`OPENAI_MODEL`/`GEMINI_MODEL` no `.env` só configuram o
-  *nome do modelo*, nunca um segredo.
+  _nome do modelo_, nunca um segredo.
 - **Gemini** (`gemini-provider.ts`): não fixa nome de modelo. Chama `ListModels` da
   própria API do Google pra descobrir o que a chave enxerga, escolhe o melhor
   (`gemini-flash-latest` > `gemini-2.5-flash` > outros), cacheia em memória por

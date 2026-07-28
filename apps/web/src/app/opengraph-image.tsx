@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import ratLogo from "../../public/atlas-rat-logo-512.png";
+import ratLogo from "../../public/atlas-rat-logo-negative-512.png";
 
 export const runtime = "edge";
 export const alt =

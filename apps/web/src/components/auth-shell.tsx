@@ -1,4 +1,5 @@
 import { CheckCircle2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { LogoFull, LogoIsotype } from "@/components/logo";
@@ -21,10 +22,27 @@ export function AuthShell({
   return (
     <main className="grid min-h-screen bg-background lg:grid-cols-[minmax(0,1fr)_520px]">
       <section className="relative hidden overflow-hidden border-r bg-card lg:flex lg:flex-col lg:p-10">
-        <Link href="/">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          <div className="absolute -bottom-32 -right-40 h-[680px] w-[680px] rounded-full bg-primary/[0.045] blur-3xl xl:-right-16" />
+          <Image
+            src="/atlas-rat-mascot-login.png"
+            alt=""
+            width={1024}
+            height={1536}
+            sizes="(min-width: 1280px) 620px, 520px"
+            className="absolute -bottom-28 -right-40 h-auto w-[520px] select-none opacity-[0.075] xl:-bottom-36 xl:-right-16 xl:w-[620px] 2xl:right-4 2xl:opacity-10"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-card via-card/90 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-card to-transparent" />
+        </div>
+
+        <Link href="/" className="relative z-10 w-fit">
           <LogoFull className="text-base" />
         </Link>
-        <div className="my-auto max-w-xl">
+        <div className="relative z-10 my-auto max-w-xl">
           <LogoIsotype className="mb-8 h-16 w-16" />
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-primary">
             Gestão de qualidade digital
@@ -45,7 +63,9 @@ export function AuthShell({
             ))}
           </ul>
         </div>
-        <p className="text-xs text-muted-foreground">© 2026 Elevate QA</p>
+        <p className="relative z-10 text-xs text-muted-foreground">
+          © 2026 Elevate QA
+        </p>
       </section>
 
       <section className="flex min-h-screen flex-col px-5 py-6 sm:px-10 lg:px-14">
