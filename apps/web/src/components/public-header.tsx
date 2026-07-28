@@ -45,7 +45,7 @@ export function PublicHeader() {
       </a>
       <header className="border-b bg-card">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6">
-          <Link href="/" aria-label="Elevate QA — página inicial">
+          <Link href="/" aria-label="MuriOps — página inicial">
             <LogoFull className="text-sm" />
           </Link>
           <nav

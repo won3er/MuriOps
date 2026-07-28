@@ -13,6 +13,7 @@ import {
   Terminal,
   Wrench,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { FeatureShowcase } from "@/components/feature-showcase";
 import { PublicHeader } from "@/components/public-header";
@@ -90,14 +91,22 @@ export default function LandingPage() {
   const { hasSession } = useAuth();
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="relative flex min-h-screen flex-col overflow-hidden">
       <PublicHeader />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-16 -z-10 h-[760px] bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.15),transparent_58%)]"
+      />
       <main
         id="conteudo-principal"
-        className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6"
+        className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-5 sm:px-6"
       >
         {/* Hero — sem animação de entrada: é o candidato a LCP. */}
-        <section className="mt-16 flex flex-col items-center text-center sm:mt-24">
+        <section className="relative mt-16 flex flex-col items-center text-center sm:mt-24">
+          <div
+            aria-hidden="true"
+            className="absolute left-1/2 top-0 -z-10 h-80 w-[min(920px,100vw)] -translate-x-1/2 rounded-full border border-primary/10 bg-primary/[0.025] blur-3xl"
+          />
           <span className="mb-5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary">
             Gestão contínua de qualidade digital
           </span>
@@ -132,15 +141,15 @@ export default function LandingPage() {
         </section>
 
         {/* Destaques — pills + screenshot real, no espírito da home do GitHub */}
-        <section className="mt-28">
-          <div className="mb-8 max-w-2xl">
+        <section className="mt-28 sm:mt-36">
+          <div className="mb-9 max-w-3xl">
             <p className="mb-2 text-xs font-medium uppercase tracking-wider text-primary">
               Um ciclo conectado
             </p>
-            <h2 className="text-3xl font-semibold sm:text-4xl">
+            <h2 className="text-3xl font-semibold sm:text-4xl lg:text-5xl">
               Cinco frentes, um só workspace
             </h2>
-            <p className="mt-3 leading-7 text-muted-foreground">
+            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
               Do primeiro diagnóstico ao acompanhamento das melhorias, cada
               etapa preserva o contexto do projeto e prepara a próxima decisão.
             </p>
@@ -153,14 +162,23 @@ export default function LandingPage() {
           <div className="mb-10 text-center">
             <h2 className="text-3xl font-semibold">Como funciona</h2>
           </div>
-          <ol className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <ol className="relative grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div
+              aria-hidden="true"
+              className="absolute left-[10%] right-[10%] top-8 -z-10 hidden h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent lg:block"
+            />
             {STEPS.map((s) => (
-              <li key={s.n} className="rounded-xl border border-border p-5">
-                <span className="tabular text-sm font-semibold text-primary">
+              <li
+                key={s.n}
+                className="group rounded-xl border border-border bg-card/35 p-5 transition-colors hover:border-primary/35 hover:bg-card"
+              >
+                <span className="tabular inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-primary/25 bg-background px-2 text-xs font-semibold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                   {s.n}
                 </span>
-                <h3 className="mt-2 font-medium">{s.title}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{s.desc}</p>
+                <h3 className="mt-4 font-medium">{s.title}</h3>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {s.desc}
+                </p>
               </li>
             ))}
           </ol>
@@ -168,8 +186,20 @@ export default function LandingPage() {
 
         {/* Destaque da Aplicação — o diferencial */}
         <section className="mt-28">
-          <div className="glass grid items-center gap-8 rounded-2xl p-8 md:grid-cols-2 md:p-12">
-            <div>
+          <div className="glass relative isolate grid items-center gap-8 overflow-hidden rounded-2xl p-7 md:grid-cols-2 md:p-12">
+            <div
+              aria-hidden="true"
+              className="absolute -right-16 -top-24 -z-20 h-96 w-96 rounded-full bg-primary/[0.08] blur-3xl"
+            />
+            <Image
+              src="/mascot-build.png"
+              alt=""
+              width={1024}
+              height={1536}
+              sizes="280px"
+              className="pointer-events-none absolute -bottom-24 left-[43%] -z-10 hidden h-auto w-64 select-none opacity-[0.12] lg:block"
+            />
+            <div className="relative z-10">
               <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary">
                 <Bot className="h-3.5 w-3.5" /> Aplicação
               </span>
@@ -199,7 +229,7 @@ export default function LandingPage() {
               </div>
             </div>
             {/* Mock do checklist — ilustra o resultado sem prometer nada falso. */}
-            <div className="rounded-xl border border-border bg-card/60 p-5">
+            <div className="relative z-10 rounded-xl border border-border bg-background/80 p-5 shadow-[0_24px_60px_-42px_rgba(99,102,241,0.8)] backdrop-blur">
               <p className="mb-4 text-xs text-muted-foreground">
                 Plano de aplicação · 2 de 3 aplicados
               </p>
@@ -236,41 +266,89 @@ export default function LandingPage() {
 
         {/* Módulos cobertos */}
         <section className="mt-28">
-          <div className="mb-10 text-center">
-            <h2 className="text-3xl font-semibold">O que a análise cobre</h2>
-            <p className="mt-2 text-muted-foreground">
-              Oito frentes rodando em cada varredura, com evidência anexada.
-            </p>
+          <div className="mb-10 grid items-end gap-6 sm:grid-cols-[minmax(0,1fr)_260px]">
+            <div className="max-w-2xl">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-primary">
+                Profundidade de diagnóstico
+              </p>
+              <h2 className="text-3xl font-semibold sm:text-4xl">
+                O que a análise cobre
+              </h2>
+              <p className="mt-3 max-w-xl leading-7 text-muted-foreground">
+                Oito frentes trabalham em conjunto. Cada achado chega com
+                contexto, evidência e prioridade para orientar a próxima ação.
+              </p>
+            </div>
+            <div className="relative hidden h-44 sm:block">
+              <div
+                aria-hidden="true"
+                className="absolute inset-6 rounded-full bg-primary/10 blur-3xl"
+              />
+              <Image
+                src="/mascot-investigate.png"
+                alt=""
+                width={1024}
+                height={1536}
+                sizes="240px"
+                className="absolute -bottom-6 right-0 h-56 w-auto select-none object-contain"
+              />
+            </div>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {MODULES.map((m) => (
               <div
                 key={m.label}
-                className="rounded-xl border border-border p-5"
+                className="group rounded-xl border border-border bg-card/25 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-card"
               >
-                <m.icon className="mb-3 h-5 w-5 text-primary" />
+                <span className="mb-4 grid h-9 w-9 place-items-center rounded-lg border bg-background transition-colors group-hover:border-primary/30 group-hover:bg-primary/10">
+                  <m.icon className="h-4 w-4 text-primary" />
+                </span>
                 <h3 className="text-sm font-medium">{m.label}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{m.desc}</p>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {m.desc}
+                </p>
               </div>
             ))}
           </div>
         </section>
 
         {/* CTA final */}
-        <section className="mt-28 flex flex-col items-center rounded-2xl border border-primary/25 bg-primary/[0.06] px-6 py-14 text-center">
-          <h2 className="max-w-2xl text-balance text-3xl font-semibold">
-            Descubra o que está travando a qualidade do seu site
-          </h2>
-          <p className="mt-3 max-w-lg text-muted-foreground">
-            A primeira análise leva alguns minutos e não exige nenhuma mudança
-            no seu projeto.
-          </p>
-          <Link href={hasSession ? "/dashboard" : "/register"} className="mt-7">
-            <Button size="lg">
-              {hasSession ? "Ir para o Dashboard" : "Começar agora"}
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
+        <section className="relative mt-28 overflow-hidden rounded-2xl border border-primary/25 bg-primary/[0.055] px-6 py-12 sm:px-10 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center lg:px-14 lg:py-14">
+          <div
+            aria-hidden="true"
+            className="absolute -right-20 -top-28 h-96 w-96 rounded-full bg-primary/15 blur-3xl"
+          />
+          <div className="relative z-10 max-w-2xl text-center lg:text-left">
+            <p className="mb-3 text-xs font-medium uppercase tracking-wider text-primary">
+              Próxima decisão, com contexto
+            </p>
+            <h2 className="text-balance text-3xl font-semibold sm:text-4xl">
+              Descubra o que está travando a qualidade do seu site
+            </h2>
+            <p className="mt-3 max-w-lg text-muted-foreground">
+              A primeira análise leva alguns minutos e não exige nenhuma mudança
+              no seu projeto.
+            </p>
+            <Link
+              href={hasSession ? "/dashboard" : "/register"}
+              className="mt-7 inline-flex"
+            >
+              <Button size="lg">
+                {hasSession ? "Ir para o Dashboard" : "Começar agora"}
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+          <div className="relative z-10 hidden h-56 lg:block">
+            <Image
+              src="/mascot-monitor.png"
+              alt=""
+              width={1536}
+              height={1024}
+              sizes="340px"
+              className="absolute -bottom-16 right-0 h-72 w-auto select-none object-contain"
+            />
+          </div>
         </section>
       </main>
       <SiteFooter />

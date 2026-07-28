@@ -1,4 +1,4 @@
-# Deploy — Elevate QA
+# Deploy — MuriOps
 
 Arquitetura de produção: **Vercel** (frontend Next.js) + **Render** (API
 Fastify + Playwright, processo persistente, free tier sem cartão) +
@@ -50,6 +50,21 @@ Se isso incomodar depois, dá pra trocar de plano ali mesmo, sem mudar código.
 
 5. Deploy. Vercel te dá uma URL tipo `https://elevate-qa.vercel.app`.
 
+### Domínio oficial — `muriops.com.br`
+
+1. Na Vercel, abra o projeto → **Settings → Domains** e adicione
+   `muriops.com.br` e `www.muriops.com.br`.
+2. No provedor do domínio, copie exatamente os registros DNS indicados pela
+   Vercel. Não remova o domínio `vercel.app` durante a transição.
+3. Na Vercel, defina `NEXT_PUBLIC_SITE_URL=https://muriops.com.br`.
+4. No Render, configure temporariamente:
+   `CORS_ORIGIN=https://muriops.com.br,https://www.muriops.com.br,https://elevate-qa.vercel.app`.
+5. No Google Cloud OAuth, inclua as origens JavaScript
+   `https://muriops.com.br` e `https://www.muriops.com.br`, preservando a
+   origem antiga até o novo domínio ser validado.
+6. Depois que HTTPS, login e API funcionarem no domínio novo, torne
+   `muriops.com.br` o domínio primário na Vercel.
+
 ## 3. Fechar o CORS
 
 Volta no Render → o serviço → **Environment** → edita `CORS_ORIGIN` pra URL real do Vercel (`https://elevate-qa.vercel.app`, sem barra no final). Salvar já redeploya sozinho.
@@ -65,14 +80,14 @@ Volta no Render → o serviço → **Environment** → edita `CORS_ORIGIN` pra U
 
 ## Variáveis de ambiente — referência rápida
 
-| Variável | Onde | Valor |
-|---|---|---|
-| `DATABASE_URL` | Render | pooler Supabase, porta 6543, `?pgbouncer=true` |
-| `DIRECT_URL` | Render | conexão direta Supabase, porta 5432 |
-| `JWT_SECRET` | Render | gerado automaticamente pelo `render.yaml` |
-| `CORS_ORIGIN` | Render | URL do Vercel (sem barra final) |
+| Variável              | Onde   | Valor                                           |
+| --------------------- | ------ | ----------------------------------------------- |
+| `DATABASE_URL`        | Render | pooler Supabase, porta 6543, `?pgbouncer=true`  |
+| `DIRECT_URL`          | Render | conexão direta Supabase, porta 5432             |
+| `JWT_SECRET`          | Render | gerado automaticamente pelo `render.yaml`       |
+| `CORS_ORIGIN`         | Render | URL do Vercel (sem barra final)                 |
 | `AI_PROVIDER` + chave | Render | `gemini`/`claude`/`openai` + respectiva API key |
-| `NEXT_PUBLIC_API_URL` | Vercel | URL pública do Render |
+| `NEXT_PUBLIC_API_URL` | Vercel | URL pública do Render                           |
 
 ## Próximo passo: assinatura/cobrança
 

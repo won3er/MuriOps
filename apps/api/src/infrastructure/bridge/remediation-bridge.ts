@@ -8,7 +8,7 @@ import type { RemediationPlan } from "@qa-ai/shared";
  * O pacote contém:
  * 1. As mudanças detalhadas (o que, onde, como) — a IA aplica no código.
  * 2. Comandos de API autenticados pelo token do plano — a IA marca cada item
- *    como "Feito" conforme aplica, e o checklist no Elevate QA atualiza em
+ *    como "Feito" conforme aplica, e o checklist no MuriOps atualiza em
  *    tempo real (a página do plano faz polling).
  */
 export function buildRemediationBridgeMarkdown(
@@ -22,7 +22,7 @@ export function buildRemediationBridgeMarkdown(
   const header = [
     `# Plano de Aplicação — ${plan.title}`,
     "",
-    "> Pacote gerado pelo Elevate QA. Entregue este arquivo à sua ferramenta de IA",
+    "> Pacote gerado pelo MuriOps. Entregue este arquivo à sua ferramenta de IA",
     "> de desenvolvimento (Claude Code, Windsurf, Codex, Cursor...) e peça para",
     "> ela aplicar as mudanças abaixo no projeto.",
     "",
@@ -80,7 +80,7 @@ export function buildRemediationBridgeMarkdown(
     "",
     "---",
     "",
-    "_Checklist sincronizado com o Elevate QA — o usuário acompanha o progresso em tempo real na seção Aplicação._",
+    "_Checklist sincronizado com o MuriOps — o usuário acompanha o progresso em tempo real na seção Aplicação._",
     "",
   ].join("\n");
 

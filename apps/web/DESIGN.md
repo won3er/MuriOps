@@ -1,4 +1,4 @@
-# Elevate QA — Product UI Reference
+# MuriOps — Product UI Reference
 
 > Plataforma operacional — superfícies neutras, densidade controlada, navegação
 > contextual e um único acento cromático, sem gradiente decorativo.
@@ -13,7 +13,7 @@ componentes literalmente: alta densidade com leitura calma, superfícies
 separadas por bordas, tipografia predominantemente alinhada à esquerda,
 navegação global + contextual e layouts que continuam funcionais em telas
 estreitas. A paleta usa a família de superfícies grafite do GitHub como
-referência, mas preserva o índigo (`#6366f1`) como assinatura do Elevate QA.
+referência, mas preserva o índigo (`#6366f1`) como assinatura do MuriOps.
 
 Duas versões anteriores foram descartadas por feedback direto do usuário:
 

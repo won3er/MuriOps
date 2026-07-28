@@ -2,14 +2,14 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 /**
- * Identidade visual do Elevate QA.
+ * Identidade visual do MuriOps.
  *
  * Mascote: rato em negativo dentro de um selo circular — uma marca simples,
  * técnica e legível mesmo nos menores pontos da interface.
  */
 export function LogoIsotype({
   className,
-  title = "Elevate QA",
+  title = "MuriOps",
 }: {
   className?: string;
   title?: string;
@@ -52,7 +52,7 @@ export function LogoFull({
     <span className={cn("flex items-center gap-2 font-semibold", className)}>
       <LogoMark className={markClassName} />
       <span>
-        Elevate <span className="text-primary">QA</span>
+        Muri<span className="text-primary">Ops</span>
       </span>
     </span>
   );

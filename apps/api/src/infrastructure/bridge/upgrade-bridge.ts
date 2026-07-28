@@ -21,7 +21,7 @@ export function buildUpgradeBridgeMarkdown(
   const header = [
     `# Plano de Atualização — ${plan.title}`,
     "",
-    "> Pacote gerado pelo Elevate QA. Entregue este arquivo à sua ferramenta de IA",
+    "> Pacote gerado pelo MuriOps. Entregue este arquivo à sua ferramenta de IA",
     "> de desenvolvimento (Claude Code, Windsurf, Codex, Cursor...) e peça para",
     "> ela atualizar as dependências abaixo no projeto, na ordem indicada.",
     "",
@@ -84,7 +84,7 @@ export function buildUpgradeBridgeMarkdown(
     "",
     "---",
     "",
-    "_Checklist sincronizado com o Elevate QA — o usuário acompanha o progresso em tempo real na seção Atualizar._",
+    "_Checklist sincronizado com o MuriOps — o usuário acompanha o progresso em tempo real na seção Atualizar._",
     "",
   ].join("\n");
 

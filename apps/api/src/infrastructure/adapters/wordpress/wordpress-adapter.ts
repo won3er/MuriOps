@@ -50,7 +50,7 @@ export class WordpressAdapter implements Adapter {
     const existing = await this.findPageBySlug(slug);
 
     const payload = {
-      title: `Atlas QA: ${item.title}`,
+      title: `MuriOps: ${item.title}`,
       slug,
       status: "draft",
       content: renderHtml(item),
@@ -119,7 +119,7 @@ function renderHtml(item: RemediationItem): string {
     item.filePath ? `<p><strong>Local sugerido:</strong> <code>${escapeHtml(item.filePath)}</code></p>` : "",
     `<h3>Descrição</h3><p>${escapeHtml(item.description)}</p>`,
     `<h3>Como aplicar</h3><p>${escapeHtml(item.howTo)}</p>`,
-    `<hr/><p><em>Criado automaticamente pelo Atlas QA. Esta página é só o registro do que precisa ser feito — publicar/ajustar o WordPress em si continua manual.</em></p>`,
+    `<hr/><p><em>Criado automaticamente pelo MuriOps. Esta página é só o registro do que precisa ser feito — publicar/ajustar o WordPress em si continua manual.</em></p>`,
   ]
     .filter(Boolean)
     .join("\n");

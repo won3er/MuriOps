@@ -92,7 +92,7 @@ Responda SEMPRE em português do Brasil e SOMENTE com um objeto JSON válido, se
  * Java) está explicitamente FORA DE ESCOPO, porque exige uma arquitetura de
  * migração de sistema completo que o produto ainda não tem. Sem esta trava a
  * IA naturalmente sugeriria "reescreva em Java", que é um conselho que o
- * Elevate QA não consegue sustentar nem aplicar.
+ * MuriOps não consegue sustentar nem aplicar.
  */
 export const LEGACY_SCOPE_RULE = `
 ATENÇÃO — ESTE É UM SISTEMA LEGADO. Regra de escopo obrigatória:

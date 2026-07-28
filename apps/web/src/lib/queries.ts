@@ -19,11 +19,7 @@ import type {
   UpgradePlan,
   UpgradeSummary,
 } from "@qa-ai/shared";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "./api";
 
@@ -40,12 +36,17 @@ export const qk = {
   upgradePlan: (id: string) => ["upgrade-plan", id] as const,
   upgradePlans: ["upgrade-plans"] as const,
   mcpConnection: (projectId: string) => ["mcp-connection", projectId] as const,
-  githubConnection: (projectId: string) => ["github-connection", projectId] as const,
-  wordpressConnection: (projectId: string) => ["wordpress-connection", projectId] as const,
-  shopifyConnection: (projectId: string) => ["shopify-connection", projectId] as const,
+  githubConnection: (projectId: string) =>
+    ["github-connection", projectId] as const,
+  wordpressConnection: (projectId: string) =>
+    ["wordpress-connection", projectId] as const,
+  shopifyConnection: (projectId: string) =>
+    ["shopify-connection", projectId] as const,
   ftpConnection: (projectId: string) => ["ftp-connection", projectId] as const,
-  adapterConnections: (projectId: string) => ["adapter-connections", projectId] as const,
-  orchestrationRuns: (projectId: string) => ["orchestration-runs", projectId] as const,
+  adapterConnections: (projectId: string) =>
+    ["adapter-connections", projectId] as const,
+  orchestrationRuns: (projectId: string) =>
+    ["orchestration-runs", projectId] as const,
   orchestrationRun: (id: string) => ["orchestration-run", id] as const,
   orchestrationEvents: (id: string) => ["orchestration-events", id] as const,
   qualityGates: (projectId: string) => ["quality-gates", projectId] as const,
@@ -89,7 +90,9 @@ export function useCreateBlueprint() {
       qc.invalidateQueries({ queryKey: qk.blueprints });
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao gerar blueprint"),
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao gerar blueprint",
+      ),
   });
 }
 
@@ -148,7 +151,8 @@ export function useRemediationPlan(id: string) {
       if (!plan) return false;
       if (plan.status === "PENDING") return 2500;
       const items = plan.result?.items ?? [];
-      const allDone = items.length > 0 && items.every((i) => i.status === "done");
+      const allDone =
+        items.length > 0 && items.every((i) => i.status === "done");
       return plan.status === "READY" && !allDone ? 4000 : false;
     },
   });
@@ -207,7 +211,9 @@ export function useUpdateRemediationItem(planId: string) {
       qc.setQueryData<RemediationPlan>(qk.remediationPlan(planId), plan);
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao atualizar item"),
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao atualizar item",
+      ),
   });
 }
 
@@ -241,7 +247,8 @@ export function useUpgradePlan(id: string) {
       if (!plan) return false;
       if (plan.status === "PENDING") return 2500;
       const items = plan.result?.items ?? [];
-      const allDone = items.length > 0 && items.every((i) => i.status === "done");
+      const allDone =
+        items.length > 0 && items.every((i) => i.status === "done");
       return plan.status === "READY" && !allDone ? 4000 : false;
     },
   });
@@ -265,20 +272,47 @@ export function useCreateUpgradePlan() {
       qc.invalidateQueries({ queryKey: qk.upgradePlans });
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao gerar a Atualização"),
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao gerar a Atualização",
+      ),
+  });
+}
+
+export function useCreateUpgradePlanFromGithub() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (projectId: string) =>
+      api.createUpgradePlanFromGithub(projectId),
+    onSuccess: (plan) => {
+      qc.setQueryData<UpgradePlan>(qk.upgradePlan(plan.id), plan);
+      qc.invalidateQueries({ queryKey: qk.upgradePlans });
+    },
+    onError: (err) =>
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Falha ao investigar o repositório no GitHub",
+      ),
   });
 }
 
 export function useUpdateUpgradeItem(planId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ itemId, status }: { itemId: string; status: UpgradeItemStatus }) =>
-      api.updateUpgradeItem(planId, itemId, status),
+    mutationFn: ({
+      itemId,
+      status,
+    }: {
+      itemId: string;
+      status: UpgradeItemStatus;
+    }) => api.updateUpgradeItem(planId, itemId, status),
     onSuccess: (plan) => {
       qc.setQueryData<UpgradePlan>(qk.upgradePlan(planId), plan);
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao atualizar item"),
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao atualizar item",
+      ),
   });
 }
 
@@ -333,7 +367,9 @@ export function useCreateProject() {
       toast.success("Projeto criado");
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao criar projeto"),
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao criar projeto",
+      ),
   });
 }
 
@@ -361,8 +397,13 @@ export function useDeleteProject() {
 export function useUpdateProjectAutonomy() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, autonomyLevel }: { id: string; autonomyLevel: AutonomyLevel }) =>
-      api.updateProjectAutonomy(id, autonomyLevel),
+    mutationFn: ({
+      id,
+      autonomyLevel,
+    }: {
+      id: string;
+      autonomyLevel: AutonomyLevel;
+    }) => api.updateProjectAutonomy(id, autonomyLevel),
     onSuccess: (project) => {
       qc.invalidateQueries({ queryKey: qk.projects });
       qc.setQueryData<Project>(["project", project.id], project);
@@ -437,7 +478,9 @@ export function useConnectGithub(projectId: string) {
       toast.success("Conexão GitHub criada");
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao conectar o GitHub"),
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao conectar o GitHub",
+      ),
   });
 }
 
@@ -455,14 +498,19 @@ export function useWordpressConnection(projectId: string) {
 export function useConnectWordpress(projectId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { siteUrl: string; username: string; appPassword: string }) =>
-      api.connectWordpress(projectId, body),
+    mutationFn: (body: {
+      siteUrl: string;
+      username: string;
+      appPassword: string;
+    }) => api.connectWordpress(projectId, body),
     onSuccess: (connection) => {
       qc.setQueryData(qk.wordpressConnection(projectId), connection);
       toast.success("Conexão WordPress criada");
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao conectar o WordPress"),
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao conectar o WordPress",
+      ),
   });
 }
 
@@ -485,7 +533,9 @@ export function useConnectShopify(projectId: string) {
       toast.success("Conexão Shopify criada");
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao conectar a Shopify"),
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao conectar a Shopify",
+      ),
   });
 }
 
@@ -514,7 +564,9 @@ export function useConnectFtp(projectId: string) {
       toast.success("Conexão FTP criada");
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao conectar por FTP"),
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao conectar por FTP",
+      ),
   });
 }
 
@@ -545,7 +597,11 @@ export function useOrchestrationRun(id: string) {
     refetchInterval: (query) => {
       const status = query.state.data?.status;
       if (!status) return false;
-      return ACTIVE_RUN_STATUSES.has(status) ? 2000 : status === "AWAITING_APPLY" ? 4000 : false;
+      return ACTIVE_RUN_STATUSES.has(status)
+        ? 2000
+        : status === "AWAITING_APPLY"
+          ? 4000
+          : false;
     },
   });
 }
@@ -570,7 +626,9 @@ export function useCreateOrchestrationRun(projectId: string) {
       toast.success("Execução iniciada");
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao iniciar a execução"),
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao iniciar a execução",
+      ),
   });
 }
 
@@ -612,8 +670,11 @@ export function useQualityGates(projectId: string) {
 export function useCreateQualityGate(projectId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { category?: string | null; minScore: number; label?: string }) =>
-      api.createQualityGate(projectId, body),
+    mutationFn: (body: {
+      category?: string | null;
+      minScore: number;
+      label?: string;
+    }) => api.createQualityGate(projectId, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.qualityGates(projectId) });
       toast.success("Quality gate criado");

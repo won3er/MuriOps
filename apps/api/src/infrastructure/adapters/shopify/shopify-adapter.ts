@@ -47,7 +47,7 @@ export class ShopifyAdapter implements Adapter {
 
     const body = {
       page: {
-        title: `Atlas QA: ${item.title}`,
+        title: `MuriOps: ${item.title}`,
         handle,
         body_html: renderHtml(item),
         published: false,
@@ -116,7 +116,7 @@ function renderHtml(item: RemediationItem): string {
     item.filePath ? `<p><strong>Local sugerido:</strong> <code>${escapeHtml(item.filePath)}</code></p>` : "",
     `<h3>Descrição</h3><p>${escapeHtml(item.description)}</p>`,
     `<h3>Como aplicar</h3><p>${escapeHtml(item.howTo)}</p>`,
-    `<hr/><p><em>Criado automaticamente pelo Atlas QA. Mudanças de tema/app continuam exigindo o time de dev.</em></p>`,
+    `<hr/><p><em>Criado automaticamente pelo MuriOps. Mudanças de tema/app continuam exigindo o time de dev.</em></p>`,
   ]
     .filter(Boolean)
     .join("\n");

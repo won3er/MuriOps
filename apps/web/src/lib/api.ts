@@ -31,8 +31,7 @@ import type {
   UpgradeSummary,
 } from "@qa-ai/shared";
 
-const BASE =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3333";
 
 const TOKEN_KEY = "qa-ai-token";
 
@@ -58,10 +57,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
     ...options,
@@ -128,7 +124,10 @@ export const api = {
     request<RemediationSummary[]>(`/projects/${id}/remediation-plans`),
   deleteProject: (id: string) =>
     request<void>(`/projects/${id}`, { method: "DELETE" }),
-  updateProjectAutonomy: (id: string, autonomyLevel: Project["autonomyLevel"]) =>
+  updateProjectAutonomy: (
+    id: string,
+    autonomyLevel: Project["autonomyLevel"],
+  ) =>
     request<Project>(`/projects/${id}`, {
       method: "PATCH",
       body: JSON.stringify({ autonomyLevel }),
@@ -150,7 +149,9 @@ export const api = {
       { method: "POST" },
     ),
   disconnectMcp: (projectId: string) =>
-    request<void>(`/projects/${projectId}/mcp-connection`, { method: "DELETE" }),
+    request<void>(`/projects/${projectId}/mcp-connection`, {
+      method: "DELETE",
+    }),
 
   // ---- adapter GitHub (Fase 2) ----
   getGithubConnection: (projectId: string) =>
@@ -345,7 +346,11 @@ export const api = {
     }),
   getRemediationPlan: (id: string) =>
     request<RemediationPlan>(`/remediation-plans/${id}`),
-  updateRemediationItem: (id: string, itemId: string, status: RemediationItemStatus) =>
+  updateRemediationItem: (
+    id: string,
+    itemId: string,
+    status: RemediationItemStatus,
+  ) =>
     request<RemediationPlan>(`/remediation-plans/${id}/items/${itemId}`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
@@ -398,6 +403,11 @@ export const api = {
     request<UpgradePlan>("/upgrade-plans", {
       method: "POST",
       body: JSON.stringify(body),
+    }),
+  createUpgradePlanFromGithub: (projectId: string) =>
+    request<UpgradePlan>(`/projects/${projectId}/upgrade-plans/from-github`, {
+      method: "POST",
+      body: JSON.stringify({}),
     }),
   getUpgradePlan: (id: string) => request<UpgradePlan>(`/upgrade-plans/${id}`),
   updateUpgradeItem: (id: string, itemId: string, status: UpgradeItemStatus) =>

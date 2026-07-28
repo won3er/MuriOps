@@ -2,7 +2,7 @@
   "name": "qa-ai",
   "version": "0.1.0",
   "private": true,
-  "description": "Elevate QA - Plataforma SaaS de análise automática de qualidade web com IA",
+  "description": "MuriOps - Plataforma de gestão contínua de qualidade digital com IA",
   "packageManager": "pnpm@9.12.0",
   "engines": {
     "node": ">=20"

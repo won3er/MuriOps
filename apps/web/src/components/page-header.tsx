@@ -24,7 +24,16 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <header className={cn("space-y-3", className)}>
+    <header
+      className={cn(
+        "app-panel relative isolate overflow-hidden rounded-xl px-5 py-5 sm:px-6 sm:py-6",
+        className,
+      )}
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-24 -top-32 -z-10 h-72 w-72 rounded-full bg-primary/10 blur-3xl"
+      />
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav aria-label="Navegação estrutural">
           <ol className="flex min-w-0 flex-wrap items-center gap-1 text-xs text-muted-foreground">
@@ -59,11 +68,11 @@ export function PageHeader({
               {eyebrow}
             </div>
           )}
-          <h1 className="break-words text-2xl font-semibold leading-tight text-foreground">
+          <h1 className="break-words text-2xl font-semibold leading-tight text-foreground sm:text-[1.75rem]">
             {title}
           </h1>
           {description && (
-            <div className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
+            <div className="mt-1.5 max-w-3xl text-sm leading-6 text-muted-foreground">
               {description}
             </div>
           )}

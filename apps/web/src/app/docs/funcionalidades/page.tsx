@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 export const metadata = {
   title: "Status das funcionalidades",
   description:
-    "Consulte o que está disponível, em evolução ou planejado no Elevate QA.",
+    "Consulte o que está disponível, em evolução ou planejado no MuriOps.",
   alternates: { canonical: "/docs/funcionalidades" },
 };
 

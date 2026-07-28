@@ -1,4 +1,4 @@
-# Elevate QA — contexto do projeto
+# MuriOps — contexto do projeto
 
 SaaS de análise de QA para sites: crawler + Playwright analisa UI/UX, performance,
 SEO, acessibilidade, segurança, console/network — com IA (Claude/Gemini/OpenAI)

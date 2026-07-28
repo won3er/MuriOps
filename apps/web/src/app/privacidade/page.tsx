@@ -3,7 +3,7 @@ import { LegalSection, LegalShell } from "@/components/legal-shell";
 export const metadata = {
   title: "Privacidade",
   description:
-    "Saiba como o Elevate QA trata credenciais, dados de projetos e informações da conta.",
+    "Saiba como o MuriOps trata credenciais, dados de projetos e informações da conta.",
   alternates: { canonical: "/privacidade" },
 };
 
@@ -43,7 +43,7 @@ export default function PrivacidadePage() {
           os termos e políticas dele.
         </p>
         <p>
-          Sem uma chave própria configurada, o Elevate QA não utiliza
+          Sem uma chave própria configurada, o MuriOps não utiliza
           silenciosamente uma chave compartilhada: as respostas degradam para o
           modo determinístico.
         </p>

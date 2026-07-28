@@ -53,8 +53,41 @@ h3 {
 }
 
 .glass {
-  background: hsl(var(--card));
+  background: linear-gradient(
+    145deg,
+    hsl(var(--card) / 0.98),
+    hsl(var(--background) / 0.92)
+  );
   border: 1px solid hsl(var(--border));
+  box-shadow:
+    0 1px 0 hsl(var(--foreground) / 0.025) inset,
+    0 18px 50px -40px rgb(0 0 0 / 0.85);
+}
+
+.app-canvas {
+  background:
+    radial-gradient(
+      circle at 78% -12%,
+      hsl(var(--primary) / 0.1),
+      transparent 28rem
+    ),
+    linear-gradient(hsl(var(--border) / 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--border) / 0.055) 1px, transparent 1px),
+    hsl(var(--background));
+  background-size:
+    auto,
+    48px 48px,
+    48px 48px,
+    auto;
+}
+
+.app-panel {
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card) / 0.82);
+  box-shadow:
+    0 1px 0 hsl(var(--foreground) / 0.025) inset,
+    0 24px 70px -55px rgb(0 0 0 / 0.9);
+  backdrop-filter: blur(18px);
 }
 
 ::selection {
@@ -71,6 +104,21 @@ select:focus-visible,
 textarea:focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
+}
+
+@keyframes feature-stage-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.feature-stage-enter {
+  animation: feature-stage-enter 320ms ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {

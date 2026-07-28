@@ -114,7 +114,7 @@ function renderMarkdown(item: RemediationItem): string {
     item.howTo,
     "",
     "---",
-    "_Gravado automaticamente pelo Atlas QA via FTP. Este arquivo é só o registro do que precisa ser feito — editar o código-fonte real continua manual._",
+    "_Gravado automaticamente pelo MuriOps via FTP. Este arquivo é só o registro do que precisa ser feito — editar o código-fonte real continua manual._",
   ]
     .filter(Boolean)
     .join("\n");

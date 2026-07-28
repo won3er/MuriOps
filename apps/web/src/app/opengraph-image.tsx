@@ -3,7 +3,7 @@ import ratLogo from "../../public/atlas-rat-logo-negative-512.png";
 
 export const runtime = "edge";
 export const alt =
-  "Elevate QA — Gestão de qualidade digital, do diagnóstico à correção";
+  "MuriOps — Gestão de qualidade digital, do diagnóstico à correção";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -41,7 +41,7 @@ export default function OpengraphImage() {
             display: "flex",
           }}
         >
-          Elevate&nbsp;<span style={{ color: "#7c81ff" }}>QA</span>
+          Muri<span style={{ color: "#7c81ff" }}>Ops</span>
         </div>
       </div>
       <div

@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 export const metadata = {
   title: "Integrações e tecnologias",
   description:
-    "Conheça as integrações do Elevate QA com GitHub, MCP, WordPress, Shopify e FTP.",
+    "Conheça as integrações do MuriOps com GitHub, MCP, WordPress, Shopify e FTP.",
   alternates: { canonical: "/docs/integracoes" },
 };
 
@@ -107,7 +107,7 @@ export default function IntegracoesPage() {
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Codex, Claude Code, Cursor, Windsurf ou outra ferramenta pode ler
               o plano e atualizar o checklist sem usar uma chave de IA do
-              Elevate QA.
+              MuriOps.
             </p>
           </div>
         </div>
@@ -120,7 +120,7 @@ export default function IntegracoesPage() {
             Princípio: credenciais sob controle
           </h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            O Elevate QA não usa uma chave compartilhada do servidor como
+            O MuriOps não usa uma chave compartilhada do servidor como
             fallback. Sem uma chave própria configurada, as funções de IA
             degradam para respostas determinísticas. Tokens de plataforma e
             chaves de IA devem ser revogados na origem quando você quiser

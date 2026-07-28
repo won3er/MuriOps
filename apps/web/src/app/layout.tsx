@@ -18,9 +18,8 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://elevate-qa.vercel.app";
-const title = "Elevate QA — Gestão contínua de qualidade digital";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://muriops.com.br";
+const title = "MuriOps — Gestão contínua de qualidade digital";
 const description =
   "Organize projetos, execute análises de qualidade, transforme achados em planos aplicáveis e acompanhe ciclos de melhoria em um único workspace.";
 
@@ -28,14 +27,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     default: title,
-    template: "%s — Elevate QA",
+    template: "%s — MuriOps",
   },
   description,
   openGraph: {
     type: "website",
     locale: "pt_BR",
     url: siteUrl,
-    siteName: "Elevate QA",
+    siteName: "MuriOps",
     title,
     description,
   },

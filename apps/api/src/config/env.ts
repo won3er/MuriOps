@@ -48,7 +48,7 @@ const schema = z
 
     // Client ID do OAuth do Google (não é segredo — é público, usado também
     // no frontend). Sem ele, o botão "Entrar com Google" fica desabilitado.
-    // Isso não é uma "chave de IA" — é a identidade do próprio Elevate QA
+    // Isso não é uma "chave de IA" — é a identidade do próprio MuriOps
     // como aplicação OAuth, igual ao JWT_SECRET.
     GOOGLE_CLIENT_ID: z.string().optional(),
   })

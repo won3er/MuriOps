@@ -12,7 +12,7 @@ import { DocsShell } from "@/components/docs-shell";
 export const metadata = {
   title: "Documentação",
   description:
-    "Entenda o fluxo do Elevate QA, consulte funcionalidades e configure integrações.",
+    "Entenda o fluxo do MuriOps, consulte funcionalidades e configure integrações.",
   alternates: { canonical: "/docs" },
 };
 
@@ -46,7 +46,7 @@ const SECTIONS = [
 export default function DocsPage() {
   return (
     <DocsShell
-      title="Documentação do Elevate QA"
+      title="Documentação do MuriOps"
       description="Aprenda a operar o ciclo de qualidade, entenda o papel de cada módulo e saiba exatamente o que cada integração faz."
     >
       <section className="grid gap-4 sm:grid-cols-3">

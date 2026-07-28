@@ -64,7 +64,7 @@ export function AuthShell({
           </ul>
         </div>
         <p className="relative z-10 text-xs text-muted-foreground">
-          © 2026 Elevate QA
+          © 2026 MuriOps
         </p>
       </section>
 

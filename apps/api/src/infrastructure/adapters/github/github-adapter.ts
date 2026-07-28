@@ -96,7 +96,7 @@ export class GithubAdapter implements Adapter {
       method: "PUT",
       headers: this.headers(),
       body: JSON.stringify({
-        message: `Atlas QA: checklist de remediação (${path})`,
+        message: `MuriOps: checklist de remediação (${path})`,
         content: Buffer.from(content, "utf8").toString("base64"),
         branch,
         ...(sha ? { sha } : {}),
@@ -116,7 +116,7 @@ export class GithubAdapter implements Adapter {
     if (existing.length > 0) return existing[0]!;
 
     return this.post<GithubPr>(`/repos/${this.owner}/${this.repo}/pulls`, {
-      title: `Atlas QA: ${item.title}`,
+      title: `MuriOps: ${item.title}`,
       head: branch,
       base,
       body: renderChecklist(item),
@@ -167,7 +167,7 @@ function renderChecklist(item: RemediationItem): string {
     item.howTo,
     "",
     "---",
-    "_Aberto automaticamente pelo Atlas QA. Esta PR só é aplicada de verdade quando um humano revisa e faz o merge — o Atlas nunca faz merge sozinho._",
+    "_Aberto automaticamente pelo MuriOps. Esta PR só é aplicada de verdade quando um humano revisa e faz o merge — o MuriOps nunca faz merge sozinho._",
   ]
     .filter(Boolean)
     .join("\n");

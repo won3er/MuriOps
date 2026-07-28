@@ -89,11 +89,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   const brand = (
-    <Link
-      href="/dashboard"
-      className="shrink-0"
-      aria-label="Elevate QA — início"
-    >
+    <Link href="/dashboard" className="shrink-0" aria-label="MuriOps — início">
       <LogoFull className="text-sm" markClassName="h-8 w-8" />
     </Link>
   );
@@ -114,12 +110,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "group flex min-h-9 items-center gap-2.5 rounded-md px-2 text-sm transition-colors",
+                    "group relative flex min-h-9 items-center gap-2.5 rounded-md px-2.5 text-sm transition-all",
                     active
-                      ? "bg-accent text-foreground"
-                      : "text-muted-foreground hover:bg-accent/70 hover:text-foreground",
+                      ? "bg-primary/10 text-foreground shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.12)]"
+                      : "text-muted-foreground hover:translate-x-0.5 hover:bg-accent/70 hover:text-foreground",
                   )}
                 >
+                  {active && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute -left-4 h-5 w-0.5 rounded-full bg-primary shadow-[0_0_12px_hsl(var(--primary)/0.7)]"
+                    />
+                  )}
                   <item.icon
                     className={cn(
                       "h-4 w-4 shrink-0",
@@ -158,7 +160,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         Pular para o conteúdo
       </a>
       {/* Navegação global: marca, busca/comandos e ações da conta. */}
-      <header className="flex h-16 items-center gap-3 border-b bg-card px-4 sm:px-5">
+      <header className="sticky top-0 z-40 flex h-16 items-center gap-3 border-b bg-background/88 px-4 backdrop-blur-xl sm:px-5">
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
@@ -231,8 +233,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       <div className="flex min-h-[calc(100vh-4rem)]">
         {/* Navegação local persistente no desktop. */}
-        <aside className="hidden w-60 shrink-0 flex-col border-r bg-card/50 p-4 md:flex">
-          <div className="mb-5 flex items-center gap-2 rounded-md border bg-background/60 px-2.5 py-2 text-xs text-muted-foreground">
+        <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-60 shrink-0 flex-col border-r bg-card/38 p-4 backdrop-blur-xl md:flex">
+          <div className="mb-5 flex items-center gap-2 rounded-lg border bg-background/55 px-2.5 py-2.5 text-xs text-muted-foreground shadow-sm">
             <Boxes className="h-4 w-4 text-primary" />
             <span className="truncate">Workspace principal</span>
           </div>
@@ -242,7 +244,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         <main
           id="conteudo-principal"
-          className="min-w-0 flex-1 overflow-x-hidden px-4 py-6 sm:px-6 md:px-8 lg:px-10 lg:py-8"
+          className="app-canvas min-w-0 flex-1 overflow-x-hidden px-4 py-6 sm:px-6 md:px-8 lg:px-10 lg:py-9"
         >
           {children}
         </main>

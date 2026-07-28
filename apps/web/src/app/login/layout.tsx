@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Entrar",
-  description: "Entre na sua conta Elevate QA para acompanhar suas análises.",
+  description: "Entre na sua conta MuriOps para acompanhar suas análises.",
   alternates: {
     canonical: "/login",
   },

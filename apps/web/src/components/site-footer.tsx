@@ -37,7 +37,7 @@ export function SiteFooter() {
     <footer className="mt-24 border-t bg-card/40">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 sm:grid-cols-2 lg:grid-cols-[minmax(240px,1fr)_repeat(3,180px)]">
         <div>
-          <Link href="/" aria-label="Elevate QA — página inicial">
+          <Link href="/" aria-label="MuriOps — página inicial">
             <LogoFull className="text-sm" />
           </Link>
           <p className="mt-3 max-w-xs text-sm leading-6 text-muted-foreground">
@@ -67,7 +67,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t px-6 py-5">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <span>© {new Date().getFullYear()} Elevate QA.</span>
+          <span>© {new Date().getFullYear()} MuriOps.</span>
           <span>Qualidade é um processo contínuo.</span>
         </div>
       </div>

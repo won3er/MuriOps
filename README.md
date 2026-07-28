@@ -1,4 +1,4 @@
-# Elevate QA — Análise inteligente de qualidade web
+# MuriOps — Gestão contínua de qualidade digital
 
 Plataforma SaaS que analisa automaticamente qualquer site simulando uma **equipe
 profissional de QA**: navega, explora, testa fluxos, coleta evidências e entrega

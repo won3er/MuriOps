@@ -3,7 +3,7 @@ import { LegalSection, LegalShell } from "@/components/legal-shell";
 export const metadata = {
   title: "Termos de uso",
   description:
-    "Condições essenciais para utilizar o Elevate QA de forma responsável.",
+    "Condições essenciais para utilizar o MuriOps de forma responsável.",
   alternates: { canonical: "/termos" },
 };
 
@@ -11,7 +11,7 @@ export default function TermosPage() {
   return (
     <LegalShell
       title="Termos de uso"
-      description="As condições essenciais para utilizar o Elevate QA de forma responsável."
+      description="As condições essenciais para utilizar o MuriOps de forma responsável."
     >
       <LegalSection title="1. Uso autorizado">
         <p>
@@ -24,7 +24,7 @@ export default function TermosPage() {
 
       <LegalSection title="2. Como o serviço funciona">
         <p>
-          O Elevate QA combina crawler, automação de navegador e verificações
+          O MuriOps combina crawler, automação de navegador e verificações
           técnicas para produzir scores, achados e evidências. Quando uma chave
           própria é configurada, provedores de IA podem interpretar esses dados
           e gerar resumos, blueprints e planos.
@@ -45,7 +45,7 @@ export default function TermosPage() {
         </p>
         <p>
           Esses registros não garantem que a correção técnica tenha sido
-          implementada. O Elevate QA não faz merge automático no GitHub e não
+          implementada. O MuriOps não faz merge automático no GitHub e não
           deve publicar rascunhos sem uma ação posterior de uma pessoa
           autorizada.
         </p>

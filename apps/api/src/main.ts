@@ -16,7 +16,7 @@ async function main(): Promise<void> {
   await recoverStaleUpgradePlans();
   await recoverStaleOrchestrationRuns();
   await app.listen({ port: env.API_PORT, host: env.API_HOST });
-  app.log.info(`🚀 Elevate QA API em http://${env.API_HOST}:${env.API_PORT}`);
+  app.log.info(`🚀 MuriOps API em http://${env.API_HOST}:${env.API_PORT}`);
 }
 
 main().catch((err) => {

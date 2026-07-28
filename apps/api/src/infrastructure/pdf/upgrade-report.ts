@@ -13,7 +13,7 @@ export function generateUpgradeReportPdf(plan: UpgradePlan): PDFKit.PDFDocument 
   const doc = new PDFDocument({ size: "A4", margin: 50 });
   const r = plan.result;
 
-  doc.fontSize(20).text("Plano de Atualização — Elevate QA", { align: "left" });
+  doc.fontSize(20).text("Plano de Atualização — MuriOps", { align: "left" });
   doc.moveDown(0.3);
   doc.fontSize(10).fillColor("#666").text(plan.title);
   doc.text(
