@@ -44,11 +44,17 @@ aplicar de verdade na plataforma real do cliente ou automatizar o ciclo inteiro.
    Aplicação (usa as conexões de lá pra aplicar) — não tem lógica própria de apply.
    Autonomia MANUAL é a única implementada (Supervisionado/Autônomo ainda faltam).
    Ao criar uma execução dá pra escolher qual conexão usar: com adapter *push*
-   (GitHub/WordPress/Shopify/Nuvemshop/FTP) ela aplica sozinha a cada iteração; sem
+   (GitHub/WordPress/Shopify/FTP) ela aplica sozinha a cada iteração; sem
    conexão ou com MCP, quem aplica é a IA de dev do próprio usuário (ex.: Claude Pro
    via Claude Code conectado por MCP — sem precisar de API key nenhuma do Elevate
    QA), e a execução retoma sozinha quando todos os itens do plano forem marcados
    como feitos (`maybeAutoResumeFromPlan` em `orchestration.service.ts`).
+   **Reanálise (corrigido em 28/07/2026):** a iteração 1 aproveita a análise mais
+   recente do projeto; da 2ª em diante o `advance()` dispara uma *análise nova*
+   (mesmas categorias/profundidade da anterior, via `analysisService.start` +
+   `waitForAnalysisCompleted`). Antes ele reusava a última análise concluída em
+   toda iteração — o ciclo nunca reanalisava de fato e gerava planos duplicados
+   sobre dados velhos.
 6. **Atualizar** (`/atualizar`) — cola um `package.json`, IA gera plano de upgrade de
    dependências. Botão **"Enviar para Aplicação"** manda o plano pronto pra Aplicação
    (`RemediationSourceType.UPGRADE` — os itens do upgrade já vêm prontos, sem nova
@@ -91,11 +97,14 @@ anterior incompleta:
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —
-   conectar um projeto real no WordPress/Shopify/FTP e confirmar que a
-   aplicação automática funciona; rodar um ciclo completo de Orquestração (incl.
-   via MCP/ponte com retomada automática); validar o fluxo "Atualizar → Enviar
-   para Aplicação"; testar o login com Google de ponta a ponta assim que o
-   usuário configurar o Client ID. **Próximo item a atacar.**
+   ✅ *Feito em 28/07/2026:* ciclo completo de Orquestração validado ao vivo
+   (gate falhando → plano gerado → itens marcados pela ponte → retomada
+   automática → **reanálise real** na iteração seguinte); fluxo "Atualizar →
+   Enviar para Aplicação" validado (plano de upgrade vira `RemediationPlan`
+   sem nova chamada de IA); ponte universal (`GET /apply/:token` + `PATCH
+   .../items/:id`) validada. **Falta ainda:** conectar um projeto real no
+   WordPress/Shopify/FTP e confirmar a aplicação automática *push*; testar o
+   login com Google assim que o Client ID for configurado.
 2. **[Fase 2] Configurar Google OAuth em produção** — usuário precisa criar o
    Client ID no Google Cloud Console e colar em `GOOGLE_CLIENT_ID` (Render) e
    `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (Vercel). Sem isso o botão "Entrar com Google"
