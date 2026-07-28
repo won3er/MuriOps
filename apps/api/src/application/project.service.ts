@@ -4,6 +4,7 @@ import type {
   ProjectWithStats,
 } from "@qa-ai/shared";
 import { prisma } from "../infrastructure/database/prisma.js";
+import { assertPublicUrl } from "../infrastructure/security/url-guard.js";
 import { NotFoundError } from "./analysis.service.js";
 
 function normalizeUrl(url: string): string {
@@ -18,11 +19,18 @@ export const projectService = {
     userId: string,
     input: CreateProjectRequest,
   ): Promise<Project> {
+    const url = normalizeUrl(input.url);
+    // Bloqueia SSRF aqui pra dar feedback rápido no cadastro — a checagem
+    // que realmente importa (barra o crawler de verdade) é a de
+    // analysis.service.ts.start(), porque a URL efetiva de cada análise
+    // pode ser sobrescrita por request (StartAnalysisRequest.url), sem
+    // passar de novo por aqui.
+    await assertPublicUrl(url);
     const project = await prisma.project.create({
       data: {
         name: input.name,
         description: input.description ?? null,
-        url: normalizeUrl(input.url),
+        url,
         organizationId,
         createdById: userId,
       },

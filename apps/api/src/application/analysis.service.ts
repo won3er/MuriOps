@@ -14,6 +14,7 @@ import {
   cancelPendingAnalysis,
   enqueueAnalysis,
 } from "../infrastructure/queue/runner.js";
+import { assertPublicUrl } from "../infrastructure/security/url-guard.js";
 import { toAnalysisDto, toIssueDto, toPageDto } from "./mappers.js";
 
 export class NotFoundError extends Error {
@@ -62,6 +63,14 @@ export const analysisService = {
 
     const categories = normalizeCategories(input.categories);
 
+    // Ponto de verdade contra SSRF: StartAnalysisRequest.url deixa
+    // sobrescrever a URL do projeto por request, então validar só no
+    // cadastro do projeto (project.service.ts) não é suficiente — é aqui,
+    // bem antes de enfileirar o crawler de verdade, que a URL efetiva
+    // desta análise precisa ser checada contra IP interno/reservado.
+    const effectiveUrl = input.url ?? project.url;
+    await assertPublicUrl(effectiveUrl);
+
     const last = await prisma.analysis.findFirst({
       where: { projectId },
       orderBy: { version: "desc" },
@@ -74,7 +83,7 @@ export const analysisService = {
         version: (last?.version ?? 0) + 1,
         status: "QUEUED",
         config: {
-          url: input.url ?? project.url,
+          url: effectiveUrl,
           categories,
           maxDepth: input.maxDepth ?? 2,
           maxPages,
