@@ -90,7 +90,8 @@ function isPrivateOrReservedIp(address: string): boolean {
 function isPrivateOrReservedIpv4(address: string): boolean {
   const octets = address.split(".").map(Number);
   if (octets.length !== 4 || octets.some((o) => Number.isNaN(o))) return true;
-  const [a, b] = octets;
+  const a = octets[0]!;
+  const b = octets[1]!;
 
   if (a === 0) return true; // 0.0.0.0/8
   if (a === 10) return true; // 10.0.0.0/8 (privado)
