@@ -123,18 +123,20 @@ anterior incompleta:
    automática → **reanálise real** na iteração seguinte); fluxo "Atualizar →
    Enviar para Aplicação" validado (plano de upgrade vira `RemediationPlan`
    sem nova chamada de IA); ponte universal (`GET /apply/:token` + `PATCH
-   .../items/:id`) validada. **Falta ainda:** conectar um projeto real no
-   WordPress/Shopify/FTP e confirmar a aplicação automática *push* (precisa
-   de credenciais reais do usuário); testar o login com Google no navegador
-   agora que o Client ID foi configurado (item 2 abaixo — deploy disparado,
-   falta confirmar visualmente o botão + fluxo completo).
-2. **[Fase 2] Configurar Google OAuth em produção** — ✅ *Feito em 28/07/2026
-   (Cowork, guiado passo a passo com o usuário):* Client ID OAuth criado no
-   Google Cloud Console (projeto `mystical-banner-424318-g1`, tipo "App da
-   Web", origem JS autorizada `https://elevate-qa.vercel.app`), salvo como
-   `GOOGLE_CLIENT_ID` no Render e `NEXT_PUBLIC_GOOGLE_CLIENT_ID` na Vercel,
-   ambos os serviços redeployados. **Falta:** confirmar visualmente no
-   navegador que o botão "Entrar com Google" aparece e completa o login.
+   .../items/:id`) validada; **login com Google confirmado ao vivo em
+   produção** (29/07/2026 — ver item 2). **Falta ainda:** conectar um
+   projeto real no WordPress/Shopify/FTP e confirmar a aplicação automática
+   *push* (precisa de credenciais reais do usuário).
+2. **[Fase 2] Configurar Google OAuth em produção** — ✅ *Concluído e
+   confirmado em produção em 29/07/2026:* Client ID OAuth criado no Google
+   Cloud Console (projeto `mystical-banner-424318-g1`, tipo "App da Web",
+   origem JS autorizada `https://elevate-qa.vercel.app`), salvo como
+   `GOOGLE_CLIENT_ID` no Render e `NEXT_PUBLIC_GOOGLE_CLIENT_ID` na Vercel;
+   bug de CSP bloqueando `accounts.google.com` corrigido (commit `5a26492`,
+   28/07/2026 à noite) e testado no navegador depois do usuário dar
+   `git push` — botão "Continuar com o Google" renderiza,
+   `window.google.accounts.id` carrega, fluxo abre normalmente. Pendência
+   fechada.
 3. **[Fase 2] Confirmar migrations em produção** — ✅ *Confirmado em
    28/07/2026:* `apps/api/Dockerfile` já roda `pnpm exec prisma migrate
    deploy` no `CMD`, antes de `node dist/main.js`, toda vez que o container
@@ -178,19 +180,28 @@ anterior incompleta:
    `webhooks.routes.ts`, `ftp-adapter.ts`, `github-adapter.ts`, `index.ts`
    dos adapters, `manual-bridge.adapter.ts`, `adapter-connection.service.ts`,
    `settings.routes.ts`, `upgrade.service.ts`, `project.service.ts`.
-   **Achado, mas NÃO corrigido (precisa de decisão/teste, não é fix
-   trivial):** `project.service.ts` → `normalizeUrl()` não valida a URL do
-   projeto contra IPs internos/privados (`localhost`, `127.0.0.1`,
-   `169.254.169.254` metadata de nuvem, `10.x`/`192.168.x`) antes do crawler
-   (Playwright) acessá-la de verdade no servidor — SSRF clássico: alguém
-   pode cadastrar um projeto apontando pra rede interna do Render e ver o
-   conteúdo retornado no relatório de análise. Não tentei corrigir essa
-   madrugada porque um filtro correto precisa resolver DNS, checar faixas de
-   IP e cobrir redirects durante o crawl (não só a URL inicial) — um fix
-   apressado sem poder testar o crawler de ponta a ponta arriscava quebrar
-   análises legítimas. Fica como próximo item prioritário da Fase 3.
+   **SSRF corrigido em 29/07/2026** (commit `e0d8e35`): criado
+   `apps/api/src/infrastructure/security/url-guard.ts` (`assertPublicUrl()`)
+   — resolve o hostname via DNS e bloqueia IPs privados/reservados (RFC1918,
+   loopback, `169.254.0.0/16` incluindo metadata de nuvem, CGNAT, TEST-NETs,
+   multicast, faixas IPv6 equivalentes) e hostnames tipo
+   `localhost`/`*.local`/`*.internal`. Aplicado em dois pontos:
+   `project.service.ts.create()` (feedback rápido no cadastro) e
+   **`analysis.service.ts.start()`** — este é o que realmente importa, porque
+   `StartAnalysisRequest.url` deixa sobrescrever a URL do projeto por
+   request, então validar só no cadastro não bastava. Testado isoladamente
+   com um script Node fora do repo (169.254.169.254, localhost, 127.0.0.1,
+   10.x, 192.168.x, `[::1]` barrados; domínios públicos liberados — DNS real
+   não pôde ser testado no sandbox por falta de acesso de rede direto, mas a
+   lógica foi validada). **Gap remanescente, não coberto:** não intercepta
+   redirects durante o crawl em si — o Playwright pode seguir um redirect
+   pra um IP interno no meio da navegação, depois da checagem inicial passar.
+   Fechar isso exigiria validar request a request dentro do engine de crawl;
+   documentado no comentário do arquivo, não é bloqueante pra usar a
+   correção atual (cobre o caso comum: registrar/pedir análise de uma URL
+   interna direto).
    **Ainda não revisados:** analysis-runner/crawler (o resto — fora do ponto
-   de SSRF já achado), blueprint.service.ts, rotas de dashboard. Retomar a
+   de SSRF já corrigido), blueprint.service.ts, rotas de dashboard. Retomar a
    partir daqui quando continuar a Fase 3.
 7. **[Removido em 28/07/2026] Adapter Nuvemshop** — a loja de teste real
    (`qateste.lojavirtualnuvem.com.br`) estourava consistentemente os 512MB do
