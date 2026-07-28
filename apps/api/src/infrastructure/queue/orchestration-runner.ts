@@ -16,7 +16,16 @@ const CONCURRENCY = 2;
 const pending: string[] = [];
 const running = new Set<string>();
 
+/**
+ * Enfileira um run pra avançar um passo. Deduplicado por runId: se o mesmo
+ * run já está pendente ou rodando (ex.: duplo clique em "Aprovar", ou uma
+ * observação de webhook chegando junto com o auto-resume da ponte), o
+ * segundo enqueue é ignorado — sem isso, `pump()` podia disparar `advance()`
+ * duas vezes em paralelo pro mesmo runId, gerando planos de remediação
+ * duplicados (mesma classe de bug já visto na reanálise antes desta correção).
+ */
 export async function enqueueOrchestrationRun(runId: string): Promise<void> {
+  if (running.has(runId) || pending.includes(runId)) return;
   pending.push(runId);
   pump();
 }

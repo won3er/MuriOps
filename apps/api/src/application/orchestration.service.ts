@@ -103,10 +103,20 @@ export const orchestrationService = {
       throw new ConflictError(`Execução não está aguardando aprovação (status atual: ${run.status}).`);
     }
     const nextIteration = run.iteration + 1;
-    await prisma.orchestrationRun.update({
-      where: { id },
+    // updateMany com status na condição (em vez de update por id direto):
+    // torna a transição atômica. Duas chamadas de approve() quase
+    // simultâneas (duplo clique) podiam ambas passar pela checagem acima
+    // antes de qualquer uma escrever, e as duas incrementavam a iteração e
+    // enfileiravam o run — processando o mesmo passo duas vezes em paralelo.
+    // Com a condição de status no WHERE, só a primeira escrita afeta alguma
+    // linha; a segunda afeta 0 linhas e vira ConflictError.
+    const { count } = await prisma.orchestrationRun.updateMany({
+      where: { id, status: "AWAITING_APPLY" },
       data: { status: "REANALYZING", iteration: nextIteration },
     });
+    if (count === 0) {
+      throw new ConflictError("Execução já foi aprovada (ou mudou de status) em outra requisição.");
+    }
     await logEvent(id, "APPLY_APPROVED", "Aprovado manualmente — retomando a execução.");
     await logEvent(id, "ITERATION_ADVANCED", `Iniciando iteração ${nextIteration}.`);
     await enqueueOrchestrationRun(id);
@@ -155,17 +165,22 @@ export async function onObservation(
   });
   if (!run) return;
 
+  const nextIteration = run.iteration + 1;
+  // Guarda o status na condição do updateMany (mesmo motivo do approve()
+  // acima) — dois webhooks quase simultâneos pro mesmo projeto não podem
+  // ambos retomar o mesmo run.
+  const { count } = await prisma.orchestrationRun.updateMany({
+    where: { id: run.id, status: "AWAITING_OBSERVATION" },
+    data: { status: "REANALYZING", iteration: nextIteration },
+  });
+  if (count === 0) return;
+
   await logEvent(
     run.id,
     "OBSERVATION_RECEIVED",
     "Mudança observada pelo adapter — retomando a execução.",
     event,
   );
-  const nextIteration = run.iteration + 1;
-  await prisma.orchestrationRun.update({
-    where: { id: run.id },
-    data: { status: "REANALYZING", iteration: nextIteration },
-  });
   await logEvent(run.id, "ITERATION_ADVANCED", `Iniciando iteração ${nextIteration}.`);
   await enqueueOrchestrationRun(run.id);
 }
@@ -192,10 +207,15 @@ export async function maybeAutoResumeFromPlan(planId: string): Promise<void> {
   if (items.length === 0 || items.some((i) => i.status === "pending")) return;
 
   const nextIteration = run.iteration + 1;
-  await prisma.orchestrationRun.update({
-    where: { id: run.id },
+  // Guarda o status na condição (mesmo motivo do approve()/onObservation
+  // acima) — marcar vários itens em sequência rápida pela ponte/MCP dispara
+  // este handler várias vezes; só a primeira pode de fato retomar o run.
+  const { count } = await prisma.orchestrationRun.updateMany({
+    where: { id: run.id, status: "AWAITING_APPLY" },
     data: { status: "REANALYZING", iteration: nextIteration },
   });
+  if (count === 0) return;
+
   await logEvent(
     run.id,
     "APPLY_APPROVED",
