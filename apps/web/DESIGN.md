@@ -1,21 +1,19 @@
-# Elevate QA — Style Reference
+# Elevate QA — Product UI Reference
 
-> Instrument — cinza-grafite puro, um único acento cromático, sem gradiente
-> decorativo.
+> Plataforma operacional — superfícies neutras, densidade controlada, navegação
+> contextual e um único acento cromático, sem gradiente decorativo.
 
 **Tema:** dark único, fixo (`forcedTheme="dark"` no `ThemeProvider`). Sem
 variante light.
 
-## De onde veio
+## Direção atual
 
-Esta versão usa literalmente a escala de cinza do design system real do
-**Linear**, capturado via [styles.refero.design](https://styles.refero.design)
-(não é "inspirado em" — os valores hex abaixo são os tokens documentados lá
-para o Linear: Void/Carbon/Obsidian/Graphite/Smoke/Fog/Bone/Paper). A cor de
-acento não é a do Linear (eles usam um verde-lima elétrico só num botão) —
-trocamos por um índigo (`#6366f1`), comum em ferramentas de dev/IA (tags do
-próprio Linear, GitHub Copilot, Vercel em alguns contextos) e sem nenhuma
-relação com o laranja usado nas duas versões anteriores.
+Esta versão segue princípios do **GitHub Primer** sem copiar sua marca ou seus
+componentes literalmente: alta densidade com leitura calma, superfícies
+separadas por bordas, tipografia predominantemente alinhada à esquerda,
+navegação global + contextual e layouts que continuam funcionais em telas
+estreitas. A paleta usa a família de superfícies grafite do GitHub como
+referência, mas preserva o índigo (`#6366f1`) como assinatura do Elevate QA.
 
 Duas versões anteriores foram descartadas por feedback direto do usuário:
 
@@ -25,24 +23,23 @@ Duas versões anteriores foram descartadas por feedback direto do usuário:
    como acento e um glow radial no fundo. Rejeitada: usuário não queria mais
    nenhum laranja, e classificou o gradiente de fundo como "amador".
 
-**v3 "Instrument" (atual)** corrige os dois pontos: acento trocado para
-índigo, e o `body{}` não tem mais nenhum `background-image` — é um flat color
-sólido, sem glow, sem gradiente. O logo (isótipo em barras) manteve a forma
-mas passou a usar fill sólido em vez de gradiente interno — a filosofia do
-Linear é "quase tudo neutro, uma única cor plana quando precisa de ação".
+**v4 "Platform" (atual)** mantém o fundo sólido e o acento índigo, mas troca a
+lógica de “coleção de telas SaaS” por uma arquitetura de sistema: barra global,
+navegação agrupada, cabeçalhos consistentes, regiões contextuais e páginas
+orientadas a entidades.
 
 ## Tokens — Cores
 
-| Nome (Linear) | Valor | Token CSS | Papel |
-|------|-------|-----------|-------|
-| Void | `#08090a` | `--background` | Fundo de página — canvas padrão |
-| Carbon | `#0f1011` | `--card` | Cards, navs — um degrau acima do canvas |
-| Obsidian | `#161718` | `--muted` | Superfícies levemente elevadas |
-| Graphite | `#23252a` | `--border` / `--accent` | Bordas, divisores, hover |
-| Fog | `#8a8f98` | `--muted-foreground` | Texto secundário, placeholder |
-| Paper | `#ffffff` | `--foreground` | Texto primário — branco puro |
-| Índigo (não é do Linear) | `#6366f1` | `--primary` | Único acento cromático — CTA, link ativo, foco, logo |
-| Alarm | mantém `--destructive` | `--destructive` | Vermelho de erro/severidade alta — não muda |
+| Nome                     | Valor                  | Token CSS              | Papel                                                |
+| ------------------------ | ---------------------- | ---------------------- | ---------------------------------------------------- |
+| Canvas                   | `#0d1117`              | `--background`         | Fundo de página                                      |
+| Surface                  | `#161b22`              | `--card`               | Cards, barras e painéis                              |
+| Control                  | `#21262d`              | `--muted` / `--accent` | Controles e hover                                    |
+| Border                   | `#30363d`              | `--border`             | Bordas e divisores                                   |
+| Secondary                | `#8b949e`              | `--muted-foreground`   | Texto secundário                                     |
+| Foreground               | `#f0f6fc`              | `--foreground`         | Texto primário                                       |
+| Índigo (não é do Linear) | `#6366f1`              | `--primary`            | Único acento cromático — CTA, link ativo, foco, logo |
+| Alarm                    | mantém `--destructive` | `--destructive`        | Vermelho de erro/severidade alta — não muda          |
 
 Sem token de tema claro — app roda sempre com `.dark`.
 
@@ -76,31 +73,26 @@ sem `background-image`. Essa foi a correção mais direta pedida pelo usuário
 - **Cores de severidade/status** (emerald/amber/red/sky do Tailwind, e os
   hexs de score em `lib/utils.ts`) continuam — comunicam prioridade, não
   fazem parte da identidade de marca.
-- **Isótipo** (barras ascendentes formando "E") mantém a forma exata das
-  versões anteriores; só a cor e o fill (sólido, não gradiente) mudaram.
+- **Cores funcionais** aparecem somente quando comunicam estado, risco ou
+  prioridade. A identidade principal permanece neutra com acento índigo.
 
 ## Mascote
 
-O mascote é a arte de **texugo em silhueta** enviada diretamente pelo
-usuário: um círculo branco com o texugo em preto (perfil, orelha, focinho e
-olho recortados em negativo), fundo preto ao redor do círculo. Diferente das
-tentativas anteriores (harpia e um primeiro texugo desenhados à mão em SVG
-com paths), esta versão usa a **imagem raster original como está**, sem
-recriar os traços — o usuário pediu explicitamente essa imagem, "se
-necessário diminuindo pra encaixar".
+O mascote é um **rato em negativo dentro de um selo circular preto**. A marca
+foi desenhada para funcionar como símbolo de uma plataforma técnica: poucos
+elementos, geometria forte e leitura preservada em 16–32 px. O rosto branco,
+as orelhas laterais compactas e o focinho estreito diferenciam o rato de um
+camundongo cartunesco.
 
-Arquivo fonte: `public/badger-logo-512.png` (recorte quadrado do círculo,
-512×512, gerado a partir da imagem enviada). Usado em:
-- `components/logo.tsx` (`LogoMark`/`LogoIsotype`) via `next/image`,
-  arredondado com `rounded-full`.
-- `app/icon.svg` — a mesma imagem em 32×32, embutida como PNG em base64
-  dentro do SVG (`<image href="data:image/png;base64,...">`), pro favicon.
-- `app/opengraph-image.tsx` — lida do disco em runtime Node.js (não edge,
-  porque precisa de `fs`) e embutida como data URI na imagem de
-  compartilhamento (og:image).
+Arquivo principal: `public/atlas-rat-logo.png`, com fundo transparente.
+Derivações:
 
-Trocou dos mascotes anteriores (harpia, depois um texugo desenhado à mão)
-por pedido direto do usuário, que mandou a imagem final pronta.
+- `public/atlas-rat-logo-512.png` — marca usada pelos componentes de produto;
+- `public/atlas-rat-icon-180.png` — ícone para superfícies externas;
+- `app/icon.png` — favicon de 32 px;
+- `app/opengraph-image.tsx` — importa a marca estática na imagem social.
+
+O símbolo substituiu integralmente o antigo texugo em 28/07/2026.
 
 ## Página inicial — seção de destaques
 
@@ -113,11 +105,22 @@ genérica. O rodapé (`components/site-footer.tsx`) ganhou três colunas: guia
 rápido de uso, status de cada funcionalidade (Disponível/Beta) e links
 institucionais (Termos, Privacidade, Contato).
 
+## Arquitetura de navegação
+
+- **Barra global:** marca, busca, ajuda, notificações e conta.
+- **Navegação principal:** agrupada em Workspace, Ciclo de qualidade e
+  Plataforma.
+- **Contexto de entidade:** breadcrumb, cabeçalho, ações e abas locais.
+- **Mobile:** barra compacta e drawer; conteúdo sempre em uma coluna útil.
+- **Cards:** usados para entidades ou regiões, não como decoração genérica.
+
 ## Histórico
 
 - **v1 "Signal room"** — mogno quente + Ember + variante clara. Rejeitada
   (tema claro muito aberto).
 - **v2 "Console"** — preto neutro estilo GitHub + Ember + glow radial sutil.
   Rejeitada (ainda tinha laranja, gradiente considerado "amador").
-- **v3 "Instrument" (atual)** — escala de cinza real do Linear + acento
+- **v3 "Instrument"** — escala de cinza real do Linear + acento
   índigo sólido + zero gradiente.
+- **v4 "Platform" (atual)** — arquitetura de produto inspirada nos princípios
+  do GitHub Primer, nova marca do rato e navegação global/contextual.

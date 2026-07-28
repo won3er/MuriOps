@@ -14,7 +14,10 @@ declare global {
             client_id: string;
             callback: (resp: { credential: string }) => void;
           }) => void;
-          renderButton: (parent: HTMLElement, options: Record<string, unknown>) => void;
+          renderButton: (
+            parent: HTMLElement,
+            options: Record<string, unknown>,
+          ) => void;
         };
       };
     };
@@ -39,7 +42,9 @@ export function GoogleSignInButton() {
       try {
         await loginWithGoogle(resp.credential);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Falha ao entrar com Google");
+        toast.error(
+          err instanceof Error ? err.message : "Falha ao entrar com Google",
+        );
         setBusy(false);
       }
     },
@@ -55,7 +60,7 @@ export function GoogleSignInButton() {
     window.google.accounts.id.renderButton(containerRef.current, {
       theme: "outline",
       size: "large",
-      width: 320,
+      width: Math.min(320, containerRef.current.clientWidth || 320),
       text: "continue_with",
       shape: "rectangular",
     });
@@ -64,13 +69,17 @@ export function GoogleSignInButton() {
   if (!CLIENT_ID) return null;
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex w-full flex-col items-center gap-2">
       <Script
         src="https://accounts.google.com/gsi/client"
         strategy="afterInteractive"
         onLoad={initGoogle}
       />
-      <div ref={containerRef} aria-busy={busy} />
+      <div
+        ref={containerRef}
+        aria-busy={busy}
+        className="w-full max-w-[320px] overflow-hidden"
+      />
     </div>
   );
 }

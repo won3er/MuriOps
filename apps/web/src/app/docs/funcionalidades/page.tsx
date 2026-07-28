@@ -1,129 +1,163 @@
-"use client";
+import { CheckCircle2, Clock3, PauseCircle } from "lucide-react";
+import { DocsShell } from "@/components/docs-shell";
+import { Badge } from "@/components/ui/badge";
 
-import { ArrowLeft, CheckCircle2, Circle, Zap } from "lucide-react";
-import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
+export const metadata = {
+  title: "Status das funcionalidades",
+  description:
+    "Consulte o que está disponível, em evolução ou planejado no Elevate QA.",
+  alternates: { canonical: "/docs/funcionalidades" },
+};
 
-const FEATURES = [
+const GROUPS = [
   {
-    name: "Análise QA padrão",
-    status: "available",
-    desc: "Crawler + Playwright analisa performance, SEO, acessibilidade, UI/UX e console/network.",
+    title: "Analisar e planejar",
+    items: [
+      [
+        "Análise QA padrão",
+        "Disponível",
+        "Crawler com verificações de UI/UX, performance, SEO, acessibilidade, console e rede.",
+      ],
+      [
+        "Análise de Segurança",
+        "Disponível",
+        "Verificações aprofundadas de headers, HTTPS, CSP, TLS, DNS e exposição indevida.",
+      ],
+      [
+        "Projetar",
+        "Disponível",
+        "Blueprint com arquitetura, stack, riscos, estratégia de testes, quality gates e roadmap.",
+      ],
+      [
+        "Atualizar",
+        "Disponível",
+        "Plano de atualização de dependências a partir de um package.json.",
+      ],
+    ],
   },
   {
-    name: "Análise de Segurança",
-    status: "available",
-    desc: "Headers, HTTPS, CSP, TLS, DNS, segredos expostos e vulnerabilidades conhecidas.",
+    title: "Aplicar e acompanhar",
+    items: [
+      [
+        "Aplicação",
+        "Disponível",
+        "Transforma análises, blueprints e upgrades em checklists de remediação.",
+      ],
+      [
+        "PDF e ponte universal",
+        "Disponível",
+        "Exportação para execução humana ou por uma IA de desenvolvimento.",
+      ],
+      [
+        "Servidor MCP por projeto",
+        "Disponível",
+        "Permite consultar o plano e atualizar itens por protocolo MCP.",
+      ],
+      [
+        "Orquestração Manual",
+        "Disponível",
+        "Executa o ciclo com checkpoints e retomada após a aplicação dos itens.",
+      ],
+      [
+        "Orquestração Supervisionada",
+        "Em desenvolvimento",
+        "Prevista para aprovações explícitas entre as etapas.",
+      ],
+      [
+        "Orquestração Autônoma",
+        "Em desenvolvimento",
+        "Prevista para ciclos automáticos limitados por quality gates.",
+      ],
+    ],
   },
   {
-    name: "Aplicação",
-    status: "available",
-    desc: "Transforma achados em plano de ação — execute manualmente ou via adapters.",
+    title: "Conexões",
+    items: [
+      [
+        "GitHub",
+        "Disponível",
+        "Cria branch, checklist rastreável e pull request; não altera o código nem faz merge.",
+      ],
+      [
+        "WordPress",
+        "Disponível",
+        "Cria ou atualiza uma página em rascunho com o checklist; mudanças de tema continuam manuais.",
+      ],
+      [
+        "Shopify",
+        "Disponível",
+        "Cria uma página não publicada com o checklist; não edita tema ou Liquid.",
+      ],
+      [
+        "FTP/FTPS",
+        "Disponível",
+        "Grava um arquivo Markdown no servidor; não modifica automaticamente o código existente.",
+      ],
+      [
+        "Wix, Squarespace e Webnode",
+        "Adiado",
+        "Sem adapter de aplicação real; reconsiderar apenas se houver uma API adequada.",
+      ],
+    ],
   },
-  {
-    name: "Ponte Universal (MCP/Bridge)",
-    status: "available",
-    desc: "Exporte planos em markdown e aplique com sua IA de dev (Claude Code, Cursor…) sem API key.",
-  },
-  {
-    name: "Projetar (Blueprint)",
-    status: "available",
-    desc: "IA desenha arquitetura, stack, quality gates e roadmap para seu projeto.",
-  },
-  {
-    name: "Atualizar (Upgrade)",
-    status: "available",
-    desc: "Análise de dependências: risco, breaking changes, passo a passo de migração.",
-  },
-  {
-    name: "Orquestração (Manual)",
-    status: "available",
-    desc: "Automatiza ciclo: analisar → gerar plano → aplicar → reanalisar com controle manual.",
-  },
-  {
-    name: "Adapters: WordPress",
-    status: "available",
-    desc: "Aplicação automática criando páginas de rascunho no WordPress via API.",
-  },
-  {
-    name: "Adapters: Shopify",
-    status: "available",
-    desc: "Aplicação automática via API do Shopify.",
-  },
-  {
-    name: "Adapters: FTP",
-    status: "available",
-    desc: "Aplicação automática em servidores FTP (Hostinger, Hostgator, etc).",
-  },
-  {
-    name: "GitHub Integration",
-    status: "available",
-    desc: "Análise de repositórios e aplicação via pull requests.",
-  },
-  {
-    name: "Orquestração (Supervisionada)",
-    status: "planned",
-    desc: "Executa ciclos com aprovação manual em cada iteração.",
-  },
-  {
-    name: "Orquestração (Autônoma)",
-    status: "planned",
-    desc: "Ciclos totalmente automáticos com quality gates.",
-  },
-  {
-    name: "Wix Integration",
-    status: "deferred",
-    desc: "Planejado — modo plano manual apenas (sem API de aplicação automática).",
-  },
-  {
-    name: "Squarespace Integration",
-    status: "deferred",
-    desc: "Planejado — modo plano manual apenas (sem API de aplicação automática).",
-  },
-];
+] as const;
 
-const STATUS_CONFIG = {
-  available: { color: "text-emerald-400", label: "Disponível", icon: CheckCircle2 },
-  planned: { color: "text-blue-400", label: "Em desenvolvimento", icon: Zap },
-  deferred: { color: "text-amber-400", label: "Adiado", icon: Circle },
+const STATUS = {
+  Disponível: {
+    icon: CheckCircle2,
+    className: "border-emerald-500/35 bg-emerald-500/10 text-emerald-300",
+  },
+  "Em desenvolvimento": {
+    icon: Clock3,
+    className: "border-sky-500/35 bg-sky-500/10 text-sky-300",
+  },
+  Adiado: {
+    icon: PauseCircle,
+    className: "border-amber-500/35 bg-amber-500/10 text-amber-300",
+  },
 };
 
 export default function FuncionalidadesPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto max-w-4xl px-6 py-12">
-        <Link href="/docs" className="mb-6 inline-flex items-center gap-2 text-orange-400 hover:text-orange-300">
-          <ArrowLeft className="h-4 w-4" /> Voltar
-        </Link>
-
-        <div className="mb-12">
-          <h1 className="mb-4 text-4xl font-bold">Status das funcionalidades</h1>
-          <p className="text-lg text-slate-400">
-            Veja o que está disponível, em desenvolvimento e adiado.
-          </p>
-        </div>
-
-        <div className="grid gap-4">
-          {FEATURES.map((f) => {
-            const cfg = STATUS_CONFIG[f.status as keyof typeof STATUS_CONFIG];
-            const Icon = cfg.icon;
-            return (
-              <Card key={f.name} className="border-slate-700 bg-slate-800/50">
-                <CardContent className="flex items-start gap-4 py-4">
-                  <Icon className={`mt-1 h-5 w-5 shrink-0 ${cfg.color}`} />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium">{f.name}</h3>
-                      <span className={`text-xs ${cfg.color}`}>{cfg.label}</span>
-                    </div>
-                    <p className="mt-1 text-sm text-slate-400">{f.desc}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+    <DocsShell
+      title="Status das funcionalidades"
+      description="Uma visão honesta do que pode ser usado hoje, do que ainda está em desenvolvimento e dos limites de cada integração."
+      eyebrow="Produto"
+    >
+      <div className="mb-8 flex flex-wrap gap-2">
+        {Object.entries(STATUS).map(([label, config]) => (
+          <Badge key={label} className={config.className}>
+            <config.icon className="h-3 w-3" /> {label}
+          </Badge>
+        ))}
       </div>
-    </div>
+
+      <div className="space-y-10">
+        {GROUPS.map((group) => (
+          <section key={group.title}>
+            <h2 className="mb-3 text-lg font-semibold">{group.title}</h2>
+            <div className="divide-y overflow-hidden rounded-lg border bg-card">
+              {group.items.map(([name, status, description]) => {
+                const config = STATUS[status];
+                return (
+                  <div
+                    key={name}
+                    className="grid gap-2 px-4 py-4 sm:grid-cols-[200px_minmax(0,1fr)_auto] sm:items-start"
+                  >
+                    <h3 className="text-sm font-medium">{name}</h3>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      {description}
+                    </p>
+                    <Badge className={config.className}>
+                      <config.icon className="h-3 w-3" /> {status}
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
+    </DocsShell>
   );
 }

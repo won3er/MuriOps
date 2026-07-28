@@ -1,173 +1,284 @@
 "use client";
 
-import { FileSearch, Loader2, Play, ShieldAlert } from "lucide-react";
+import {
+  ArrowRight,
+  FileSearch,
+  Loader2,
+  Play,
+  ShieldAlert,
+} from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
+import { QueryErrorState } from "@/components/query-error-state";
+import { AnalysisStatusBadge } from "@/components/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { AnalysisStatusBadge } from "@/components/status-badge";
 import { api } from "@/lib/api";
 import { useAnalysesList, useProjects } from "@/lib/queries";
-import { formatDuration, scoreColor, timeAgo } from "@/lib/utils";
+import { cn, formatDuration, scoreColor, timeAgo } from "@/lib/utils";
 
-/** Auditoria de segurança = análise que rodou só a categoria DEEP_SECURITY. */
 function isSecurityAudit(categories: string[]): boolean {
   return categories.length === 1 && categories[0] === "DEEP_SECURITY";
 }
 
 export default function AnalysesHubPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          className="grid place-items-center py-24 text-muted-foreground"
+          role="status"
+        >
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="mt-3 text-sm">Preparando análises…</span>
+        </div>
+      }
+    >
+      <AnalysesHub />
+    </Suspense>
+  );
+}
+
+function AnalysesHub() {
   const router = useRouter();
-  const { data: projects = [] } = useProjects();
-  const { data: analyses = [], isLoading } = useAnalysesList();
-
+  const searchParams = useSearchParams();
+  const {
+    data: projects = [],
+    isError: projectsError,
+    refetch: refetchProjects,
+  } = useProjects();
+  const {
+    data: analyses = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useAnalysesList();
   const [projectId, setProjectId] = useState("");
-  const [starting, setStarting] = useState(false);
-  const [startingSecurity, setStartingSecurity] = useState(false);
+  const [startingType, setStartingType] = useState<"qa" | "security" | null>(
+    null,
+  );
 
-  async function start(security: boolean) {
+  useEffect(() => {
+    const requestedProject = searchParams.get("projectId");
+    if (requestedProject) setProjectId(requestedProject);
+  }, [searchParams]);
+
+  async function start(type: "qa" | "security") {
     if (!projectId) return;
-    security ? setStartingSecurity(true) : setStarting(true);
+    setStartingType(type);
     try {
       const analysis = await api.startAnalysis(
         projectId,
-        security ? { categories: ["DEEP_SECURITY"] } : {},
+        type === "security" ? { categories: ["DEEP_SECURITY"] } : {},
       );
       router.push(`/analyses/${analysis.id}`);
-    } finally {
-      security ? setStartingSecurity(false) : setStarting(false);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível iniciar a análise.",
+      );
+      setStartingType(null);
     }
   }
 
+  const activeCount = analyses.filter((analysis) =>
+    ["QUEUED", "CRAWLING", "ANALYZING", "AI_REVIEW"].includes(analysis.status),
+  ).length;
+
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold">
-          <FileSearch className="h-6 w-6 text-primary" /> Análise
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Rode e acompanhe as análises de qualquer projeto — QA padrão (UI,
-          performance, SEO, acessibilidade) ou Segurança (TLS, DNS, headers,
-          segredos expostos) — tudo num só lugar.
-        </p>
-      </div>
+    <div className="mx-auto max-w-7xl space-y-7">
+      <PageHeader
+        eyebrow="Ciclo de qualidade"
+        title="Análises"
+        description="Execute verificações, acompanhe o processamento e compare a evolução dos projetos."
+      />
 
-      {/* Nova análise */}
-      <Card>
-        <CardContent className="space-y-4 py-6">
-          <h2 className="text-sm font-medium text-muted-foreground">
-            Rodar uma nova análise
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-[1fr_auto_auto] sm:items-end">
-            <div>
-              <label
-                htmlFor="analise-projeto"
-                className="mb-1.5 block text-xs text-muted-foreground"
-              >
-                Projeto
-              </label>
-              <select
-                id="analise-projeto"
-                value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
-                className="h-10 w-full rounded-md border border-input bg-background/60 px-3 text-sm"
-              >
-                <option value="">Selecione um projeto…</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => start(true)}
-              disabled={!projectId || startingSecurity}
+      <section className="rounded-lg border bg-card">
+        <div className="border-b px-5 py-4">
+          <h2 className="text-sm font-semibold">Nova análise</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Selecione o projeto e escolha o escopo adequado.
+          </p>
+        </div>
+        <div className="grid gap-5 p-5 lg:grid-cols-[minmax(220px,1fr)_minmax(0,2fr)]">
+          <div>
+            <label
+              htmlFor="analysis-project"
+              className="mb-1.5 block text-sm font-medium"
             >
-              {startingSecurity ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ShieldAlert className="h-4 w-4" />
-              )}
-              Análise de Segurança
-            </Button>
-            <Button onClick={() => start(false)} disabled={!projectId || starting}>
-              {starting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
-              Análise QA padrão
-            </Button>
+              Projeto
+            </label>
+            <select
+              id="analysis-project"
+              value={projectId}
+              onChange={(event) => setProjectId(event.target.value)}
+              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="">Selecione um projeto…</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+            {projectsError ? (
+              <div className="mt-3">
+                <QueryErrorState
+                  compact
+                  title="Projetos indisponíveis"
+                  description="Não foi possível carregar as opções."
+                  onRetry={() => void refetchProjects()}
+                />
+              </div>
+            ) : (
+              projects.length === 0 && (
+                <Link
+                  href="/projects"
+                  className="mt-2 inline-flex text-xs text-primary hover:underline"
+                >
+                  Cadastre um projeto primeiro
+                </Link>
+              )
+            )}
           </div>
-        </CardContent>
-      </Card>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => start("qa")}
+              disabled={!projectId || startingType !== null}
+              className="group flex gap-3 rounded-md border p-4 text-left hover:border-primary/50 hover:bg-accent/30 disabled:pointer-events-none disabled:opacity-50"
+            >
+              {startingType === "qa" ? (
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              ) : (
+                <Play className="h-5 w-5 text-primary" />
+              )}
+              <span>
+                <strong className="block text-sm font-medium">
+                  Análise QA padrão
+                </strong>
+                <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                  UI/UX, performance, SEO, acessibilidade, console e rede.
+                </span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => start("security")}
+              disabled={!projectId || startingType !== null}
+              className="group flex gap-3 rounded-md border p-4 text-left hover:border-primary/50 hover:bg-accent/30 disabled:pointer-events-none disabled:opacity-50"
+            >
+              {startingType === "security" ? (
+                <Loader2 className="h-5 w-5 animate-spin text-amber-400" />
+              ) : (
+                <ShieldAlert className="h-5 w-5 text-amber-400" />
+              )}
+              <span>
+                <strong className="block text-sm font-medium">
+                  Análise de Segurança
+                </strong>
+                <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                  TLS, DNS, headers, políticas e exposições indevidas.
+                </span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </section>
 
-      {/* Histórico geral */}
-      <div>
-        <h2 className="mb-3 text-lg font-medium">Todas as análises</h2>
-        {isLoading ? (
-          <div className="grid place-items-center py-10 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
+      <section>
+        <div className="mb-3 flex items-end justify-between">
+          <div>
+            <h2 className="text-base font-semibold">Histórico</h2>
+            <p className="text-xs text-muted-foreground">
+              {activeCount > 0
+                ? `${activeCount} análise(s) em andamento`
+                : `${analyses.length} análise(s) registrada(s)`}
+            </p>
           </div>
-        ) : analyses.length === 0 ? (
-          <Card>
-            <CardContent className="py-10 text-center text-muted-foreground">
-              Nenhuma análise ainda. Selecione um projeto acima e rode a
-              primeira.
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {analyses.map((a) => (
-              <Card key={a.id} className="transition-colors hover:border-primary/50">
-                <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+        </div>
+
+        <div className="overflow-hidden rounded-lg border bg-card">
+          {isLoading ? (
+            <div className="grid place-items-center py-12 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+          ) : isError ? (
+            <QueryErrorState
+              title="Não foi possível carregar o histórico"
+              onRetry={() => void refetch()}
+            />
+          ) : analyses.length === 0 ? (
+            <div className="px-6 py-12 text-center">
+              <FileSearch className="mx-auto h-6 w-6 text-muted-foreground" />
+              <p className="mt-3 text-sm font-medium">
+                Nenhuma análise executada
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Selecione um projeto acima para iniciar.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {analyses.map((analysis) => {
+                const security = isSecurityAudit(analysis.categories);
+                return (
                   <Link
-                    href={`/analyses/${a.id}`}
-                    className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5"
+                    key={analysis.id}
+                    href={`/analyses/${analysis.id}`}
+                    className="group grid gap-3 px-4 py-3.5 hover:bg-accent/40 sm:grid-cols-[minmax(0,1fr)_180px_80px_20px] sm:items-center"
                   >
-                    <span className="truncate font-medium">{a.projectName}</span>
-                    {isSecurityAudit(a.categories) && (
-                      <Badge className="border-border text-muted-foreground">
-                        <ShieldAlert className="h-3 w-3" /> Segurança
-                      </Badge>
-                    )}
-                    <span className="tabular text-sm text-muted-foreground">
-                      v{a.version}
-                    </span>
-                    <AnalysisStatusBadge status={a.status} />
-                    <span className="text-xs text-muted-foreground">
-                      {a.issueCount} problema(s) · {a.pagesDiscovered} página(s)
-                    </span>
-                  </Link>
-                  <div className="flex items-center gap-4">
-                    <span className="tabular text-xs text-muted-foreground">
-                      {formatDuration(a.durationMs)} · {timeAgo(a.createdAt)}
-                    </span>
-                    {a.score && (
-                      <span
-                        className={
-                          "tabular text-lg font-bold " + scoreColor(a.score.overall)
-                        }
-                      >
-                        {a.score.overall}
-                      </span>
-                    )}
-                    <Link
-                      href={`/projects/${a.projectId}`}
-                      className="text-xs text-muted-foreground hover:text-foreground"
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="truncate text-sm font-medium">
+                          {analysis.projectName}
+                        </span>
+                        <span className="tabular text-xs text-muted-foreground">
+                          v{analysis.version}
+                        </span>
+                        <AnalysisStatusBadge status={analysis.status} />
+                        {security && (
+                          <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-300">
+                            Segurança
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="mt-1 truncate text-xs text-muted-foreground">
+                        {analysis.projectUrl}
+                      </p>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      <p>
+                        {analysis.issueCount} problema(s) ·{" "}
+                        {analysis.pagesDiscovered} página(s)
+                      </p>
+                      <p>
+                        {formatDuration(analysis.durationMs)} ·{" "}
+                        {timeAgo(analysis.createdAt)}
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        "tabular text-right text-lg font-semibold",
+                        analysis.score
+                          ? scoreColor(analysis.score.overall)
+                          : "text-muted-foreground",
+                      )}
                     >
-                      Ver projeto
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+                      {analysis.score?.overall ?? "—"}
+                    </span>
+                    <ArrowRight className="hidden h-3.5 w-3.5 text-muted-foreground sm:block" />
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Globe, ShoppingBag, HardDrive } from "lucide-react";
+import { Globe, HardDrive, Loader2, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ConnectionQueryState } from "@/components/connection-query-state";
+import { ActionError } from "@/components/action-error";
 import {
   useConnectFtp,
   useConnectShopify,
@@ -37,7 +39,7 @@ function ConnectedBadge({ label }: { label: string }) {
 }
 
 export function WordpressConnectionPanel({ projectId }: { projectId: string }) {
-  const { data, isLoading } = useWordpressConnection(projectId);
+  const { data, isLoading, isError } = useWordpressConnection(projectId);
   const connect = useConnectWordpress(projectId);
   const [siteUrl, setSiteUrl] = useState("");
   const [username, setUsername] = useState("");
@@ -46,9 +48,14 @@ export function WordpressConnectionPanel({ projectId }: { projectId: string }) {
   const connection = data && "maskedCredential" in data ? data : null;
 
   function submit() {
-    if (!siteUrl.trim() || !username.trim() || appPassword.trim().length < 8) return;
+    if (!siteUrl.trim() || !username.trim() || appPassword.trim().length < 8)
+      return;
     connect.mutate(
-      { siteUrl: siteUrl.trim(), username: username.trim(), appPassword: appPassword.trim() },
+      {
+        siteUrl: siteUrl.trim(),
+        username: username.trim(),
+        appPassword: appPassword.trim(),
+      },
       { onSuccess: () => setAppPassword("") },
     );
   }
@@ -56,24 +63,31 @@ export function WordpressConnectionPanel({ projectId }: { projectId: string }) {
   return (
     <Card>
       <CardContent className="space-y-3 pt-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Globe className="h-4 w-4 text-muted-foreground" />
             <span className="font-medium">Conectar WordPress</span>
           </div>
           {connection && (
             <ConnectedBadge
-              label={(connection.config as { siteUrl?: string } | null)?.siteUrl ?? "Conectado"}
+              label={
+                (connection.config as { siteUrl?: string } | null)?.siteUrl ??
+                "Conectado"
+              }
             />
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          Usa Senha de aplicativo (Usuário → Perfil → Senhas de aplicativo, nativo
-          do WP). O Atlas cria uma página em rascunho com o checklist de cada
-          item — nunca publica nem mexe em tema/plugin sozinho.
+          Usa Senha de aplicativo (Usuário → Perfil → Senhas de aplicativo,
+          nativo do WP). O Atlas cria uma página em rascunho com o checklist de
+          cada item — nunca publica nem mexe em tema/plugin sozinho.
         </p>
 
-        {isLoading ? null : connection ? (
+        {isLoading ? (
+          <ConnectionQueryState state="loading" />
+        ) : isError ? (
+          <ConnectionQueryState state="error" />
+        ) : connection ? (
           <p className="text-sm">
             Senha de aplicativo:{" "}
             <span className="font-mono">{connection.maskedCredential}</span>
@@ -81,18 +95,23 @@ export function WordpressConnectionPanel({ projectId }: { projectId: string }) {
         ) : (
           <div className="grid gap-2 sm:grid-cols-3">
             <Input
+              aria-label="URL do site WordPress"
+              type="url"
               placeholder="https://seusite.com"
               value={siteUrl}
               onChange={(e) => setSiteUrl(e.target.value)}
             />
             <Input
+              aria-label="Usuário do WordPress"
               placeholder="usuário WP"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
             <Input
+              aria-label="Senha de aplicativo do WordPress"
               placeholder="senha de aplicativo"
               type="password"
+              autoComplete="new-password"
               value={appPassword}
               onChange={(e) => setAppPassword(e.target.value)}
             />
@@ -102,8 +121,21 @@ export function WordpressConnectionPanel({ projectId }: { projectId: string }) {
               disabled={connect.isPending}
               onClick={submit}
             >
-              <Globe className="h-3.5 w-3.5" /> Conectar
+              {connect.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Globe className="h-3.5 w-3.5" />
+              )}
+              {connect.isPending ? "Conectando…" : "Conectar"}
             </Button>
+            {connect.error && (
+              <div className="sm:col-span-3">
+                <ActionError
+                  error={connect.error}
+                  message="Não foi possível conectar o WordPress. Confira a URL, o usuário e a senha de aplicativo."
+                />
+              </div>
+            )}
           </div>
         )}
       </CardContent>
@@ -112,7 +144,7 @@ export function WordpressConnectionPanel({ projectId }: { projectId: string }) {
 }
 
 export function ShopifyConnectionPanel({ projectId }: { projectId: string }) {
-  const { data, isLoading } = useShopifyConnection(projectId);
+  const { data, isLoading, isError } = useShopifyConnection(projectId);
   const connect = useConnectShopify(projectId);
   const [shopDomain, setShopDomain] = useState("");
   const [accessToken, setAccessToken] = useState("");
@@ -130,37 +162,48 @@ export function ShopifyConnectionPanel({ projectId }: { projectId: string }) {
   return (
     <Card>
       <CardContent className="space-y-3 pt-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             <span className="font-medium">Conectar Shopify</span>
           </div>
           {connection && (
             <ConnectedBadge
-              label={(connection.config as { shopDomain?: string } | null)?.shopDomain ?? "Conectado"}
+              label={
+                (connection.config as { shopDomain?: string } | null)
+                  ?.shopDomain ?? "Conectado"
+              }
             />
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          Usa um Admin API access token (Configurações → Apps e canais de
-          vendas → Desenvolver apps). O Atlas cria/atualiza uma Page
-          despublicada com o checklist — mudanças de tema continuam manuais.
+          Usa um Admin API access token (Configurações → Apps e canais de vendas
+          → Desenvolver apps). O Atlas cria/atualiza uma Page despublicada com o
+          checklist — mudanças de tema continuam manuais.
         </p>
 
-        {isLoading ? null : connection ? (
+        {isLoading ? (
+          <ConnectionQueryState state="loading" />
+        ) : isError ? (
+          <ConnectionQueryState state="error" />
+        ) : connection ? (
           <p className="text-sm">
-            Access token: <span className="font-mono">{connection.maskedCredential}</span>
+            Access token:{" "}
+            <span className="font-mono">{connection.maskedCredential}</span>
           </p>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">
             <Input
+              aria-label="Domínio da loja Shopify"
               placeholder="sua-loja.myshopify.com"
               value={shopDomain}
               onChange={(e) => setShopDomain(e.target.value)}
             />
             <Input
+              aria-label="Token de acesso da Shopify"
               placeholder="access token"
               type="password"
+              autoComplete="new-password"
               value={accessToken}
               onChange={(e) => setAccessToken(e.target.value)}
             />
@@ -170,8 +213,21 @@ export function ShopifyConnectionPanel({ projectId }: { projectId: string }) {
               disabled={connect.isPending}
               onClick={submit}
             >
-              <ShoppingBag className="h-3.5 w-3.5" /> Conectar
+              {connect.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <ShoppingBag className="h-3.5 w-3.5" />
+              )}
+              {connect.isPending ? "Conectando…" : "Conectar"}
             </Button>
+            {connect.error && (
+              <div className="sm:col-span-2">
+                <ActionError
+                  error={connect.error}
+                  message="Não foi possível conectar a Shopify. Confira o domínio e o token de acesso."
+                />
+              </div>
+            )}
           </div>
         )}
       </CardContent>
@@ -180,7 +236,7 @@ export function ShopifyConnectionPanel({ projectId }: { projectId: string }) {
 }
 
 export function FtpConnectionPanel({ projectId }: { projectId: string }) {
-  const { data, isLoading } = useFtpConnection(projectId);
+  const { data, isLoading, isError } = useFtpConnection(projectId);
   const connect = useConnectFtp(projectId);
   const [host, setHost] = useState("");
   const [port, setPort] = useState("21");
@@ -207,14 +263,19 @@ export function FtpConnectionPanel({ projectId }: { projectId: string }) {
   return (
     <Card>
       <CardContent className="space-y-3 pt-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex items-center gap-2">
             <HardDrive className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">Conectar por FTP (Hostinger, Hostgator...)</span>
+            <span className="font-medium">
+              Conectar por FTP (Hostinger, Hostgator...)
+            </span>
           </div>
           {connection && (
             <ConnectedBadge
-              label={(connection.config as { host?: string } | null)?.host ?? "Conectado"}
+              label={
+                (connection.config as { host?: string } | null)?.host ??
+                "Conectado"
+              }
             />
           )}
         </div>
@@ -224,22 +285,47 @@ export function FtpConnectionPanel({ projectId }: { projectId: string }) {
           <code>/atlas-qa</code>) — editar o código-fonte continua manual.
         </p>
 
-        {isLoading ? null : connection ? (
+        {isLoading ? (
+          <ConnectionQueryState state="loading" />
+        ) : isError ? (
+          <ConnectionQueryState state="error" />
+        ) : connection ? (
           <p className="text-sm">
-            Senha FTP: <span className="font-mono">{connection.maskedCredential}</span>
+            Senha FTP:{" "}
+            <span className="font-mono">{connection.maskedCredential}</span>
           </p>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">
-            <Input placeholder="host (ftp.seusite.com)" value={host} onChange={(e) => setHost(e.target.value)} />
-            <Input placeholder="porta (21)" value={port} onChange={(e) => setPort(e.target.value)} />
-            <Input placeholder="usuário FTP" value={user} onChange={(e) => setUser(e.target.value)} />
             <Input
+              aria-label="Host FTP"
+              placeholder="host (ftp.seusite.com)"
+              value={host}
+              onChange={(e) => setHost(e.target.value)}
+            />
+            <Input
+              aria-label="Porta FTP"
+              type="number"
+              inputMode="numeric"
+              placeholder="porta (21)"
+              value={port}
+              onChange={(e) => setPort(e.target.value)}
+            />
+            <Input
+              aria-label="Usuário FTP"
+              placeholder="usuário FTP"
+              value={user}
+              onChange={(e) => setUser(e.target.value)}
+            />
+            <Input
+              aria-label="Senha FTP"
               placeholder="senha FTP"
               type="password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
             <Input
+              aria-label="Pasta remota"
               placeholder="pasta remota (opcional, ex: public_html)"
               value={remotePath}
               onChange={(e) => setRemotePath(e.target.value)}
@@ -251,8 +337,21 @@ export function FtpConnectionPanel({ projectId }: { projectId: string }) {
               disabled={connect.isPending}
               onClick={submit}
             >
-              <HardDrive className="h-3.5 w-3.5" /> Conectar
+              {connect.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <HardDrive className="h-3.5 w-3.5" />
+              )}
+              {connect.isPending ? "Conectando…" : "Conectar"}
             </Button>
+            {connect.error && (
+              <div className="sm:col-span-2">
+                <ActionError
+                  error={connect.error}
+                  message="Não foi possível conectar ao FTP. Confira servidor, porta e credenciais."
+                />
+              </div>
+            )}
           </div>
         )}
       </CardContent>

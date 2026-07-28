@@ -2,27 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Paleta "Instrument" — baseada literalmente na escala de cinza do design
-   system do Linear (via styles.refero.design): Void/Carbon/Obsidian/
-   Graphite/Smoke/Ash/Fog/Bone/Paper. Sem gradiente decorativo, sem laranja —
-   um único acento cromático (índigo) usado só em CTA/foco/link ativo. Ver
-   apps/web/DESIGN.md. Definida em :root e .dark (app roda sempre em modo
-   escuro, forcedTheme="dark"). */
+/* Paleta "Platform" — superfícies grafite inspiradas na legibilidade e na
+   densidade do GitHub Primer. Sem gradiente decorativo e com um único acento
+   cromático (índigo) para CTA, foco e navegação ativa. Ver DESIGN.md.
+   Definida em :root e .dark porque o app opera em tema escuro fixo. */
 :root,
 .dark {
-  --background: 210 11% 4%; /* Void #08090a */
-  --foreground: 0 0% 100%; /* Paper #ffffff */
-  --card: 210 6% 6%; /* Carbon #0f1011 */
-  --card-foreground: 0 0% 100%;
+  --background: 215 28% 7%; /* canvas #0d1117 */
+  --foreground: 210 17% 95%; /* foreground #f0f6fc */
+  --card: 215 21% 11%; /* surface #161b22 */
+  --card-foreground: 210 17% 95%;
   /* Índigo — único ponto de cor da marca/ação. Usado com parcimônia. */
   --primary: 239 84% 67%; /* #6366f1 */
   --primary-foreground: 0 0% 100%;
-  --muted: 210 4% 9%; /* Obsidian #161718 */
-  --muted-foreground: 219 6% 57%; /* Fog #8a8f98 */
-  --accent: 223 9% 15%; /* Graphite #23252a */
-  --accent-foreground: 0 0% 100%;
-  --border: 223 9% 15%; /* Graphite #23252a */
-  --input: 223 9% 15%;
+  --muted: 215 14% 16%; /* control #21262d */
+  --muted-foreground: 215 8% 57%; /* secondary #8b949e */
+  --accent: 215 14% 16%;
+  --accent-foreground: 210 17% 95%;
+  --border: 215 14% 23%; /* border #30363d */
+  --input: 215 14% 23%;
   --ring: 239 84% 67%;
   --destructive: 0 72% 58%;
   --destructive-foreground: 0 0% 100%;
@@ -38,6 +36,8 @@ body {
   background: hsl(var(--background));
   color: hsl(var(--foreground));
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 h1,
@@ -53,8 +53,35 @@ h3 {
 }
 
 .glass {
-  background: hsl(var(--card) / 0.9);
+  background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
+}
+
+::selection {
+  background: hsl(var(--primary) / 0.28);
+  color: hsl(var(--foreground));
+}
+
+select,
+textarea {
+  color-scheme: dark;
+}
+
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 ::-webkit-scrollbar {

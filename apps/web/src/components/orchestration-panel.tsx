@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { QueryErrorState } from "@/components/query-error-state";
+import { ActionError } from "@/components/action-error";
 import {
   useAdapterConnections,
   useApproveOrchestrationRun,
@@ -30,7 +32,11 @@ const CONNECTION_KIND_LABEL: Record<string, string> = {
   FTP: "FTP",
 };
 
-const AUTONOMY_OPTIONS: { value: AutonomyLevel; label: string; disabled?: boolean }[] = [
+const AUTONOMY_OPTIONS: {
+  value: AutonomyLevel;
+  label: string;
+  disabled?: boolean;
+}[] = [
   { value: "MANUAL", label: "Manual" },
   { value: "SUPERVISED", label: "Supervisionado (em breve)", disabled: true },
   { value: "AUTONOMOUS", label: "Autônomo (em breve)", disabled: true },
@@ -70,18 +76,43 @@ export function OrchestrationPanel({
   autonomyLevel: AutonomyLevel;
 }) {
   const updateAutonomy = useUpdateProjectAutonomy();
-  const { data: gates = [] } = useQualityGates(projectId);
+  const {
+    data: gates = [],
+    isLoading: gatesLoading,
+    isError: gatesError,
+    refetch: refetchGates,
+  } = useQualityGates(projectId);
   const createGate = useCreateQualityGate(projectId);
   const deleteGate = useDeleteQualityGate(projectId);
-  const { data: runs = [] } = useOrchestrationRuns(projectId);
+  const {
+    data: runs = [],
+    isLoading: runsLoading,
+    isError: runsError,
+    refetch: refetchRuns,
+  } = useOrchestrationRuns(projectId);
   const createRun = useCreateOrchestrationRun(projectId);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
-  const { data: connections = [] } = useAdapterConnections(projectId);
+  const {
+    data: connections = [],
+    isLoading: connectionsLoading,
+    isError: connectionsError,
+    refetch: refetchConnections,
+  } = useAdapterConnections(projectId);
   const [adapterConnectionId, setAdapterConnectionId] = useState("");
 
   const activeRunId = selectedRunId ?? runs[0]?.id ?? null;
-  const { data: run } = useOrchestrationRun(activeRunId ?? "");
-  const { data: events = [] } = useOrchestrationEvents(activeRunId ?? "");
+  const {
+    data: run,
+    isLoading: runLoading,
+    isError: runError,
+    refetch: refetchRun,
+  } = useOrchestrationRun(activeRunId ?? "");
+  const {
+    data: events = [],
+    isLoading: eventsLoading,
+    isError: eventsError,
+    refetch: refetchEvents,
+  } = useOrchestrationEvents(activeRunId ?? "");
   const approve = useApproveOrchestrationRun(activeRunId ?? "");
   const cancel = useCancelOrchestrationRun(activeRunId ?? "");
 
@@ -93,12 +124,24 @@ export function OrchestrationPanel({
       <Card>
         <CardContent className="space-y-3 pt-6">
           <span className="font-medium">Nível de autonomia</span>
-          <div className="flex flex-wrap gap-2">
+          <div
+            className="grid gap-2 sm:grid-cols-3"
+            role="radiogroup"
+            aria-label="Nível de autonomia"
+          >
             {AUTONOMY_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
+                type="button"
+                role="radio"
+                aria-checked={autonomyLevel === opt.value}
                 disabled={opt.disabled || updateAutonomy.isPending}
-                onClick={() => updateAutonomy.mutate({ id: projectId, autonomyLevel: opt.value })}
+                onClick={() =>
+                  updateAutonomy.mutate({
+                    id: projectId,
+                    autonomyLevel: opt.value,
+                  })
+                }
                 className={cn(
                   "rounded-md border px-3 py-1.5 text-sm transition-colors",
                   autonomyLevel === opt.value
@@ -115,6 +158,10 @@ export function OrchestrationPanel({
             Manual: toda aplicação de mudança espera sua aprovação antes de
             reanalisar. Os demais níveis ainda não executam sozinhos.
           </p>
+          <ActionError
+            error={updateAutonomy.error}
+            message="Não foi possível atualizar o nível de autonomia."
+          />
         </CardContent>
       </Card>
 
@@ -122,53 +169,114 @@ export function OrchestrationPanel({
         <CardContent className="space-y-3 pt-6">
           <span className="font-medium">Quality gates</span>
           <div className="space-y-2">
-            {gates.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Nenhum gate configurado — a execução passa direto na primeira análise.
+            {gatesLoading ? (
+              <p
+                className="flex items-center gap-2 text-sm text-muted-foreground"
+                role="status"
+              >
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Carregando gates…
               </p>
-            )}
-            {gates.map((g) => (
-              <div key={g.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                <span>
-                  {g.label ?? g.category ?? "Score geral"} · mínimo {g.minScore}
-                </span>
-                <Button size="sm" variant="outline" onClick={() => deleteGate.mutate(g.id)}>
-                  Remover
-                </Button>
-              </div>
-            ))}
+            ) : gatesError ? (
+              <QueryErrorState
+                compact
+                title="Quality gates indisponíveis"
+                onRetry={() => void refetchGates()}
+              />
+            ) : gates.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nenhum gate configurado — a execução passa direto na primeira
+                análise.
+              </p>
+            ) : null}
+            {!gatesError &&
+              gates.map((g) => (
+                <div
+                  key={g.id}
+                  className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+                >
+                  <span className="min-w-0 break-words">
+                    {g.label ?? g.category ?? "Score geral"} · mínimo{" "}
+                    {g.minScore}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={deleteGate.isPending}
+                    onClick={() => deleteGate.mutate(g.id)}
+                  >
+                    {deleteGate.isPending && deleteGate.variables === g.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : null}
+                    Remover
+                  </Button>
+                </div>
+              ))}
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Input
-              className="w-40"
-              placeholder="rótulo (opcional)"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-            />
-            <Input
-              className="w-28"
-              type="number"
-              min={0}
-              max={100}
-              value={minScore}
-              onChange={(e) => setMinScore(e.target.value)}
-            />
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_120px_auto]">
+            <div className="space-y-1">
+              <label
+                htmlFor="gate-label"
+                className="text-xs text-muted-foreground"
+              >
+                Rótulo (opcional)
+              </label>
+              <Input
+                id="gate-label"
+                placeholder="Ex.: Pronto para publicar"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <label
+                htmlFor="gate-score"
+                className="text-xs text-muted-foreground"
+              >
+                Score mínimo
+              </label>
+              <Input
+                id="gate-score"
+                type="number"
+                min={0}
+                max={100}
+                value={minScore}
+                onChange={(e) => setMinScore(e.target.value)}
+              />
+            </div>
             <Button
               size="sm"
               variant="outline"
-              disabled={createGate.isPending}
+              className="self-end"
+              disabled={
+                createGate.isPending ||
+                !Number.isFinite(Number(minScore)) ||
+                Number(minScore) < 0 ||
+                Number(minScore) > 100
+              }
               onClick={() => {
                 const score = Number(minScore);
                 if (!Number.isFinite(score)) return;
                 createGate.mutate(
-                  { category: null, minScore: score, label: label.trim() || undefined },
+                  {
+                    category: null,
+                    minScore: score,
+                    label: label.trim() || undefined,
+                  },
                   { onSuccess: () => setLabel("") },
                 );
               }}
             >
-              Adicionar gate (score geral)
+              {createGate.isPending && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              )}
+              Adicionar gate
             </Button>
           </div>
+          <ActionError
+            error={createGate.error || deleteGate.error}
+            message="Não foi possível atualizar os quality gates."
+          />
         </CardContent>
       </Card>
 
@@ -176,12 +284,17 @@ export function OrchestrationPanel({
         <CardContent className="space-y-3 pt-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="font-medium">Execuções</span>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              <label htmlFor="run-connection" className="sr-only">
+                Conexão usada na execução
+              </label>
               <select
+                id="run-connection"
                 value={adapterConnectionId}
                 onChange={(e) => setAdapterConnectionId(e.target.value)}
-                className="h-9 rounded-md border border-input bg-background/60 px-2 text-xs"
-                title="Conexão usada pra aplicar automaticamente (deixe em branco pra aplicação manual ou via MCP/ponte)"
+                className="h-9 min-w-0 rounded-md border border-input bg-background px-2 text-xs"
+                title="Conexão usada para registrar os itens na plataforma; deixe em branco para aplicação manual ou via MCP/ponte"
+                disabled={connectionsLoading || connectionsError}
               >
                 <option value="">Sem conexão (manual / MCP / ponte)</option>
                 {connections.map((c) => (
@@ -202,36 +315,95 @@ export function OrchestrationPanel({
                   )
                 }
               >
-                <Play className="h-3.5 w-3.5" /> Iniciar execução
+                {createRun.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Play className="h-3.5 w-3.5" />
+                )}
+                {createRun.isPending ? "Iniciando…" : "Iniciar execução"}
               </Button>
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Com conexão push (GitHub, WordPress, Shopify, FTP) o
-            Atlas aplica sozinho a cada iteração. Sem conexão — ou com MCP —
-            você aplica pela sua própria IA de dev (ex.: Claude Code
-            conectado via MCP em Aplicação); a execução retoma sozinha
-            assim que todos os itens forem marcados como feitos.
+            Conexões push registram o checklist na plataforma escolhida, mas não
+            garantem a correção técnica. Sem conexão — ou com MCP — você aplica
+            pela sua ferramenta de desenvolvimento; a execução retoma quando os
+            itens do plano forem marcados como feitos.
           </p>
 
-          {runs.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+          {connectionsError && (
+            <QueryErrorState
+              compact
+              title="Conexões indisponíveis"
+              description="Você ainda pode iniciar uma execução manual."
+              onRetry={() => void refetchConnections()}
+            />
+          )}
+
+          {runsLoading ? (
+            <p
+              className="flex items-center gap-2 text-sm text-muted-foreground"
+              role="status"
+            >
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Carregando execuções…
+            </p>
+          ) : runsError ? (
+            <QueryErrorState
+              compact
+              title="Execuções indisponíveis"
+              onRetry={() => void refetchRuns()}
+            />
+          ) : runs.length > 0 ? (
+            <div
+              className="flex flex-wrap gap-1.5"
+              role="tablist"
+              aria-label="Execuções"
+            >
               {runs.map((r) => (
                 <button
                   key={r.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeRunId === r.id}
                   onClick={() => setSelectedRunId(r.id)}
                   className={cn(
                     "rounded-md border px-2 py-1 text-xs",
-                    activeRunId === r.id ? "border-primary bg-primary/10" : "border-border",
+                    activeRunId === r.id
+                      ? "border-primary bg-primary/10"
+                      : "border-border",
                   )}
                 >
                   {timeAgo(r.createdAt)} · {STATUS_LABEL[r.status] ?? r.status}
                 </button>
               ))}
             </div>
+          ) : (
+            <p className="rounded-md border border-dashed px-3 py-4 text-sm text-muted-foreground">
+              Nenhuma execução iniciada para este projeto.
+            </p>
           )}
 
-          {run && (
+          <ActionError
+            error={createRun.error}
+            message="Não foi possível iniciar a execução."
+          />
+
+          {activeRunId && runLoading ? (
+            <div
+              className="flex items-center gap-2 rounded-md border p-4 text-sm text-muted-foreground"
+              role="status"
+            >
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Carregando execução…
+            </div>
+          ) : runError ? (
+            <QueryErrorState
+              compact
+              title="Não foi possível carregar a execução"
+              onRetry={() => void refetchRun()}
+            />
+          ) : run ? (
             <div className="space-y-3 rounded-md border p-3">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className={STATUS_CLASS[run.status] ?? ""}>
@@ -241,41 +413,93 @@ export function OrchestrationPanel({
                   Iteração {run.iteration}/{run.maxIterations}
                 </span>
                 {run.status === "AWAITING_APPLY" && (
-                  <Button size="sm" disabled={approve.isPending} onClick={() => approve.mutate()}>
-                    <CheckCircle2 className="h-3.5 w-3.5" /> Aprovar e reanalisar
+                  <Button
+                    size="sm"
+                    disabled={approve.isPending}
+                    onClick={() => approve.mutate()}
+                  >
+                    {approve.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    )}
+                    {approve.isPending ? "Aprovando…" : "Aprovar e reanalisar"}
                   </Button>
                 )}
-                {["QUEUED", "AWAITING_APPLY", "AWAITING_OBSERVATION"].includes(run.status) && (
-                  <Button size="sm" variant="outline" disabled={cancel.isPending} onClick={() => cancel.mutate()}>
-                    <XCircle className="h-3.5 w-3.5" /> Cancelar
-                  </Button>
-                )}
-                {["ANALYZING", "EVALUATING_GATES", "PLANNING", "APPLYING", "REANALYZING"].includes(
+                {["QUEUED", "AWAITING_APPLY", "AWAITING_OBSERVATION"].includes(
                   run.status,
-                ) && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+                ) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={cancel.isPending}
+                    onClick={() => cancel.mutate()}
+                  >
+                    {cancel.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <XCircle className="h-3.5 w-3.5" />
+                    )}
+                    {cancel.isPending ? "Cancelando…" : "Cancelar"}
+                  </Button>
+                )}
+                {[
+                  "ANALYZING",
+                  "EVALUATING_GATES",
+                  "PLANNING",
+                  "APPLYING",
+                  "REANALYZING",
+                ].includes(run.status) && (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                )}
               </div>
               {run.status === "AWAITING_APPLY" && (
                 <p className="text-xs text-muted-foreground">
-                  Antes de aprovar: se você aplicou as correções fora do Atlas
-                  QA (deploy manual, PR mesclado etc.), rode uma nova análise
-                  no projeto primeiro. "Aprovar" reavalia a análise mais
-                  recente que já existir — ele não dispara uma análise nova
-                  sozinho.
+                  Confirme que as mudanças foram publicadas antes de aprovar. A
+                  próxima iteração dispara uma nova análise com o mesmo escopo
+                  para medir o efeito das correções.
                 </p>
               )}
-              {run.error && <p className="text-sm text-muted-foreground">{run.error}</p>}
+              <ActionError
+                error={run.error}
+                message="A execução foi interrompida por um erro."
+              />
               <div className="space-y-1.5">
-                {events.map((e) => (
-                  <div key={e.id} className="flex items-start gap-2 text-xs">
-                    <span className="mt-0.5 whitespace-nowrap text-muted-foreground">
-                      {timeAgo(e.createdAt)}
-                    </span>
-                    <span>{e.message}</span>
-                  </div>
-                ))}
+                {eventsLoading ? (
+                  <p
+                    className="flex items-center gap-2 text-xs text-muted-foreground"
+                    role="status"
+                  >
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Carregando eventos…
+                  </p>
+                ) : eventsError ? (
+                  <QueryErrorState
+                    compact
+                    title="Eventos indisponíveis"
+                    onRetry={() => void refetchEvents()}
+                  />
+                ) : events.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Nenhum evento registrado até o momento.
+                  </p>
+                ) : (
+                  events.map((e) => (
+                    <div key={e.id} className="flex items-start gap-2 text-xs">
+                      <span className="mt-0.5 whitespace-nowrap text-muted-foreground">
+                        {timeAgo(e.createdAt)}
+                      </span>
+                      <span>{e.message}</span>
+                    </div>
+                  ))
+                )}
               </div>
+              <ActionError
+                error={approve.error || cancel.error}
+                message="Não foi possível concluir a ação na execução."
+              />
             </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </div>

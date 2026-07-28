@@ -1,10 +1,12 @@
 "use client";
 
-import { ClipboardCopy, Plug, RefreshCw, Unplug } from "lucide-react";
+import { ClipboardCopy, Loader2, Plug, RefreshCw, Unplug } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ConnectionQueryState } from "@/components/connection-query-state";
+import { ActionError } from "@/components/action-error";
 import {
   useConnectMcp,
   useDisconnectMcp,
@@ -18,7 +20,7 @@ import {
  * direto na URL abaixo pra ler os achados de QA e marcar itens como feitos.
  */
 export function McpConnectionPanel({ projectId }: { projectId: string }) {
-  const { data, isLoading } = useMcpConnection(projectId);
+  const { data, isLoading, isError } = useMcpConnection(projectId);
   const connect = useConnectMcp(projectId);
   const regenerate = useRegenerateMcpToken(projectId);
   const disconnect = useDisconnectMcp(projectId);
@@ -34,7 +36,7 @@ export function McpConnectionPanel({ projectId }: { projectId: string }) {
   return (
     <Card>
       <CardContent className="space-y-3 pt-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Plug className="h-4 w-4 text-muted-foreground" />
             <span className="font-medium">Conectar via MCP</span>
@@ -51,12 +53,16 @@ export function McpConnectionPanel({ projectId }: { projectId: string }) {
           remediação deste projeto, e marca itens como feitos direto de lá.
         </p>
 
-        {isLoading ? null : connection ? (
+        {isLoading ? (
+          <ConnectionQueryState state="loading" />
+        ) : isError ? (
+          <ConnectionQueryState state="error" />
+        ) : connection ? (
           <div className="space-y-2">
             <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 font-mono text-xs">
               <span className="truncate">{connection.mcpUrl}</span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="outline" onClick={copyUrl}>
                 <ClipboardCopy className="h-3.5 w-3.5" /> Copiar URL
               </Button>
@@ -66,7 +72,12 @@ export function McpConnectionPanel({ projectId }: { projectId: string }) {
                 disabled={regenerate.isPending}
                 onClick={() => regenerate.mutate()}
               >
-                <RefreshCw className="h-3.5 w-3.5" /> Gerar novo token
+                {regenerate.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3.5 w-3.5" />
+                )}
+                {regenerate.isPending ? "Gerando…" : "Gerar novo token"}
               </Button>
               <Button
                 size="sm"
@@ -74,11 +85,20 @@ export function McpConnectionPanel({ projectId }: { projectId: string }) {
                 className="text-muted-foreground hover:text-destructive"
                 disabled={disconnect.isPending}
                 onClick={() => {
-                  if (confirm("Desconectar o MCP deste projeto? Você pode criar uma nova conexão depois."))
+                  if (
+                    confirm(
+                      "Desconectar o MCP deste projeto? Você pode criar uma nova conexão depois.",
+                    )
+                  )
                     disconnect.mutate();
                 }}
               >
-                <Unplug className="h-3.5 w-3.5" /> Desconectar
+                {disconnect.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Unplug className="h-3.5 w-3.5" />
+                )}
+                {disconnect.isPending ? "Desconectando…" : "Desconectar"}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -86,15 +106,30 @@ export function McpConnectionPanel({ projectId }: { projectId: string }) {
               conectadas vão precisar da URL nova. Desconectar remove esta
               conexão por completo, permitindo reconfigurar do zero.
             </p>
+            <ActionError
+              error={regenerate.error || disconnect.error}
+              message="Não foi possível atualizar a conexão MCP. Tente novamente."
+            />
           </div>
         ) : (
-          <Button
-            size="sm"
-            disabled={connect.isPending}
-            onClick={() => connect.mutate()}
-          >
-            <Plug className="h-3.5 w-3.5" /> Criar conexão MCP
-          </Button>
+          <div className="space-y-2">
+            <Button
+              size="sm"
+              disabled={connect.isPending}
+              onClick={() => connect.mutate()}
+            >
+              {connect.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Plug className="h-3.5 w-3.5" />
+              )}
+              {connect.isPending ? "Criando…" : "Criar conexão MCP"}
+            </Button>
+            <ActionError
+              error={connect.error}
+              message="Não foi possível criar a conexão MCP. Tente novamente."
+            />
+          </div>
         )}
       </CardContent>
     </Card>

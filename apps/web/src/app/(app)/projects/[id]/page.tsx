@@ -2,9 +2,15 @@
 
 import type { Analysis, ProjectWithStats } from "@qa-ai/shared";
 import {
+  Activity,
+  ArrowRight,
+  CalendarDays,
+  ExternalLink,
   FileSearch,
   GitBranch,
+  Globe2,
   Loader2,
+  Settings2,
   ShieldAlert,
   Trash2,
   Wrench,
@@ -12,31 +18,33 @@ import {
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { AnalysisStatusBadge } from "@/components/status-badge";
+import { MetricTile } from "@/components/metric-tile";
+import { LocalNav, PageHeader } from "@/components/page-header";
+import { QueryErrorState } from "@/components/query-error-state";
+import { ActionError } from "@/components/action-error";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { useProjectRemediationPlans } from "@/lib/queries";
 import { cn, formatDuration, scoreColor, timeAgo } from "@/lib/utils";
 
-const REMEDIATION_STATUS_LABEL: Record<string, string> = {
-  PENDING: "Gerando…",
-  READY: "Pronta",
-  FAILED: "Falhou",
-};
-const REMEDIATION_STATUS_CLASS: Record<string, string> = {
-  PENDING: "border-amber-500/40 bg-amber-500/15 text-amber-300",
-  READY: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
-  FAILED: "border-red-500/40 bg-red-500/15 text-red-300",
+const PLAN_STATUS: Record<string, { label: string; className: string }> = {
+  PENDING: {
+    label: "Gerando…",
+    className: "border-amber-500/40 bg-amber-500/15 text-amber-300",
+  },
+  READY: {
+    label: "Pronta",
+    className: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
+  },
+  FAILED: {
+    label: "Falhou",
+    className: "border-red-500/40 bg-red-500/15 text-red-300",
+  },
 };
 
-/**
- * Painel administrativo do projeto (dashboard) — métricas, histórico
- * recente (só leitura) e conexões/integrações. Rodar uma análise nova é
- * responsabilidade da funcionalidade "Análise" (`/analyses`); esta tela não
- * inicia análises, só administra o projeto e resume o que já existe.
- */
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -44,22 +52,57 @@ export default function ProjectDetailPage() {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingProject, setDeletingProject] = useState(false);
-  const { data: remediationPlans = [] } = useProjectRemediationPlans(id);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>(null);
+  const [analysesError, setAnalysesError] = useState<unknown>(null);
+  const [actionError, setActionError] = useState<unknown>(null);
+  const {
+    data: remediationPlans = [],
+    isError: remediationError,
+    refetch: refetchRemediation,
+  } = useProjectRemediationPlans(id);
+
+  async function loadProject() {
+    setLoading(true);
+    setLoadError(null);
+    setAnalysesError(null);
+    const [projectResult, analysesResult] = await Promise.allSettled([
+      api.getProject(id),
+      api.projectAnalyses(id),
+    ]);
+
+    if (projectResult.status === "fulfilled") {
+      setProject(projectResult.value);
+    } else {
+      setLoadError(projectResult.reason);
+    }
+
+    if (analysesResult.status === "fulfilled") {
+      setAnalyses(analysesResult.value);
+    } else {
+      setAnalysesError(analysesResult.reason);
+    }
+    setLoading(false);
+  }
 
   useEffect(() => {
-    api.getProject(id).then(setProject).catch(() => {});
-    api.projectAnalyses(id).then(setAnalyses).catch(() => {});
+    void loadProject();
   }, [id]);
 
   async function removeAnalysis(analysisId: string, version: number) {
-    if (!confirm(`Apagar a análise v${version}? Essa ação não pode ser desfeita.`))
+    if (
+      !confirm(`Apagar a análise v${version}? Essa ação não pode ser desfeita.`)
+    )
       return;
     setDeletingId(analysisId);
+    setActionError(null);
     try {
       await api.deleteAnalysis(analysisId);
-      setAnalyses((prev) => prev.filter((a) => a.id !== analysisId));
-    } catch {
-      /* mantém na lista se falhar */
+      setAnalyses((current) =>
+        current.filter((analysis) => analysis.id !== analysisId),
+      );
+    } catch (error) {
+      setActionError(error);
     } finally {
       setDeletingId(null);
     }
@@ -68,271 +111,443 @@ export default function ProjectDetailPage() {
   async function removeProject() {
     if (
       !confirm(
-        `Apagar o projeto "${project?.name}"? Isso remove todas as análises, aplicações e conexões associadas — não pode ser desfeito.`,
+        `Apagar o projeto "${project?.name}"? Isso remove todas as análises, aplicações e conexões associadas.`,
       )
     )
       return;
     setDeletingProject(true);
+    setActionError(null);
     try {
       await api.deleteProject(id);
       router.push("/projects");
-    } catch {
+    } catch (error) {
+      setActionError(error);
       setDeletingProject(false);
     }
   }
 
-  const isSecurityAudit = (a: Analysis) =>
-    a.categories.length === 1 && a.categories[0] === "DEEP_SECURITY";
+  if (loading) {
+    return (
+      <div
+        className="grid place-items-center py-24 text-muted-foreground"
+        role="status"
+      >
+        <Loader2 className="h-6 w-6 animate-spin" />
+        <span className="mt-3 text-sm">Carregando projeto…</span>
+      </div>
+    );
+  }
+
+  if (loadError || !project) {
+    return (
+      <div className="mx-auto max-w-2xl py-12">
+        <QueryErrorState
+          title="Não foi possível carregar este projeto"
+          onRetry={() => void loadProject()}
+        />
+      </div>
+    );
+  }
+
   const recentAnalyses = [...analyses]
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
-    .slice(0, 5);
+    .slice(0, 6);
+  const latestAnalysis = recentAnalyses[0];
+  const completedAnalyses = analyses.filter(
+    (analysis) => analysis.status === "COMPLETED",
+  ).length;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="truncate text-2xl font-semibold">{project?.name ?? "Projeto"}</h1>
-          <a
-            href={project?.url}
-            target="_blank"
-            rel="noreferrer"
-            className="block truncate text-sm text-muted-foreground hover:text-foreground"
-          >
-            {project?.url}
-          </a>
-        </div>
-        <Button
-          variant="ghost"
-          className="text-muted-foreground hover:text-destructive"
-          disabled={deletingProject}
-          onClick={removeProject}
-        >
-          {deletingProject ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Trash2 className="h-4 w-4" />
-          )}
-          Apagar projeto
-        </Button>
-      </div>
-
-      {/* Métricas — visão de dashboard do projeto. */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardContent className="py-5">
-            <p className="text-xs text-muted-foreground">Análises rodadas</p>
-            <p className="mt-1 text-2xl font-semibold tabular">
-              {project?.analysisCount ?? "—"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="py-5">
-            <p className="text-xs text-muted-foreground">Última pontuação</p>
-            <p
-              className={cn(
-                "mt-1 text-2xl font-semibold tabular",
-                project?.lastScore != null ? scoreColor(project.lastScore) : "",
-              )}
+    <div className="mx-auto max-w-7xl space-y-6">
+      <PageHeader
+        breadcrumbs={[
+          { label: "Projetos", href: "/projects" },
+          { label: project?.name ?? "Carregando…" },
+        ]}
+        title={project?.name ?? "Projeto"}
+        description={
+          project ? (
+            <a
+              href={project.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex max-w-full items-center gap-1.5 truncate hover:text-foreground"
             >
-              {project?.lastScore ?? "—"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="py-5">
-            <p className="text-xs text-muted-foreground">Última análise</p>
-            <p className="mt-1 text-2xl font-semibold tabular">
-              {project?.lastAnalysisAt ? timeAgo(project.lastAnalysisAt) : "—"}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+              <Globe2 className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{project.url}</span>
+              <ExternalLink className="h-3 w-3 shrink-0" />
+            </a>
+          ) : (
+            "Carregando informações do projeto…"
+          )
+        }
+        actions={
+          <>
+            <Link href={`/aplicacao?projectId=${id}`}>
+              <Button variant="outline" size="sm">
+                <Settings2 className="h-3.5 w-3.5" /> Conexões
+              </Button>
+            </Link>
+            <Link href={`/analyses?projectId=${id}`}>
+              <Button size="sm">
+                <FileSearch className="h-3.5 w-3.5" /> Nova análise
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
-      {/* Análises recentes — só leitura; rodar uma nova é em "Análise". */}
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-medium">Análises recentes</h2>
-          <Link href="/analyses">
-            <Button size="sm" variant="outline">
-              <FileSearch className="h-3.5 w-3.5" /> Ir para Análise
-            </Button>
-          </Link>
-        </div>
-        {recentAnalyses.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-              <div className="grid h-12 w-12 place-items-center rounded-xl bg-primary/15 text-primary">
-                <FileSearch className="h-6 w-6" />
-              </div>
+      {(analysesError || remediationError) && (
+        <QueryErrorState
+          compact
+          title="Parte dos dados está indisponível"
+          description="O projeto foi carregado, mas alguns históricos não puderam ser consultados."
+          onRetry={() => {
+            void loadProject();
+            void refetchRemediation();
+          }}
+        />
+      )}
+
+      <ActionError
+        error={actionError}
+        message="Não foi possível concluir a exclusão. Tente novamente."
+      />
+
+      <LocalNav
+        items={[
+          { label: "Visão geral", href: `/projects/${id}`, active: true },
+          {
+            label: "Análises",
+            href: `/analyses?projectId=${id}`,
+            count: analyses.length,
+          },
+          {
+            label: "Aplicações",
+            href: `/aplicacao?projectId=${id}`,
+            count: remediationPlans.length,
+          },
+          {
+            label: "Conexões",
+            href: `/aplicacao?projectId=${id}&view=connections`,
+          },
+          { label: "Orquestrações", href: `/orquestracao?projectId=${id}` },
+        ]}
+      />
+
+      <section className="grid overflow-hidden rounded-lg border bg-card sm:grid-cols-2 xl:grid-cols-4">
+        <MetricTile
+          label="Score atual"
+          value={project?.lastScore ?? "—"}
+          icon={Activity}
+          valueClassName={
+            project?.lastScore !== null && project?.lastScore !== undefined
+              ? scoreColor(project.lastScore)
+              : undefined
+          }
+          detail={
+            project?.lastAnalysisAt
+              ? `Atualizado ${timeAgo(project.lastAnalysisAt)}`
+              : "Sem análise"
+          }
+        />
+        <MetricTile
+          label="Análises concluídas"
+          value={completedAnalyses}
+          icon={FileSearch}
+          detail={`${analyses.length} execução(ões) no total`}
+        />
+        <MetricTile
+          label="Aplicações"
+          value={remediationPlans.length}
+          icon={Wrench}
+          detail={`${remediationPlans.filter((plan) => plan.status === "READY").length} pronta(s)`}
+        />
+        <MetricTile
+          label="Última atividade"
+          value={
+            project?.lastAnalysisAt ? timeAgo(project.lastAnalysisAt) : "—"
+          }
+          icon={CalendarDays}
+          detail={
+            latestAnalysis
+              ? `Análise v${latestAnalysis.version}`
+              : "Nenhuma atividade"
+          }
+        />
+      </section>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-6">
+          <section>
+            <div className="mb-3 flex items-center justify-between">
               <div>
-                <p className="font-medium">Nenhuma análise ainda</p>
-                <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                  Rode a primeira análise QA padrão ou de Segurança deste
-                  projeto na funcionalidade "Análise".
+                <h2 className="text-base font-semibold">Análises recentes</h2>
+                <p className="text-xs text-muted-foreground">
+                  Histórico de qualidade deste projeto
                 </p>
               </div>
-              <Link href="/analyses">
-                <Button size="sm" variant="outline">
-                  <FileSearch className="h-3.5 w-3.5" /> Ir para Análise
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {recentAnalyses.map((a) => (
-              <Card key={a.id} className="transition-colors hover:border-primary/50">
-                <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <Link
-                    href={`/analyses/${a.id}`}
-                    className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5"
-                  >
-                    <span className="tabular text-sm text-muted-foreground">
-                      v{a.version}
-                    </span>
-                    {isSecurityAudit(a) && (
-                      <Badge className="border-border text-muted-foreground">
-                        <ShieldAlert className="h-3 w-3" /> Segurança
-                      </Badge>
-                    )}
-                    <AnalysisStatusBadge status={a.status} />
-                    <span className="text-xs text-muted-foreground">
-                      {a.issueCount} problema(s) · {a.pagesDiscovered} página(s)
-                    </span>
-                  </Link>
-                  <div className="flex items-center justify-between gap-4 sm:justify-end">
-                    <span className="tabular text-xs text-muted-foreground">
-                      {formatDuration(a.durationMs)} · {timeAgo(a.createdAt)}
-                    </span>
-                    <div className="flex items-center gap-3">
-                      {a.score && (
-                        <span
-                          className={cn(
-                            "tabular text-lg font-bold",
-                            scoreColor(a.score.overall),
-                          )}
-                        >
-                          {a.score.overall}
-                        </span>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive"
-                        disabled={deletingId === a.id}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          removeAnalysis(a.id, a.version);
-                        }}
-                        aria-label="Apagar análise"
-                      >
-                        {deletingId === a.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {analyses.length > recentAnalyses.length && (
               <Link
-                href="/analyses"
-                className="block text-center text-sm text-muted-foreground hover:text-foreground"
+                href={`/analyses?projectId=${id}`}
+                className="text-xs text-muted-foreground hover:text-foreground"
               >
-                Ver todas as {analyses.length} análises em Análise →
+                Ver todas
               </Link>
-            )}
-          </div>
-        )}
-      </div>
+            </div>
 
-      {/* Aplicações geradas a partir das análises deste projeto. */}
-      <div>
-        <h2 className="mb-3 text-lg font-medium">Aplicações</h2>
-        {remediationPlans.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-              <div className="grid h-12 w-12 place-items-center rounded-xl bg-primary/15 text-primary">
-                <Wrench className="h-6 w-6" />
-              </div>
+            <div className="overflow-hidden rounded-lg border bg-card">
+              {recentAnalyses.length === 0 ? (
+                <div className="flex flex-col items-center px-6 py-12 text-center">
+                  <FileSearch className="mb-3 h-6 w-6 text-muted-foreground" />
+                  <p className="font-medium">Nenhuma análise executada</p>
+                  <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                    Rode a primeira Análise QA padrão ou Análise de Segurança.
+                  </p>
+                  <Link href={`/analyses?projectId=${id}`} className="mt-4">
+                    <Button size="sm">Iniciar análise</Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {recentAnalyses.map((analysis) => {
+                    const security =
+                      analysis.categories.length === 1 &&
+                      analysis.categories[0] === "DEEP_SECURITY";
+                    return (
+                      <div
+                        key={analysis.id}
+                        className="group flex flex-col gap-3 px-4 py-3.5 hover:bg-accent/40 sm:flex-row sm:items-center"
+                      >
+                        <Link
+                          href={`/analyses/${analysis.id}`}
+                          className="flex min-w-0 flex-1 items-center gap-3"
+                        >
+                          <span className="tabular w-7 shrink-0 text-xs text-muted-foreground">
+                            v{analysis.version}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-medium">
+                                {security
+                                  ? "Análise de Segurança"
+                                  : "Análise QA padrão"}
+                              </span>
+                              {security && (
+                                <ShieldAlert className="h-3.5 w-3.5 text-amber-400" />
+                              )}
+                              <AnalysisStatusBadge status={analysis.status} />
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {analysis.issueCount} problema(s) ·{" "}
+                              {analysis.pagesDiscovered} página(s)
+                              {" · "}
+                              {formatDuration(analysis.durationMs)}
+                            </p>
+                          </div>
+                        </Link>
+                        <div className="flex items-center justify-between gap-3 sm:justify-end">
+                          <span className="text-xs text-muted-foreground">
+                            {timeAgo(analysis.createdAt)}
+                          </span>
+                          {analysis.score && (
+                            <span
+                              className={cn(
+                                "tabular w-8 text-right text-base font-semibold",
+                                scoreColor(analysis.score.overall),
+                              )}
+                            >
+                              {analysis.score.overall}
+                            </span>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground opacity-100 hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100"
+                            disabled={deletingId === analysis.id}
+                            onClick={() =>
+                              removeAnalysis(analysis.id, analysis.version)
+                            }
+                            aria-label={`Apagar análise v${analysis.version}`}
+                          >
+                            {deletingId === analysis.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section>
+            <div className="mb-3 flex items-center justify-between">
               <div>
-                <p className="font-medium">Nenhuma Aplicação ainda</p>
-                <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                  Depois de uma análise concluída, vá em "Aplicação" no menu
-                  para transformar os achados num checklist pronto para
-                  aplicar no seu projeto.
+                <h2 className="text-base font-semibold">Aplicações</h2>
+                <p className="text-xs text-muted-foreground">
+                  Planos de correção gerados para o projeto
                 </p>
               </div>
-              <Link href="/aplicacao">
-                <Button size="sm" variant="outline">
-                  <Wrench className="h-3.5 w-3.5" /> Ir para Aplicação
-                </Button>
+              <Link
+                href={`/aplicacao?projectId=${id}`}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Abrir Aplicação
               </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {remediationPlans.map((plan) => (
-              <Link key={plan.id} href={`/aplicacao/${plan.id}`}>
-                <Card className="transition-colors hover:border-primary/50">
-                  <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">
-                      <span className="truncate font-medium">{plan.title}</span>
-                      <Badge className={REMEDIATION_STATUS_CLASS[plan.status]}>
-                        {REMEDIATION_STATUS_LABEL[plan.status] ?? plan.status}
-                      </Badge>
-                      {plan.status === "READY" && (
-                        <span className="tabular text-xs text-muted-foreground">
-                          {plan.doneCount}/{plan.itemCount} aplicado(s)
-                        </span>
-                      )}
-                    </div>
-                    <span className="tabular text-xs text-muted-foreground">
-                      {timeAgo(plan.createdAt)}
-                    </span>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
 
-      {/* Aplicação é o executor final — conexões/integrações e orquestração ficam lá. */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Link href={`/aplicacao?projectId=${id}`}>
-          <Card className="transition-colors hover:border-primary/50">
-            <CardContent className="flex items-center gap-3 py-4">
-              <Wrench className="h-5 w-5 shrink-0 text-primary" />
-              <div className="min-w-0 flex-1">
-                <p className="font-medium">Conexões e integrações</p>
-                <p className="text-sm text-muted-foreground">
-                  GitHub, MCP, WordPress, Shopify, FTP — tudo em
-                  Aplicação, o executor final das mudanças.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href={`/orquestracao?projectId=${id}`}>
-          <Card className="border-primary/30 transition-colors hover:border-primary/60">
-            <CardContent className="flex items-center gap-3 py-4">
-              <GitBranch className="h-5 w-5 shrink-0 text-primary" />
-              <div className="min-w-0 flex-1">
-                <p className="font-medium">Orquestração deste projeto</p>
-                <p className="text-sm text-muted-foreground">
-                  Nível de autonomia, quality gates e o loop analisar → plano
-                  → aplicar → reanalisar, automático.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+            <div className="overflow-hidden rounded-lg border bg-card">
+              {remediationPlans.length === 0 ? (
+                <div className="flex items-center gap-4 px-5 py-7">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md border bg-muted">
+                    <Wrench className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">
+                      Nenhuma aplicação criada
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Envie uma análise concluída para Aplicação.
+                    </p>
+                  </div>
+                  <Link href={`/aplicacao?projectId=${id}`}>
+                    <Button variant="outline" size="sm">
+                      Abrir
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {remediationPlans.slice(0, 5).map((plan) => {
+                    const status = PLAN_STATUS[plan.status];
+                    return (
+                      <Link
+                        key={plan.id}
+                        href={`/aplicacao/${plan.id}`}
+                        className="group flex items-center gap-3 px-4 py-3.5 hover:bg-accent/40"
+                      >
+                        <Wrench className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">
+                            {plan.title}
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {plan.doneCount}/{plan.itemCount} item(ns)
+                            aplicado(s)
+                          </p>
+                        </div>
+                        <Badge className={status?.className}>
+                          {status?.label ?? plan.status}
+                        </Badge>
+                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+
+        <aside className="space-y-5">
+          <section>
+            <h2 className="mb-3 text-base font-semibold">
+              Continuar trabalhando
+            </h2>
+            <div className="overflow-hidden rounded-lg border bg-card">
+              {[
+                {
+                  href: `/analyses?projectId=${id}`,
+                  label: "Rodar nova análise",
+                  description: "Avaliar qualidade ou segurança",
+                  icon: FileSearch,
+                },
+                {
+                  href: `/aplicacao?projectId=${id}`,
+                  label: "Gerenciar aplicações",
+                  description: "Planos e conexões do projeto",
+                  icon: Wrench,
+                },
+                {
+                  href: `/orquestracao?projectId=${id}`,
+                  label: "Abrir orquestração",
+                  description: "Automatizar o ciclo de qualidade",
+                  icon: GitBranch,
+                },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex gap-3 border-b px-4 py-3.5 last:border-b-0 hover:bg-accent/40"
+                >
+                  <item.icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">{item.label}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {item.description}
+                    </p>
+                  </div>
+                  <ArrowRight className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" />
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <h2 className="mb-3 text-base font-semibold">Sobre o projeto</h2>
+            <Card>
+              <CardContent className="space-y-4 py-4 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    URL monitorada
+                  </p>
+                  <p className="mt-1 truncate">{project?.url ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Autonomia</p>
+                  <p className="mt-1 capitalize">
+                    {project?.autonomyLevel?.toLowerCase() ?? "Manual"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Criado</p>
+                  <p className="mt-1">
+                    {project?.createdAt
+                      ? new Intl.DateTimeFormat("pt-BR", {
+                          dateStyle: "medium",
+                        }).format(new Date(project.createdAt))
+                      : "—"}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          <section className="rounded-lg border border-destructive/25 p-4">
+            <p className="text-sm font-medium">Zona de risco</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Apagar remove análises, aplicações e conexões associadas.
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-3 px-0 text-destructive hover:bg-transparent hover:text-destructive"
+              disabled={deletingProject}
+              onClick={removeProject}
+            >
+              {deletingProject ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="h-3.5 w-3.5" />
+              )}
+              Apagar projeto
+            </Button>
+          </section>
+        </aside>
       </div>
     </div>
   );

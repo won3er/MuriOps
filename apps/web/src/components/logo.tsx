@@ -4,9 +4,8 @@ import { cn } from "@/lib/utils";
 /**
  * Identidade visual do Elevate QA.
  *
- * Mascote: a arte de texugo enviada diretamente pelo usuário (círculo
- * branco com o texugo em silhueta preta, fundo preto) — usada como imagem
- * raster (`/badger-logo-512.png`), não recriada em SVG à mão. Ver DESIGN.md.
+ * Mascote: rato em negativo dentro de um selo circular — uma marca simples,
+ * técnica e legível mesmo nos menores pontos da interface.
  */
 export function LogoIsotype({
   className,
@@ -17,11 +16,11 @@ export function LogoIsotype({
 }) {
   return (
     <Image
-      src="/badger-logo-512.png"
+      src="/atlas-rat-logo-512.png"
       alt={title}
       width={512}
       height={512}
-      className={cn("h-9 w-9 rounded-full", className)}
+      className={cn("h-9 w-9 object-contain", className)}
       priority
     />
   );
@@ -31,11 +30,11 @@ export function LogoIsotype({
 export function LogoMark({ className }: { className?: string }) {
   return (
     <Image
-      src="/badger-logo-512.png"
-      alt="Elevate QA"
+      src="/atlas-rat-logo-512.png"
+      alt=""
       width={512}
       height={512}
-      className={cn("h-8 w-8 rounded-full", className)}
+      className={cn("h-8 w-8 object-contain", className)}
       priority
     />
   );

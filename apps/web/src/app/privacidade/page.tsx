@@ -1,38 +1,89 @@
-import Link from "next/link";
-import { LogoIsotype } from "@/components/logo";
+import { LegalSection, LegalShell } from "@/components/legal-shell";
 
-export const metadata = { title: "Privacidade" };
+export const metadata = {
+  title: "Privacidade",
+  description:
+    "Saiba como o Elevate QA trata credenciais, dados de projetos e informações da conta.",
+  alternates: { canonical: "/privacidade" },
+};
 
 export default function PrivacidadePage() {
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16">
-      <Link href="/" className="mb-10 inline-flex items-center gap-2 font-semibold">
-        <LogoIsotype className="h-7 w-7" title="Elevate QA" />
-        Elevate <span className="text-primary">QA</span>
-      </Link>
-      <h1 className="text-3xl font-semibold">Privacidade</h1>
-      <div className="prose prose-invert mt-6 space-y-4 text-sm text-muted-foreground">
+    <LegalShell
+      title="Privacidade"
+      description="Quais dados são utilizados, por que são necessários e quais controles estão disponíveis."
+    >
+      <LegalSection title="1. Dados de conta e organização">
         <p>
-          Guardamos o essencial pra você usar o produto: seus dados de conta
-          (nome, e-mail), os projetos e URLs que você cadastra, e os
-          resultados das análises (score, achados, screenshots, requisições)
-          gerados a partir dessas URLs.
+          Armazenamos informações necessárias para autenticação e operação do
+          workspace, como nome, e-mail, identificador do Google quando usado e
+          vínculo com a organização. Senhas são armazenadas de forma derivada,
+          não em texto puro.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="2. Projetos e resultados">
+        <p>
+          Guardamos URLs cadastradas, configurações, páginas descobertas,
+          scores, achados, evidências técnicas e resultados gerados. Esses dados
+          permitem apresentar histórico, comparar execuções e montar planos de
+          remediação.
         </p>
         <p>
-          Para interpretar os achados e gerar planos de correção, o conteúdo
-          da análise é enviado ao provedor de IA configurado (Claude, Gemini
-          ou OpenAI). Esses provedores processam o conteúdo conforme as
-          próprias políticas de privacidade.
+          Não cadastre segredos em nomes, descrições ou URLs. Uma análise pode
+          observar conteúdo publicamente exposto pelo próprio site analisado.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="3. Provedores de IA">
+        <p>
+          Quando você configura Claude, OpenAI ou Gemini, partes relevantes dos
+          achados, descrições ou planos são enviadas ao provedor escolhido para
+          processamento. O tratamento realizado por esse provedor também segue
+          os termos e políticas dele.
         </p>
         <p>
-          Não vendemos seus dados a terceiros. Você pode apagar projetos,
-          análises e blueprints a qualquer momento diretamente no app.
+          Sem uma chave própria configurada, o Elevate QA não utiliza
+          silenciosamente uma chave compartilhada: as respostas degradam para o
+          modo determinístico.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="4. Credenciais de integrações">
+        <p>
+          Chaves de IA, tokens e senhas de integração são criptografados antes
+          de serem armazenados no banco. Eles são descriptografados somente
+          quando necessários para a operação solicitada. Ainda assim, use
+          credenciais de escopo mínimo e revogue-as na origem ao desconectar um
+          serviço.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="5. Compartilhamento e retenção">
+        <p>
+          Não vendemos dados pessoais. Dados podem ser processados por serviços
+          essenciais de hospedagem, banco, autenticação e provedores escolhidos
+          por você, na medida necessária para entregar o produto.
         </p>
         <p>
-          Dúvidas ou pedido de exclusão de conta: entre em contato pelo
-          e-mail no rodapé da página inicial.
+          Projetos, análises e blueprints podem ser apagados nas áreas
+          correspondentes. Para exclusão da conta ou solicitações relativas aos
+          seus dados, use o contato abaixo.
         </p>
-      </div>
-    </main>
+      </LegalSection>
+
+      <LegalSection title="6. Contato">
+        <p>
+          Solicitações de privacidade podem ser enviadas para{" "}
+          <a
+            className="text-primary hover:underline"
+            href="mailto:jadsonpavia@gmail.com"
+          >
+            jadsonpavia@gmail.com
+          </a>
+          .
+        </p>
+      </LegalSection>
+    </LegalShell>
   );
 }

@@ -2,6 +2,7 @@
 
 import type { RemediationScope } from "@qa-ai/shared";
 import {
+  ArrowRight,
   ChevronDown,
   FileSearch,
   GitBranch,
@@ -16,6 +17,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { GithubConnectionPanel } from "@/components/github-connection-panel";
 import { McpConnectionPanel } from "@/components/mcp-connection-panel";
+import { PageHeader } from "@/components/page-header";
+import { QueryErrorState } from "@/components/query-error-state";
 import {
   FtpConnectionPanel,
   ShopifyConnectionPanel,
@@ -82,7 +85,17 @@ const SCOPE_LABEL: Record<string, string> = {
  */
 export default function AplicacaoPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <div
+          className="grid place-items-center py-24 text-muted-foreground"
+          role="status"
+        >
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="mt-3 text-sm">Preparando aplicações…</span>
+        </div>
+      }
+    >
       <AplicacaoPageInner />
     </Suspense>
   );
@@ -91,8 +104,17 @@ export default function AplicacaoPage() {
 function AplicacaoPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: projects = [] } = useProjects();
-  const { data: plans = [], isLoading } = useRemediationPlans();
+  const {
+    data: projects = [],
+    isError: projectsError,
+    refetch: refetchProjects,
+  } = useProjects();
+  const {
+    data: plans = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useRemediationPlans();
   const createPlan = useCreateRemediationPlan();
 
   const [projectId, setProjectId] = useState("");
@@ -102,6 +124,7 @@ function AplicacaoPageInner() {
   useEffect(() => {
     const wanted = searchParams.get("projectId");
     if (wanted) setProjectId(wanted);
+    if (searchParams.get("view") === "connections") setConnectionsOpen(true);
   }, [searchParams]);
 
   function exportar() {
@@ -113,23 +136,24 @@ function AplicacaoPageInner() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold">
-          <Wrench className="h-6 w-6 text-primary" /> Aplicação
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Exporte suas análises e transforme os achados num plano de mudanças —
-          para aplicar manualmente ou direto na plataforma real do cliente.
-        </p>
-      </div>
+    <div className="mx-auto max-w-7xl space-y-7">
+      <PageHeader
+        eyebrow="Ciclo de qualidade"
+        title="Aplicações"
+        description="Transforme análises, blueprints e upgrades em planos rastreáveis para execução humana ou assistida."
+      />
 
       {/* Exportar análises */}
       <Card>
         <CardContent className="space-y-5 py-6">
-          <h2 className="text-sm font-medium text-muted-foreground">
-            Exportar análises de um projeto
-          </h2>
+          <div>
+            <h2 className="text-sm font-semibold">
+              Criar aplicação a partir de um projeto
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Escolha quais análises concluídas devem compor o novo plano.
+            </p>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
             <div>
@@ -152,6 +176,16 @@ function AplicacaoPageInner() {
                   </option>
                 ))}
               </select>
+              {projectsError && (
+                <div className="mt-3">
+                  <QueryErrorState
+                    compact
+                    title="Projetos indisponíveis"
+                    description="Não foi possível carregar as opções."
+                    onRetry={() => void refetchProjects()}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -171,7 +205,9 @@ function AplicacaoPageInner() {
                 <s.icon
                   className={cn(
                     "mb-2 h-5 w-5",
-                    scope === s.value ? "text-primary" : "text-muted-foreground",
+                    scope === s.value
+                      ? "text-primary"
+                      : "text-muted-foreground",
                   )}
                 />
                 <p className="text-sm font-medium">{s.label}</p>
@@ -192,7 +228,7 @@ function AplicacaoPageInner() {
               ) : (
                 <Wrench className="h-4 w-4" />
               )}
-              Exportar e gerar plano
+              Gerar plano de aplicação
             </Button>
           </div>
         </CardContent>
@@ -202,8 +238,8 @@ function AplicacaoPageInner() {
       <div>
         {!projectId ? (
           <p className="text-sm text-muted-foreground">
-            Selecione um projeto acima pra ver ou configurar as conexões e
-            integrações dele (GitHub, MCP, WordPress, Shopify, FTP).
+            Selecione um projeto para consultar e configurar as conexões
+            disponíveis.
           </p>
         ) : (
           <>
@@ -213,7 +249,9 @@ function AplicacaoPageInner() {
               className="flex w-full items-center gap-2 rounded-md border px-3 py-2.5 text-sm transition-colors hover:bg-accent"
             >
               <Plug className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">Conexões e integrações deste projeto</span>
+              <span className="font-medium">
+                Conexões e integrações deste projeto
+              </span>
               <ChevronDown
                 className={cn(
                   "ml-auto h-4 w-4 text-muted-foreground transition-transform",
@@ -228,7 +266,8 @@ function AplicacaoPageInner() {
                   <GithubConnectionPanel projectId={projectId} />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Plataforma do site (apply real fora do repositório):
+                  Plataformas externas — cada adapter registra o plano de uma
+                  forma diferente:
                 </p>
                 <div className="grid gap-4 md:grid-cols-2">
                   <WordpressConnectionPanel projectId={projectId} />
@@ -242,28 +281,43 @@ function AplicacaoPageInner() {
       </div>
 
       {/* Orquestração — automatiza o ciclo usando estas mesmas conexões. */}
-      <Link href={projectId ? `/orquestracao?projectId=${projectId}` : "/orquestracao"}>
+      <Link
+        href={
+          projectId ? `/orquestracao?projectId=${projectId}` : "/orquestracao"
+        }
+      >
         <Card className="border-primary/30 transition-colors hover:border-primary/60">
           <CardContent className="flex items-center gap-3 py-4">
             <GitBranch className="h-5 w-5 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
-              <p className="font-medium">Enviar para Orquestração</p>
+              <p className="font-medium">Abrir na Orquestração</p>
               <p className="text-sm text-muted-foreground">
-                Deixa o ciclo analisar → plano → aplicar → reanalisar rodar
-                sozinho, usando as conexões configuradas acima.
+                Continue o ciclo analisar → plano → aplicar → reanalisar com os
+                checkpoints disponíveis no modo Manual.
               </p>
             </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
           </CardContent>
         </Card>
       </Link>
 
       {/* Histórico de aplicações */}
       <div>
-        <h2 className="mb-3 text-lg font-medium">Suas Aplicações</h2>
+        <div className="mb-3">
+          <h2 className="text-base font-semibold">Histórico de aplicações</h2>
+          <p className="text-xs text-muted-foreground">
+            Planos criados por Análise, Projetar e Atualizar
+          </p>
+        </div>
         {isLoading ? (
           <div className="grid place-items-center py-10 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
           </div>
+        ) : isError ? (
+          <QueryErrorState
+            title="Não foi possível carregar as aplicações"
+            onRetry={() => void refetch()}
+          />
         ) : plans.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
@@ -274,7 +328,11 @@ function AplicacaoPageInner() {
         ) : (
           <div className="space-y-3">
             {plans.map((plan) => (
-              <Link key={plan.id} href={`/aplicacao/${plan.id}`} className="block">
+              <Link
+                key={plan.id}
+                href={`/aplicacao/${plan.id}`}
+                className="block"
+              >
                 <Card className="transition-colors hover:border-primary/50">
                   <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">

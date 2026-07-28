@@ -1,9 +1,6 @@
 "use client";
 
-import type {
-  BlueprintCanvasEdge,
-  BlueprintCanvasNode,
-} from "@qa-ai/shared";
+import type { BlueprintCanvasEdge, BlueprintCanvasNode } from "@qa-ai/shared";
 import { Link2, Plus, Trash2, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -113,8 +110,14 @@ export function CanvasEditor({
     const board = boardRef.current;
     if (!drag || !board) return;
     const rect = board.getBoundingClientRect();
-    const x = Math.max(0, Math.min(rect.width - NODE_W, e.clientX - rect.left - drag.dx));
-    const y = Math.max(0, Math.min(rect.height - NODE_H, e.clientY - rect.top - drag.dy));
+    const x = Math.max(
+      0,
+      Math.min(rect.width - NODE_W, e.clientX - rect.left - drag.dx),
+    );
+    const y = Math.max(
+      0,
+      Math.min(rect.height - NODE_H, e.clientY - rect.top - drag.dy),
+    );
     onChange({
       ...value,
       nodes: value.nodes.map((n) => (n.id === drag.id ? { ...n, x, y } : n)),
@@ -184,99 +187,106 @@ export function CanvasEditor({
       )}
 
       <div
-        ref={boardRef}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        className="relative h-[420px] w-full overflow-hidden rounded-lg border border-border bg-[radial-gradient(circle,rgba(148,163,184,0.15)_1px,transparent_1px)] [background-size:20px_20px]"
+        className="overflow-x-auto rounded-lg border border-border"
+        aria-label="Canvas de arquitetura; deslize horizontalmente em telas estreitas"
       >
-        {/* arestas */}
-        <svg className="pointer-events-none absolute inset-0 h-full w-full">
-          <defs>
-            <marker
-              id="arrow"
-              markerWidth="8"
-              markerHeight="8"
-              refX="7"
-              refY="4"
-              orient="auto"
+        <div
+          ref={boardRef}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          className="relative h-[420px] min-w-[640px] overflow-hidden bg-[radial-gradient(circle,rgba(148,163,184,0.15)_1px,transparent_1px)] [background-size:20px_20px]"
+        >
+          {/* arestas */}
+          <svg className="pointer-events-none absolute inset-0 h-full w-full">
+            <defs>
+              <marker
+                id="arrow"
+                markerWidth="8"
+                markerHeight="8"
+                refX="7"
+                refY="4"
+                orient="auto"
+              >
+                <path d="M0,0 L8,4 L0,8 Z" fill="#818cf8" />
+              </marker>
+            </defs>
+            {value.edges.map((edge) => {
+              const from = nodeById(edge.from);
+              const to = nodeById(edge.to);
+              if (!from || !to) return null;
+              const a = center(from);
+              const b = center(to);
+              return (
+                <line
+                  key={edge.id}
+                  x1={a.x}
+                  y1={a.y}
+                  x2={b.x}
+                  y2={b.y}
+                  stroke="#818cf8"
+                  strokeWidth={2}
+                  markerEnd="url(#arrow)"
+                />
+              );
+            })}
+          </svg>
+
+          {/* nós */}
+          {value.nodes.map((n) => (
+            <div
+              key={n.id}
+              onPointerDown={(e) => onPointerDown(e, n)}
+              onClick={() => onNodeClick(n.id)}
+              style={{
+                left: n.x,
+                top: n.y,
+                width: NODE_W,
+                borderColor: colorOf(n.type),
+              }}
+              className={cn(
+                "group absolute flex touch-none flex-col rounded-md border-2 bg-card/95 px-2 py-1.5",
+                linking
+                  ? "cursor-pointer"
+                  : "cursor-grab active:cursor-grabbing",
+                selected === n.id && "ring-2 ring-primary",
+                linkFrom === n.id && "ring-2 ring-primary",
+              )}
             >
-              <path d="M0,0 L8,4 L0,8 Z" fill="#818cf8" />
-            </marker>
-          </defs>
-          {value.edges.map((edge) => {
-            const from = nodeById(edge.from);
-            const to = nodeById(edge.to);
-            if (!from || !to) return null;
-            const a = center(from);
-            const b = center(to);
-            return (
-              <line
-                key={edge.id}
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
-                stroke="#818cf8"
-                strokeWidth={2}
-                markerEnd="url(#arrow)"
+              <div className="flex items-center justify-between gap-1">
+                <span
+                  className="text-[9px] uppercase tracking-wide"
+                  style={{ color: colorOf(n.type) }}
+                >
+                  {n.type}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeNode(n.id);
+                  }}
+                  className="opacity-0 transition-opacity group-hover:opacity-100"
+                  aria-label="Remover componente"
+                >
+                  <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                </button>
+              </div>
+              <input
+                value={n.label}
+                onChange={(e) => renameNode(n.id, e.target.value)}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full bg-transparent text-xs font-medium outline-none"
               />
-            );
-          })}
-        </svg>
-
-        {/* nós */}
-        {value.nodes.map((n) => (
-          <div
-            key={n.id}
-            onPointerDown={(e) => onPointerDown(e, n)}
-            onClick={() => onNodeClick(n.id)}
-            style={{
-              left: n.x,
-              top: n.y,
-              width: NODE_W,
-              borderColor: colorOf(n.type),
-            }}
-            className={cn(
-              "group absolute flex touch-none flex-col rounded-md border-2 bg-card/95 px-2 py-1.5 shadow-md",
-              linking ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
-              selected === n.id && "ring-2 ring-primary",
-              linkFrom === n.id && "ring-2 ring-primary",
-            )}
-          >
-            <div className="flex items-center justify-between gap-1">
-              <span
-                className="text-[9px] uppercase tracking-wide"
-                style={{ color: colorOf(n.type) }}
-              >
-                {n.type}
-              </span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeNode(n.id);
-                }}
-                className="opacity-0 transition-opacity group-hover:opacity-100"
-                aria-label="Remover componente"
-              >
-                <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-              </button>
             </div>
-            <input
-              value={n.label}
-              onChange={(e) => renameNode(n.id, e.target.value)}
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full bg-transparent text-xs font-medium outline-none"
-            />
-          </div>
-        ))}
+          ))}
 
-        {value.nodes.length === 0 && (
-          <div className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">
-            Adicione componentes pela paleta acima.
-          </div>
-        )}
+          {value.nodes.length === 0 && (
+            <div className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">
+              Adicione componentes pela paleta acima.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

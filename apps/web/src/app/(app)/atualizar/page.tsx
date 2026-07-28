@@ -1,14 +1,26 @@
 "use client";
 
-import { ArrowUpCircle, Loader2, UploadCloud } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpCircle,
+  FileJson2,
+  Loader2,
+  UploadCloud,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/page-header";
+import { QueryErrorState } from "@/components/query-error-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useCreateUpgradePlan, useProjects, useUpgradePlans } from "@/lib/queries";
+import {
+  useCreateUpgradePlan,
+  useProjects,
+  useUpgradePlans,
+} from "@/lib/queries";
 import { timeAgo } from "@/lib/utils";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -36,8 +48,12 @@ const RISK_CLASS: Record<string, string> = {
 
 export default function AtualizarPage() {
   const router = useRouter();
-  const { data: projects = [] } = useProjects();
-  const { data: plans = [], isLoading } = useUpgradePlans();
+  const {
+    data: projects = [],
+    isError: projectsError,
+    refetch: refetchProjects,
+  } = useProjects();
+  const { data: plans = [], isLoading, isError, refetch } = useUpgradePlans();
   const createPlan = useCreateUpgradePlan();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,29 +78,30 @@ export default function AtualizarPage() {
       toast.error("Envie um arquivo package.json");
       return;
     }
-    file.text().then(setPackageJson).catch(() => toast.error("Falha ao ler o arquivo"));
+    file
+      .text()
+      .then(setPackageJson)
+      .catch(() => toast.error("Falha ao ler o arquivo"));
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold">
-          <ArrowUpCircle className="h-6 w-6 text-primary" /> Atualizar
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Envie o package.json do seu projeto e receba um plano de
-          atualização de dependências — risco, breaking changes e passo a
-          passo de migração por pacote — para aplicar manualmente ou direto
-          no seu ambiente de desenvolvimento via IA.
-        </p>
-      </div>
+    <div className="mx-auto max-w-7xl space-y-7">
+      <PageHeader
+        eyebrow="Ciclo de qualidade"
+        title="Atualizar"
+        description="Avalie dependências, riscos e breaking changes antes de iniciar uma migração."
+      />
 
       {/* Gerar plano de atualização */}
       <Card>
         <CardContent className="space-y-5 py-6">
-          <h2 className="text-sm font-medium text-muted-foreground">
-            Analisar dependências de um package.json
-          </h2>
+          <div>
+            <h2 className="text-sm font-semibold">Analisar um package.json</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Cole o conteúdo ou selecione o arquivo; vincular a um projeto é
+              opcional.
+            </p>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
             <div>
@@ -107,6 +124,16 @@ export default function AtualizarPage() {
                   </option>
                 ))}
               </select>
+              {projectsError && (
+                <div className="mt-3">
+                  <QueryErrorState
+                    compact
+                    title="Projetos indisponíveis"
+                    description="O plano ainda pode ser criado sem vínculo."
+                    onRetry={() => void refetchProjects()}
+                  />
+                </div>
+              )}
             </div>
             <Button
               variant="outline"
@@ -159,11 +186,21 @@ export default function AtualizarPage() {
 
       {/* Histórico de atualizações */}
       <div>
-        <h2 className="mb-3 text-lg font-medium">Suas Atualizações</h2>
+        <div className="mb-3">
+          <h2 className="text-base font-semibold">Histórico de atualizações</h2>
+          <p className="text-xs text-muted-foreground">
+            {plans.length} plano(s) registrado(s)
+          </p>
+        </div>
         {isLoading ? (
           <div className="grid place-items-center py-10 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
           </div>
+        ) : isError ? (
+          <QueryErrorState
+            title="Não foi possível carregar as atualizações"
+            onRetry={() => void refetch()}
+          />
         ) : plans.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
@@ -172,32 +209,36 @@ export default function AtualizarPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="divide-y overflow-hidden rounded-lg border bg-card">
             {plans.map((plan) => (
-              <Link key={plan.id} href={`/atualizar/${plan.id}`} className="block">
-                <Card className="transition-colors hover:border-primary/50">
-                  <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">
-                      <span className="truncate font-medium">{plan.title}</span>
-                      <Badge className={STATUS_CLASS[plan.status]}>
-                        {STATUS_LABEL[plan.status] ?? plan.status}
+              <Link
+                key={plan.id}
+                href={`/atualizar/${plan.id}`}
+                className="block"
+              >
+                <div className="group flex flex-col gap-3 px-4 py-3.5 hover:bg-accent/40 sm:flex-row sm:items-center sm:justify-between">
+                  <FileJson2 className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:block" />
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">
+                    <span className="truncate font-medium">{plan.title}</span>
+                    <Badge className={STATUS_CLASS[plan.status]}>
+                      {STATUS_LABEL[plan.status] ?? plan.status}
+                    </Badge>
+                    {plan.overallRisk && (
+                      <Badge className={RISK_CLASS[plan.overallRisk]}>
+                        {RISK_LABEL[plan.overallRisk] ?? plan.overallRisk}
                       </Badge>
-                      {plan.overallRisk && (
-                        <Badge className={RISK_CLASS[plan.overallRisk]}>
-                          {RISK_LABEL[plan.overallRisk] ?? plan.overallRisk}
-                        </Badge>
-                      )}
-                      {plan.status === "READY" && plan.itemCount > 0 && (
-                        <span className="tabular text-xs text-muted-foreground">
-                          {plan.doneCount}/{plan.itemCount} atualizado(s)
-                        </span>
-                      )}
-                    </div>
-                    <span className="tabular text-xs text-muted-foreground">
-                      {timeAgo(plan.createdAt)}
-                    </span>
-                  </CardContent>
-                </Card>
+                    )}
+                    {plan.status === "READY" && plan.itemCount > 0 && (
+                      <span className="tabular text-xs text-muted-foreground">
+                        {plan.doneCount}/{plan.itemCount} atualizado(s)
+                      </span>
+                    )}
+                  </div>
+                  <span className="tabular text-xs text-muted-foreground">
+                    {timeAgo(plan.createdAt)}
+                  </span>
+                  <ArrowRight className="hidden h-3.5 w-3.5 text-muted-foreground sm:block" />
+                </div>
               </Link>
             ))}
           </div>

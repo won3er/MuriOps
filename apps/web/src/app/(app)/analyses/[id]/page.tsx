@@ -1,15 +1,28 @@
 "use client";
 
-import { ALL_CATEGORIES, Severity, type AnalysisDetail, type Issue } from "@qa-ai/shared";
-import { motion } from "framer-motion";
-import { AlertTriangle, Download, FileSearch, Loader2, Sparkles, Wrench } from "lucide-react";
+import {
+  ALL_CATEGORIES,
+  Severity,
+  type AnalysisDetail,
+  type Issue,
+} from "@qa-ai/shared";
+import {
+  AlertTriangle,
+  Download,
+  FileSearch,
+  Loader2,
+  Sparkles,
+  Wrench,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { AnalysisStatusBadge } from "@/components/status-badge";
 import { IssueCard } from "@/components/issue-card";
 import { ScoreBars } from "@/components/score-bars";
 import { ScoreRing } from "@/components/score-ring";
+import { QueryErrorState } from "@/components/query-error-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,6 +55,7 @@ export default function AnalysisDetailPage() {
   const [search, setSearch] = useState("");
   const [showIgnored, setShowIgnored] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [loadError, setLoadError] = useState<unknown>(null);
   const pollRef = useRef<ReturnType<typeof setInterval>>();
 
   const load = useCallback(async () => {
@@ -51,9 +65,15 @@ export default function AnalysisDetailPage() {
       ...(search ? { search } : {}),
       ...(showIgnored ? { status: "ALL" } : {}),
     };
-    const detail = await api.getAnalysis(id, filters).catch(() => null);
-    if (detail) setData(detail);
-    return detail;
+    try {
+      const detail = await api.getAnalysis(id, filters);
+      setData(detail);
+      setLoadError(null);
+      return detail;
+    } catch (error) {
+      setLoadError(error);
+      return null;
+    }
   }, [id, category, severity, search, showIgnored]);
 
   // Análise que rodou só a auditoria de segurança: nesse caso os pills
@@ -85,6 +105,13 @@ export default function AnalysisDetailPage() {
     setDownloading(true);
     try {
       await api.downloadReportPdf(data.id, data.version);
+      toast.success("Relatório preparado para download");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível baixar o relatório.",
+      );
     } finally {
       setDownloading(false);
     }
@@ -114,6 +141,17 @@ export default function AnalysisDetailPage() {
     return () => clearInterval(pollRef.current);
   }, [load]);
 
+  if (!data && loadError) {
+    return (
+      <div className="mx-auto max-w-2xl py-12">
+        <QueryErrorState
+          title="Não foi possível carregar esta análise"
+          onRetry={() => void load()}
+        />
+      </div>
+    );
+  }
+
   if (!data) {
     return (
       <div className="grid place-items-center py-20 text-muted-foreground">
@@ -125,7 +163,15 @@ export default function AnalysisDetailPage() {
   const inProgress = IN_PROGRESS.includes(data.status);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto max-w-7xl space-y-7">
+      {!!loadError && (
+        <QueryErrorState
+          compact
+          title="Não foi possível atualizar os dados"
+          description="A última versão carregada continua visível."
+          onRetry={() => void load()}
+        />
+      )}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-3">
@@ -141,14 +187,14 @@ export default function AnalysisDetailPage() {
           {data.status === "COMPLETED" && (
             <p className="max-w-2xl text-sm text-muted-foreground">
               O score vai de 0 a 100 (quanto maior, melhor) e é calculado a
-              partir dos problemas encontrados em cada dimensão. Use os
-              filtros abaixo pra focar numa categoria ou severidade, e envie
-              pra Aplicação quando quiser transformar esses achados num
-              checklist de correção.
+              partir dos problemas encontrados em cada dimensão. Use os filtros
+              abaixo pra focar numa categoria ou severidade, e envie pra
+              Aplicação quando quiser transformar esses achados num checklist de
+              correção.
             </p>
           )}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2">
           {data.status === "COMPLETED" && (
             <Button
               variant="outline"
@@ -203,9 +249,9 @@ export default function AnalysisDetailPage() {
             <div className="min-w-0 flex-1 space-y-2">
               <p className="font-medium">Não deu para concluir esta análise</p>
               <p className="text-sm text-muted-foreground">
-                O site pode estar fora do ar, bloqueando o acesso do crawler,
-                ou algo travou no meio do processo. Volte pro projeto e rode
-                uma nova análise pra tentar de novo.
+                O site pode estar fora do ar, bloqueando o acesso do crawler, ou
+                algo travou no meio do processo. Volte pro projeto e rode uma
+                nova análise pra tentar de novo.
               </p>
               {data.error && (
                 <details className="text-xs text-muted-foreground">
@@ -241,10 +287,7 @@ export default function AnalysisDetailPage() {
       )}
 
       {data.aiSummary && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+        <div>
           <Card>
             <CardContent className="py-6">
               <h2 className="mb-3 flex items-center gap-2 text-sm font-medium">
@@ -255,64 +298,67 @@ export default function AnalysisDetailPage() {
               </p>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       )}
 
       {/* Filtros */}
       <div className="space-y-2">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Filtrar problemas
-      </p>
-      <div className="flex flex-wrap items-center gap-2">
-        {isSecurityOnly ? (
-          <FilterPills
-            value={securityGroup}
-            onChange={setSecurityGroup}
-            options={securityGroupOptions.map((g) => ({ value: g, label: g }))}
-          />
-        ) : (
-          <FilterPills
-            value={category}
-            onChange={setCategory}
-            options={availableCategories.map((c) => ({
-              value: c,
-              label: CATEGORY_LABEL[c] ?? c,
-            }))}
-          />
-        )}
-        <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
-          <select
-            value={severity}
-            onChange={(e) => setSeverity(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background/60 px-2 text-sm"
-          >
-            <option value="">Toda severidade</option>
-            {Object.values(Severity).map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <div className="relative flex-1 sm:flex-none">
-            <FileSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-9 w-full pl-8 sm:w-48"
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Filtrar problemas
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          {isSecurityOnly ? (
+            <FilterPills
+              value={securityGroup}
+              onChange={setSecurityGroup}
+              options={securityGroupOptions.map((g) => ({
+                value: g,
+                label: g,
+              }))}
             />
+          ) : (
+            <FilterPills
+              value={category}
+              onChange={setCategory}
+              options={availableCategories.map((c) => ({
+                value: c,
+                label: CATEGORY_LABEL[c] ?? c,
+              }))}
+            />
+          )}
+          <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
+            <select
+              value={severity}
+              onChange={(e) => setSeverity(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background/60 px-2 text-sm"
+            >
+              <option value="">Toda severidade</option>
+              {Object.values(Severity).map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <div className="relative flex-1 sm:flex-none">
+              <FileSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-9 w-full pl-8 sm:w-48"
+              />
+            </div>
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={showIgnored}
+                onChange={(e) => setShowIgnored(e.target.checked)}
+                className="h-3.5 w-3.5"
+              />
+              Mostrar descartados pela IA
+            </label>
           </div>
-          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={showIgnored}
-              onChange={(e) => setShowIgnored(e.target.checked)}
-              className="h-3.5 w-3.5"
-            />
-            Mostrar descartados pela IA
-          </label>
         </div>
-      </div>
       </div>
 
       {/* Lista de problemas */}
@@ -326,7 +372,9 @@ export default function AnalysisDetailPage() {
             </CardContent>
           </Card>
         ) : (
-          visibleIssues.map((issue) => <IssueCard key={issue.id} issue={issue} />)
+          visibleIssues.map((issue) => (
+            <IssueCard key={issue.id} issue={issue} />
+          ))
         )}
       </div>
     </div>
@@ -371,7 +419,9 @@ function Pill({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
         "rounded-full border px-3 py-1 text-xs transition-colors",
         active

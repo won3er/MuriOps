@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { QueryErrorState } from "@/components/query-error-state";
 import { api } from "@/lib/api";
 import {
   useDeleteRemediationPlan,
@@ -48,10 +49,13 @@ const SEVERITY_CLASS: Record<string, string> = {
 export default function RemediationPlanDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { data: plan, isLoading } = useRemediationPlan(id);
+  const { data: plan, isLoading, isError, refetch } = useRemediationPlan(id);
   const toggleItem = useUpdateRemediationItem(id);
   const del = useDeleteRemediationPlan();
   const [downloading, setDownloading] = useState(false);
+  const [bridgeAction, setBridgeAction] = useState<"copy" | "download" | null>(
+    null,
+  );
 
   const sortedItems = useMemo(() => {
     const items = plan?.result?.items ?? [];
@@ -67,7 +71,9 @@ export default function RemediationPlanDetailPage() {
     if (!plan || !confirm(`Apagar a Aplicação "${plan.title}"?`)) return;
     del.mutate(id, {
       onSuccess: () =>
-        router.push(plan.projectId ? `/projects/${plan.projectId}` : "/dashboard"),
+        router.push(
+          plan.projectId ? `/projects/${plan.projectId}` : "/dashboard",
+        ),
     });
   }
 
@@ -76,6 +82,13 @@ export default function RemediationPlanDetailPage() {
     setDownloading(true);
     try {
       await api.downloadRemediationPdf(id);
+      toast.success("Documento preparado para download");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível baixar o documento.",
+      );
     } finally {
       setDownloading(false);
     }
@@ -83,21 +96,28 @@ export default function RemediationPlanDetailPage() {
 
   /** Baixa o pacote da ponte universal (.md) pra entregar à IA de dev. */
   async function downloadBridge() {
+    setBridgeAction("download");
     try {
       await api.downloadRemediationBridge(id);
+      toast.success("Pacote Markdown preparado para download");
     } catch {
-      toast.error("Falha ao gerar o pacote");
+      toast.error("Não foi possível gerar o pacote Markdown");
+    } finally {
+      setBridgeAction(null);
     }
   }
 
   /** Copia o pacote pra colar direto no chat da IA (Claude Code, Windsurf...). */
   async function copyBridge() {
+    setBridgeAction("copy");
     try {
       const text = await api.fetchRemediationBridge(id);
       await navigator.clipboard.writeText(text);
       toast.success("Pacote copiado — cole na sua IA de desenvolvimento");
     } catch {
-      toast.error("Falha ao copiar o pacote");
+      toast.error("Não foi possível copiar o pacote");
+    } finally {
+      setBridgeAction(null);
     }
   }
 
@@ -112,6 +132,17 @@ export default function RemediationPlanDetailPage() {
     return (
       <div className="grid place-items-center py-24 text-muted-foreground">
         <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-2xl py-12">
+        <QueryErrorState
+          title="Não foi possível carregar esta aplicação"
+          onRetry={() => void refetch()}
+        />
       </div>
     );
   }
@@ -137,7 +168,7 @@ export default function RemediationPlanDetailPage() {
         : "/aplicacao";
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <Link
@@ -146,11 +177,11 @@ export default function RemediationPlanDetailPage() {
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Voltar
           </Link>
-          <h1 className="flex items-center gap-2 truncate text-2xl font-semibold">
+          <h1 className="flex items-start gap-2 break-words text-2xl font-semibold">
             <Wrench className="h-5 w-5 shrink-0 text-primary" />
             {plan.title}
           </h1>
-          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
             <span className="uppercase">IA: {plan.provider}</span>
             <span>·</span>
             <span>
@@ -200,6 +231,8 @@ export default function RemediationPlanDetailPage() {
             className="text-muted-foreground hover:text-destructive"
             onClick={remove}
             disabled={del.isPending}
+            aria-label="Apagar plano de aplicação"
+            title="Apagar plano de aplicação"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
@@ -213,8 +246,8 @@ export default function RemediationPlanDetailPage() {
             <div className="min-w-0 flex-1 space-y-2">
               <p className="font-medium">Não deu para gerar a Aplicação</p>
               <p className="text-sm text-muted-foreground">
-                A IA configurada não respondeu corretamente. Confira a chave
-                de API em Configurações e tente de novo.
+                A IA configurada não respondeu corretamente. Confira a chave de
+                API em Configurações e tente de novo.
               </p>
               {plan.error && (
                 <details className="text-xs text-muted-foreground">
@@ -238,8 +271,8 @@ export default function RemediationPlanDetailPage() {
             <div>
               <p className="font-medium">Montando o plano de aplicação…</p>
               <p className="text-sm text-muted-foreground">
-                A IA está transformando os achados num checklist acionável.
-                Esta página atualiza sozinha quando terminar.
+                A IA está transformando os achados num checklist acionável. Esta
+                página atualiza sozinha quando terminar.
               </p>
             </div>
           </CardContent>
@@ -254,7 +287,9 @@ export default function RemediationPlanDetailPage() {
               <div className="flex items-start gap-3">
                 <Bot className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <div>
-                  <p className="font-medium">Aplicar direto no desenvolvimento</p>
+                  <p className="font-medium">
+                    Aplicar direto no desenvolvimento
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     Copie o pacote e cole na sua IA de desenvolvimento (Claude
                     Code, Windsurf, Codex, Cursor…). Ela aplica as mudanças e
@@ -262,12 +297,31 @@ export default function RemediationPlanDetailPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex shrink-0 gap-2">
-                <Button size="sm" onClick={copyBridge}>
-                  <ClipboardCopy className="h-3.5 w-3.5" /> Copiar pacote
+              <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">
+                <Button
+                  size="sm"
+                  onClick={copyBridge}
+                  disabled={bridgeAction !== null}
+                >
+                  {bridgeAction === "copy" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <ClipboardCopy className="h-3.5 w-3.5" />
+                  )}
+                  {bridgeAction === "copy" ? "Copiando…" : "Copiar pacote"}
                 </Button>
-                <Button variant="outline" size="sm" onClick={downloadBridge}>
-                  <Download className="h-3.5 w-3.5" /> .md
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={downloadBridge}
+                  disabled={bridgeAction !== null}
+                >
+                  {bridgeAction === "download" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Download className="h-3.5 w-3.5" />
+                  )}
+                  {bridgeAction === "download" ? "Baixando…" : "Baixar .md"}
                 </Button>
               </div>
             </CardContent>
@@ -329,8 +383,8 @@ export default function RemediationPlanDetailPage() {
                           {item.category}
                         </Badge>
                         {item.filePath && (
-                          <span className="tabular flex items-center gap-1 text-xs text-muted-foreground">
-                            <FileCode2 className="h-3 w-3" />
+                          <span className="tabular flex min-w-0 items-start gap-1 break-all text-xs text-muted-foreground">
+                            <FileCode2 className="mt-0.5 h-3 w-3 shrink-0" />
                             {item.filePath}
                           </span>
                         )}

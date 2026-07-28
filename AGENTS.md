@@ -56,9 +56,10 @@ aplicar de verdade na plataforma real do cliente ou automatizar o ciclo inteiro.
    fluxo de aplicação próprio e separado (PDF + ponte própria `/apply-upgrade/:token`)
    como caminho alternativo, já que os dois convivem sem conflito.
 
-Identidade visual: laranja, isotipo (monograma "E" em barras — letra + gráfico de
-elevação); mascote texugo (`apps/web/public/badger-logo-512.png`). Componentes em
-`apps/web/src/components/logo.tsx`.
+Identidade visual: plataforma técnica inspirada na densidade e clareza do GitHub/
+Primer, com superfícies neutras e índigo como acento. Mascote: rato branco em
+negativo dentro de selo circular preto (`apps/web/public/atlas-rat-logo-512.png`).
+Componentes em `apps/web/src/components/logo.tsx`.
 
 ## Provider de IA (`apps/api/src/infrastructure/ai/`)
 

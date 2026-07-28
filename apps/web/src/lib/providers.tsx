@@ -7,8 +7,8 @@ import { Toaster } from "sonner";
 import { AuthProvider } from "./auth";
 
 /**
- * Provedores globais do app: tema (claro/escuro), cache de dados (React Query),
- * autenticação e notificações (toasts). Um único ponto no root layout.
+ * Provedores globais do app: tema escuro fixo, cache de dados (React Query),
+ * autenticação e notificações. Um único ponto no root layout.
  */
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -33,7 +33,13 @@ export function Providers({ children }: { children: ReactNode }) {
     >
       <QueryClientProvider client={queryClient}>
         <AuthProvider>{children}</AuthProvider>
-        <Toaster richColors position="top-right" theme="system" />
+        <Toaster
+          richColors
+          position="top-right"
+          theme="dark"
+          closeButton
+          toastOptions={{ className: "border-border" }}
+        />
       </QueryClientProvider>
     </ThemeProvider>
   );

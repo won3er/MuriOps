@@ -1,27 +1,36 @@
 import type { MetadataRoute } from "next";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://elevate-qa.vercel.app";
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://elevate-qa.vercel.app";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
-  return [
+  const pages = [
+    { path: "", priority: 1, changeFrequency: "weekly" as const },
+    { path: "/docs", priority: 0.8, changeFrequency: "monthly" as const },
+    { path: "/docs/guia", priority: 0.8, changeFrequency: "monthly" as const },
     {
-      url: siteUrl,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 1,
+      path: "/docs/funcionalidades",
+      priority: 0.7,
+      changeFrequency: "weekly" as const,
     },
     {
-      url: `${siteUrl}/login`,
-      lastModified: now,
-      changeFrequency: "yearly",
-      priority: 0.5,
+      path: "/docs/integracoes",
+      priority: 0.7,
+      changeFrequency: "monthly" as const,
     },
+    { path: "/termos", priority: 0.3, changeFrequency: "yearly" as const },
     {
-      url: `${siteUrl}/register`,
-      lastModified: now,
-      changeFrequency: "yearly",
-      priority: 0.5,
+      path: "/privacidade",
+      priority: 0.3,
+      changeFrequency: "yearly" as const,
     },
   ];
+
+  return pages.map((page) => ({
+    url: `${siteUrl}${page.path}`,
+    lastModified: now,
+    changeFrequency: page.changeFrequency,
+    priority: page.priority,
+  }));
 }

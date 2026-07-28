@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://elevate-qa.vercel.app";
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://elevate-qa.vercel.app";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -9,7 +10,18 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "*",
         allow: "/",
         // Área logada não deve ser indexada — não é conteúdo público.
-        disallow: ["/dashboard", "/projects", "/analyses", "/blueprints", "/settings"],
+        disallow: [
+          "/dashboard",
+          "/projects",
+          "/analyses",
+          "/blueprints",
+          "/aplicacao",
+          "/atualizar",
+          "/orquestracao",
+          "/settings",
+          "/login",
+          "/register",
+        ],
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,

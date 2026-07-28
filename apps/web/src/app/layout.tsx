@@ -18,10 +18,11 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://elevate-qa.vercel.app";
-const title = "Elevate QA — Sua equipe de QA, do diagnóstico à correção";
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://elevate-qa.vercel.app";
+const title = "Elevate QA — Gestão contínua de qualidade digital";
 const description =
-  "Analise qualquer site com IA — UI, UX, performance, SEO, acessibilidade e segurança — e receba o plano de correção pronto para aplicar, manualmente ou pela sua IA de desenvolvimento.";
+  "Organize projetos, execute análises de qualidade, transforme achados em planos aplicáveis e acompanhe ciclos de melhoria em um único workspace.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -30,9 +31,6 @@ export const metadata: Metadata = {
     template: "%s — Elevate QA",
   },
   description,
-  alternates: {
-    canonical: "/",
-  },
   openGraph: {
     type: "website",
     locale: "pt_BR",

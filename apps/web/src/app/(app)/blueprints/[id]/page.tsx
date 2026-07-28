@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
+import { toast } from "sonner";
 import { GanttChart } from "@/components/blueprint/gantt-chart";
 import { MermaidDiagram } from "@/components/blueprint/mermaid-diagram";
 import { QaRadar } from "@/components/blueprint/qa-radar";
@@ -24,6 +25,7 @@ import { RiskMatrix } from "@/components/blueprint/risk-matrix";
 import { TestPyramid } from "@/components/blueprint/test-pyramid";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { QueryErrorState } from "@/components/query-error-state";
 import { api } from "@/lib/api";
 import {
   useBlueprint,
@@ -43,7 +45,7 @@ const PRIORITY_COLOR: Record<string, string> = {
 export default function BlueprintDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { data: bp, isLoading } = useBlueprint(id);
+  const { data: bp, isLoading, isError, refetch } = useBlueprint(id);
   const regenerate = useRegenerateBlueprint(id);
   const del = useDeleteBlueprint();
   const createRemediation = useCreateRemediationPlan();
@@ -59,6 +61,13 @@ export default function BlueprintDetailPage() {
     setDownloading(true);
     try {
       await api.downloadBlueprintPdf(id, bp.title);
+      toast.success("Blueprint preparado para download");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível baixar o blueprint.",
+      );
     } finally {
       setDownloading(false);
     }
@@ -80,6 +89,17 @@ export default function BlueprintDetailPage() {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-2xl py-12">
+        <QueryErrorState
+          title="Não foi possível carregar este blueprint"
+          onRetry={() => void refetch()}
+        />
+      </div>
+    );
+  }
+
   if (!bp) {
     return (
       <div className="mx-auto max-w-2xl py-20 text-center">
@@ -96,7 +116,7 @@ export default function BlueprintDetailPage() {
   const r = bp.result;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       {/* Cabeçalho */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
@@ -106,14 +126,14 @@ export default function BlueprintDetailPage() {
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Projetar
           </Link>
-          <h1 className="truncate text-2xl font-semibold">{bp.title}</h1>
-          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+          <h1 className="break-words text-2xl font-semibold">{bp.title}</h1>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
             <span className="uppercase">IA: {bp.provider}</span>
             <span>·</span>
             <span className="capitalize">{bp.mode}</span>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {bp.status === "READY" && (
             <Button
               variant="outline"
@@ -164,6 +184,8 @@ export default function BlueprintDetailPage() {
             className="text-muted-foreground hover:text-destructive"
             onClick={remove}
             disabled={del.isPending}
+            aria-label="Apagar blueprint"
+            title="Apagar blueprint"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
@@ -177,10 +199,10 @@ export default function BlueprintDetailPage() {
             <div className="min-w-0 flex-1 space-y-2">
               <p className="font-medium">Não deu para gerar o blueprint</p>
               <p className="text-sm text-muted-foreground">
-                A IA configurada não respondeu corretamente. Isso costuma ser
-                a chave de API ausente/expirada ou o modelo escolhido estar
-                indisponível — confira em Configurações e clique em
-                "Regerar" acima para tentar de novo.
+                A IA configurada não respondeu corretamente. Isso costuma ser a
+                chave de API ausente/expirada ou o modelo escolhido estar
+                indisponível — confira em Configurações e clique em "Regerar"
+                acima para tentar de novo.
               </p>
               {bp.error && (
                 <details className="text-xs text-muted-foreground">
@@ -283,10 +305,7 @@ export default function BlueprintDetailPage() {
             <Section title="Stack recomendada">
               <div className="grid gap-3 sm:grid-cols-2">
                 {r.techStack.map((t, i) => (
-                  <div
-                    key={i}
-                    className="rounded-lg border border-border p-3"
-                  >
+                  <div key={i} className="rounded-lg border border-border p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
                         {t.category}
@@ -318,8 +337,10 @@ export default function BlueprintDetailPage() {
                       key={i}
                       className="rounded-md border border-border p-2.5 text-sm"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium">{risk.risk}</span>
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <span className="min-w-0 break-words font-medium">
+                          {risk.risk}
+                        </span>
                         <span className="shrink-0 text-xs text-muted-foreground">
                           P{risk.likelihood}×I{risk.impact}
                         </span>
@@ -343,7 +364,7 @@ export default function BlueprintDetailPage() {
                     key={tc.id}
                     className="rounded-lg border border-border p-3"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-xs font-mono text-muted-foreground">
                         {tc.id}
                       </span>
@@ -358,7 +379,9 @@ export default function BlueprintDetailPage() {
                       <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
                         {tc.type}
                       </span>
-                      <span className="text-sm font-medium">{tc.title}</span>
+                      <span className="min-w-0 break-words text-sm font-medium">
+                        {tc.title}
+                      </span>
                     </div>
                     <div className="mt-2 space-y-0.5 text-xs">
                       <p>
@@ -397,8 +420,10 @@ export default function BlueprintDetailPage() {
                       )}
                     </div>
                     <div className="pb-2">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{m.name}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="min-w-0 break-words font-medium">
+                          {m.name}
+                        </p>
                         <span className="text-xs text-muted-foreground">
                           ~{m.durationWeeks} sem
                         </span>
@@ -423,13 +448,12 @@ export default function BlueprintDetailPage() {
             <Section icon={ShieldCheck} title="Quality gates">
               <div className="grid gap-3 sm:grid-cols-2">
                 {r.qualityGates.map((g, i) => (
-                  <div
-                    key={i}
-                    className="rounded-lg border border-border p-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{g.stage}</span>
-                      <span className="rounded bg-primary/15 px-2 py-0.5 text-[11px] text-primary">
+                  <div key={i} className="rounded-lg border border-border p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="min-w-0 break-words font-medium">
+                        {g.stage}
+                      </span>
+                      <span className="break-all rounded bg-primary/15 px-2 py-0.5 text-[11px] text-primary">
                         {g.metric}: {g.threshold}
                       </span>
                     </div>
@@ -457,7 +481,7 @@ export default function BlueprintDetailPage() {
                 <div className="space-y-2">
                   {r.nfrs.map((n, i) => (
                     <div key={i} className="text-sm">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="text-xs uppercase text-muted-foreground">
                           {n.category}
                         </span>
@@ -476,8 +500,10 @@ export default function BlueprintDetailPage() {
                 <div className="space-y-2">
                   {r.metrics.map((m, i) => (
                     <div key={i} className="text-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{m.name}</span>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="min-w-0 break-words font-medium">
+                          {m.name}
+                        </span>
                         <span className="text-xs font-medium text-primary">
                           {m.target}
                         </span>
@@ -535,10 +561,7 @@ function ChipRow({ label, items }: { label: string; items: string[] }) {
     <div className="flex flex-wrap items-center gap-1.5">
       <span className="text-xs text-muted-foreground">{label}:</span>
       {items.map((it, i) => (
-        <span
-          key={i}
-          className="rounded-full bg-muted px-2 py-0.5 text-xs"
-        >
+        <span key={i} className="rounded-full bg-muted px-2 py-0.5 text-xs">
           {it}
         </span>
       ))}

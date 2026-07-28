@@ -30,8 +30,11 @@ export function IssueCard({ issue }: { issue: Issue }) {
   return (
     <Card className={cn(ignored && "opacity-60")}>
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-start justify-between gap-4 p-4 text-left"
+        aria-expanded={open}
+        aria-controls={`issue-details-${issue.id}`}
+        className="flex w-full items-start justify-between gap-4 p-4 text-left transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
       >
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -62,10 +65,11 @@ export function IssueCard({ issue }: { issue: Issue }) {
       </button>
 
       {open && (
-        <CardContent className="space-y-4 border-t pt-4">
-          {issue.impact && (
-            <Section title="Impacto">{issue.impact}</Section>
-          )}
+        <CardContent
+          id={`issue-details-${issue.id}`}
+          className="space-y-5 border-t pt-4"
+        >
+          {issue.impact && <Section title="Impacto">{issue.impact}</Section>}
           {issue.stepsToReproduce.length > 0 && (
             <div>
               <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -100,7 +104,7 @@ export function IssueCard({ issue }: { issue: Issue }) {
               <summary className="cursor-pointer text-xs text-muted-foreground">
                 Evidência bruta (console/network)
               </summary>
-              <pre className="mt-2 max-h-48 overflow-auto rounded bg-black/40 p-3 text-xs">
+              <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-black/40 p-3 text-xs">
                 {issue.raw}
               </pre>
             </details>

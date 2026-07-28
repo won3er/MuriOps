@@ -3,84 +3,122 @@
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { AuthShell } from "@/components/auth-shell";
 import { GoogleSignInButton } from "@/components/google-signin-button";
-import { LogoFull, LogoIsotype } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [email, setEmail] = useState("demo@qa-ai.local");
-  const [password, setPassword] = useState("demo1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      await login(email, password);
+      await login(email.trim(), password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao entrar");
+      setError(err instanceof Error ? err.message : "Não foi possível entrar.");
       setBusy(false);
     }
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-background px-6 py-16">
-      <nav aria-label="Principal" className="fixed left-0 top-0 p-6">
-        <Link href="/">
-          <LogoFull className="text-lg" />
-        </Link>
-      </nav>
-      <div className="w-full max-w-sm">
-        <div className="mb-6 flex flex-col items-center text-center">
-          <LogoIsotype className="h-12 w-12" />
-          <h1 className="mt-4 text-2xl font-semibold">Entrar no Elevate QA</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Use a conta demo ou a sua.</p>
+    <AuthShell
+      title="Entre no seu workspace"
+      description="Acesse seus projetos, análises e planos de aplicação."
+    >
+      <div className="space-y-6">
+        <GoogleSignInButton />
+
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="h-px flex-1 bg-border" />
+          ou continue com e-mail
+          <div className="h-px flex-1 bg-border" />
         </div>
 
-        <Card className="space-y-5 p-6">
-          <GoogleSignInButton />
-
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <div className="h-px flex-1 bg-border" />
-            ou com e-mail
-            <div className="h-px flex-1 bg-border" />
-          </div>
-
-          <form onSubmit={submit} className="space-y-3">
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="mb-1.5 block text-sm font-medium">
+              E-mail
+            </label>
             <Input
+              id="email"
+              name="email"
               type="email"
-              aria-label="E-mail"
-              placeholder="E-mail"
+              autoComplete="email"
+              inputMode="email"
+              placeholder="voce@empresa.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                if (error) setError(null);
+              }}
+              aria-invalid={!!error}
+              aria-describedby={error ? "login-error" : undefined}
+              disabled={busy}
+              required
             />
+          </div>
+          <div>
+            <label
+              htmlFor="password"
+              className="mb-1.5 block text-sm font-medium"
+            >
+              Senha
+            </label>
             <Input
+              id="password"
+              name="password"
               type="password"
-              aria-label="Senha"
-              placeholder="Senha"
+              autoComplete="current-password"
+              placeholder="Sua senha"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                if (error) setError(null);
+              }}
+              aria-invalid={!!error}
+              aria-describedby={error ? "login-error" : undefined}
+              disabled={busy}
+              required
             />
-            {error && <p className="text-sm text-red-400">{error}</p>}
-            <Button type="submit" className="w-full" disabled={busy}>
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
-            </Button>
-          </form>
-        </Card>
+          </div>
+          {error && (
+            <div
+              id="login-error"
+              role="alert"
+              className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+            >
+              {error}
+            </div>
+          )}
+          <Button type="submit" className="w-full" disabled={busy}>
+            {busy ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Entrando…
+              </>
+            ) : (
+              "Entrar"
+            )}
+          </Button>
+        </form>
 
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          Não tem conta?{" "}
-          <Link href="/register" className="text-primary hover:underline">
-            Criar agora
+        <p className="text-center text-sm text-muted-foreground">
+          Ainda não tem uma conta?{" "}
+          <Link
+            href="/register"
+            className="font-medium text-primary hover:underline"
+          >
+            Criar conta
           </Link>
         </p>
       </div>
-    </main>
+    </AuthShell>
   );
 }

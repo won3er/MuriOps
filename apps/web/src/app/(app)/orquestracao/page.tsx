@@ -1,9 +1,11 @@
 "use client";
 
-import { GitBranch } from "lucide-react";
+import { Info, Loader2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { OrchestrationPanel } from "@/components/orchestration-panel";
+import { PageHeader } from "@/components/page-header";
+import { QueryErrorState } from "@/components/query-error-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { useProjects } from "@/lib/queries";
 
@@ -16,7 +18,17 @@ import { useProjects } from "@/lib/queries";
  */
 export default function OrquestracaoPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <div
+          className="grid place-items-center py-24 text-muted-foreground"
+          role="status"
+        >
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="mt-3 text-sm">Preparando orquestrações…</span>
+        </div>
+      }
+    >
       <OrquestracaoPageInner />
     </Suspense>
   );
@@ -24,7 +36,7 @@ export default function OrquestracaoPage() {
 
 function OrquestracaoPageInner() {
   const searchParams = useSearchParams();
-  const { data: projects = [] } = useProjects();
+  const { data: projects = [], isLoading, isError, refetch } = useProjects();
   const [projectId, setProjectId] = useState("");
 
   useEffect(() => {
@@ -35,25 +47,28 @@ function OrquestracaoPageInner() {
   const project = projects.find((p) => p.id === projectId);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold">
-          <GitBranch className="h-6 w-6 text-primary" /> Orquestração
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Automatiza o ciclo de QA: analisa o projeto, verifica os quality
-          gates, gera um plano se algo não passar, aplica via as conexões
-          configuradas em Aplicação e reanalisa — repetindo até bater a meta
-          ou até esgotar as tentativas. O quanto ela pode agir sozinha
-          depende do nível de autonomia do projeto.
+    <div className="mx-auto max-w-7xl space-y-7">
+      <PageHeader
+        eyebrow="Ciclo de qualidade"
+        title="Orquestrações"
+        description="Coordene análise, quality gates, plano, aplicação e reanálise dentro de uma execução rastreável."
+      />
+
+      <aside className="flex gap-3 rounded-lg border border-primary/25 bg-primary/[0.06] p-4">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+        <p className="text-sm leading-6 text-muted-foreground">
+          O modo <strong className="text-foreground">Manual</strong> é o único
+          disponível. Modos Supervisionado e Autônomo permanecem desativados.
+          Adapters podem registrar checklists ou rascunhos sem implementar a
+          correção técnica.
         </p>
-      </div>
+      </aside>
 
       <Card>
         <CardContent className="space-y-2 py-6">
           <label
             htmlFor="orquestracao-projeto"
-            className="mb-1.5 block text-xs text-muted-foreground"
+            className="mb-1.5 block text-sm font-medium"
           >
             Projeto
           </label>
@@ -62,6 +77,7 @@ function OrquestracaoPageInner() {
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
             className="h-10 w-full rounded-md border border-input bg-background/60 px-3 text-sm sm:max-w-sm"
+            disabled={isLoading || isError}
           >
             <option value="">Selecione um projeto…</option>
             {projects.map((p) => (
@@ -70,18 +86,36 @@ function OrquestracaoPageInner() {
               </option>
             ))}
           </select>
+          {isLoading && (
+            <p
+              className="flex items-center gap-2 text-xs text-muted-foreground"
+              role="status"
+            >
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Carregando projetos…
+            </p>
+          )}
+          {isError && (
+            <QueryErrorState
+              compact
+              title="Projetos indisponíveis"
+              description="Não foi possível carregar as opções de orquestração."
+              onRetry={() => void refetch()}
+            />
+          )}
         </CardContent>
       </Card>
 
-      {project ? (
-        <OrchestrationPanel projectId={project.id} autonomyLevel={project.autonomyLevel} />
+      {isLoading || isError ? null : project ? (
+        <OrchestrationPanel
+          projectId={project.id}
+          autonomyLevel={project.autonomyLevel}
+        />
       ) : (
         <Card>
           <CardContent className="py-10 text-center text-muted-foreground">
-            Selecione um projeto acima para configurar a orquestração. Se ele
-            ainda não tiver uma conexão em Aplicação (GitHub, WordPress...),
-            configure lá antes de rodar — é o que a Orquestração usa pra
-            aplicar de verdade.
+            Selecione um projeto para consultar quality gates, conexões e
+            execuções. As conexões são configuradas em Aplicações.
           </CardContent>
         </Card>
       )}
