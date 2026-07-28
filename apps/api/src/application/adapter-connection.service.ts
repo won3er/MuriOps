@@ -58,6 +58,23 @@ export const adapterConnectionService = {
     return toDto(updated);
   },
 
+  /**
+   * Todas as conexões ativas do projeto (sem credenciais) — alimenta o
+   * seletor de "qual conexão usar" na tela de Orquestração. A ponte manual
+   * não aparece aqui (não tem `AdapterConnection` própria, usa o `apiToken`
+   * de cada `RemediationPlan`) — ela funciona sem seleção nenhuma.
+   */
+  async listByProject(
+    organizationId: string,
+    projectId: string,
+  ): Promise<AdapterConnection[]> {
+    const rows = await prisma.adapterConnection.findMany({
+      where: { projectId, organizationId, isActive: true },
+      orderBy: { createdAt: "asc" },
+    });
+    return rows.map(toDto);
+  },
+
   async getByProjectAndKind(
     organizationId: string,
     projectId: string,

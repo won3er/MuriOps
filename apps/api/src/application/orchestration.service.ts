@@ -170,6 +170,41 @@ export async function onObservation(
 }
 
 /**
+ * Chamado sempre que um item de um `RemediationPlan` muda de status — pelo
+ * checklist manual, pela ponte universal (`PATCH /apply/:token/items/:id`)
+ * ou pelo tool MCP `mark_item_done`. Se esse plano é o `currentPlanId` de um
+ * run parado em `AWAITING_APPLY` e todos os itens já estão fora de
+ * "pending", retoma sozinho — é o equivalente automático de clicar em
+ * "Aprovar e reanalisar", pra quem está aplicando via MCP/ponte com a
+ * própria IA de dev (Claude Code, Cursor...) em vez de um adapter *push*.
+ */
+export async function maybeAutoResumeFromPlan(planId: string): Promise<void> {
+  const run = await prisma.orchestrationRun.findFirst({
+    where: { currentPlanId: planId, status: "AWAITING_APPLY" },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!run) return;
+
+  const plan = await prisma.remediationPlan.findUnique({ where: { id: planId } });
+  const items =
+    (plan?.result as unknown as { items?: RemediationItem[] } | null)?.items ?? [];
+  if (items.length === 0 || items.some((i) => i.status === "pending")) return;
+
+  const nextIteration = run.iteration + 1;
+  await prisma.orchestrationRun.update({
+    where: { id: run.id },
+    data: { status: "REANALYZING", iteration: nextIteration },
+  });
+  await logEvent(
+    run.id,
+    "APPLY_APPROVED",
+    "Todos os itens marcados como feitos via MCP/ponte — retomando automaticamente.",
+  );
+  await logEvent(run.id, "ITERATION_ADVANCED", `Iniciando iteração ${nextIteration}.`);
+  await enqueueOrchestrationRun(run.id);
+}
+
+/**
  * Avança o loop de reconciliação: analisa → avalia quality gates → (se não
  * passou) gera plano de remediação → aplica pelo adapter da conexão (se
  * houver) → para em `AWAITING_APPLY` esperando aprovação humana (autonomia
@@ -298,6 +333,21 @@ async function applyViaAdapter(
     await logEvent(runId, "APPLY_REQUESTED", "Conexão de adapter não encontrada — pulando aplicação automática.");
     return;
   }
+
+  // MCP é *pull*: quem aplica é a ferramenta externa (ex.: Claude Code) do
+  // outro lado da conexão, não o núcleo orquestrador — não tenta "empurrar"
+  // nada aqui. A execução fica esperando em AWAITING_APPLY e retoma sozinha
+  // via `maybeAutoResumeFromPlan` quando todos os itens forem marcados como
+  // feitos (pela ferramenta externa, usando o MCP ou a ponte manual).
+  if (connection.kind === "MCP") {
+    await logEvent(
+      runId,
+      "APPLY_REQUESTED",
+      "Plano exposto via MCP — aguardando a ferramenta externa (ex.: Claude Code) aplicar e marcar os itens. A execução retoma sozinha quando todos estiverem feitos.",
+    );
+    return;
+  }
+
   const adapter = createAdapterFor(connection);
   if (!adapter.apply) {
     await logEvent(runId, "APPLY_REQUESTED", `Adapter ${connection.kind} não implementa apply() — pulando.`);

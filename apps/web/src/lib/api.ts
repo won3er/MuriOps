@@ -224,6 +224,10 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  // ---- conexões do projeto (seletor de adapter na Orquestração) ----
+  listAdapterConnections: (projectId: string) =>
+    request<AdapterConnection[]>(`/projects/${projectId}/adapter-connections`),
+
   // ---- quality gates (Fase 3) ----
   listQualityGates: (projectId: string) =>
     request<ProjectQualityGate[]>(`/projects/${projectId}/quality-gates`),

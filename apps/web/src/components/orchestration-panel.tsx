@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  useAdapterConnections,
   useApproveOrchestrationRun,
   useCancelOrchestrationRun,
   useCreateOrchestrationRun,
@@ -20,6 +21,15 @@ import {
   useUpdateProjectAutonomy,
 } from "@/lib/queries";
 import { cn, timeAgo } from "@/lib/utils";
+
+const CONNECTION_KIND_LABEL: Record<string, string> = {
+  GITHUB: "GitHub",
+  MCP: "MCP",
+  WORDPRESS: "WordPress",
+  SHOPIFY: "Shopify",
+  NUVEMSHOP: "Nuvemshop",
+  FTP: "FTP",
+};
 
 const AUTONOMY_OPTIONS: { value: AutonomyLevel; label: string; disabled?: boolean }[] = [
   { value: "MANUAL", label: "Manual" },
@@ -67,6 +77,8 @@ export function OrchestrationPanel({
   const { data: runs = [] } = useOrchestrationRuns(projectId);
   const createRun = useCreateOrchestrationRun(projectId);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const { data: connections = [] } = useAdapterConnections(projectId);
+  const [adapterConnectionId, setAdapterConnectionId] = useState("");
 
   const activeRunId = selectedRunId ?? runs[0]?.id ?? null;
   const { data: run } = useOrchestrationRun(activeRunId ?? "");
@@ -163,23 +175,45 @@ export function OrchestrationPanel({
 
       <Card>
         <CardContent className="space-y-3 pt-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="font-medium">Execuções</span>
-            <Button
-              size="sm"
-              disabled={createRun.isPending}
-              onClick={() =>
-                createRun.mutate(
-                  {},
-                  {
-                    onSuccess: (r) => setSelectedRunId(r.id),
-                  },
-                )
-              }
-            >
-              <Play className="h-3.5 w-3.5" /> Iniciar execução
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={adapterConnectionId}
+                onChange={(e) => setAdapterConnectionId(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background/60 px-2 text-xs"
+                title="Conexão usada pra aplicar automaticamente (deixe em branco pra aplicação manual ou via MCP/ponte)"
+              >
+                <option value="">Sem conexão (manual / MCP / ponte)</option>
+                {connections.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {CONNECTION_KIND_LABEL[c.kind] ?? c.kind}
+                  </option>
+                ))}
+              </select>
+              <Button
+                size="sm"
+                disabled={createRun.isPending}
+                onClick={() =>
+                  createRun.mutate(
+                    adapterConnectionId ? { adapterConnectionId } : {},
+                    {
+                      onSuccess: (r) => setSelectedRunId(r.id),
+                    },
+                  )
+                }
+              >
+                <Play className="h-3.5 w-3.5" /> Iniciar execução
+              </Button>
+            </div>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Com conexão push (GitHub, WordPress, Shopify, Nuvemshop, FTP) o
+            Atlas aplica sozinho a cada iteração. Sem conexão — ou com MCP —
+            você aplica pela sua própria IA de dev (ex.: Claude Code
+            conectado via MCP em Aplicação); a execução retoma sozinha
+            assim que todos os itens forem marcados como feitos.
+          </p>
 
           {runs.length > 0 && (
             <div className="flex flex-wrap gap-1.5">

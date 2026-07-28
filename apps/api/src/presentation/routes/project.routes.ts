@@ -298,6 +298,12 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
     });
   }
 
+  // Lista todas as conexões do projeto — seletor de "qual conexão usar" na Orquestração.
+  app.get("/projects/:id/adapter-connections", async (req) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    return adapterConnectionService.listByProject(req.user.organizationId, id);
+  });
+
   // Quality gates do orquestrador (Fase 3) — critério numérico avaliado a cada iteração.
   app.get("/projects/:id/quality-gates", async (req, reply) => {
     const { id } = z.object({ id: z.string() }).parse(req.params);

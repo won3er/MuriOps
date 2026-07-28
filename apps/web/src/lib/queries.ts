@@ -45,6 +45,7 @@ export const qk = {
   shopifyConnection: (projectId: string) => ["shopify-connection", projectId] as const,
   nuvemshopConnection: (projectId: string) => ["nuvemshop-connection", projectId] as const,
   ftpConnection: (projectId: string) => ["ftp-connection", projectId] as const,
+  adapterConnections: (projectId: string) => ["adapter-connections", projectId] as const,
   orchestrationRuns: (projectId: string) => ["orchestration-runs", projectId] as const,
   orchestrationRun: (id: string) => ["orchestration-run", id] as const,
   orchestrationEvents: (id: string) => ["orchestration-events", id] as const,
@@ -526,6 +527,14 @@ export function useConnectFtp(projectId: string) {
     },
     onError: (err) =>
       toast.error(err instanceof Error ? err.message : "Falha ao conectar por FTP"),
+  });
+}
+
+export function useAdapterConnections(projectId: string) {
+  return useQuery({
+    queryKey: qk.adapterConnections(projectId),
+    queryFn: () => api.listAdapterConnections(projectId),
+    enabled: !!projectId,
   });
 }
 
