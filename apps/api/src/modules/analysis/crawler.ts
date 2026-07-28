@@ -65,6 +65,19 @@ export async function crawl(options: CrawlOptions): Promise<CrawlResult> {
 
   const { browser, context } = await launchWithRetry();
   await context.addInitScript(VITALS_INIT);
+  // Bloqueia vídeo/áudio/fontes e domínios conhecidos de tracker/analytics/ads
+  // — puro overhead de memória/rede que não muda o que os analyzers avaliam
+  // (mantém imagens e scripts do próprio site, necessários pra screenshot,
+  // detecção de imagem quebrada e renderização real da página). Reduz bastante
+  // o consumo de memória em e-commerces (Nuvemshop/Shopify) que carregam
+  // dezenas de pixels de rastreamento por página.
+  await context.route("**/*", (route) => {
+    const req = route.request();
+    const type = req.resourceType();
+    if (type === "media" || type === "font") return route.abort();
+    if (isTrackerUrl(req.url())) return route.abort();
+    return route.continue();
+  });
 
   const visited = new Set<string>();
   const queue: { url: string; depth: number; linkedFrom: string | null }[] = [
@@ -339,6 +352,56 @@ async function extractLinks(
   } catch {
     return [];
   }
+}
+
+/**
+ * Domínios de tracker/analytics/ads/chat conhecidos, comuns em lojas
+ * (Nuvemshop/Shopify/etc.) e que só consomem memória/rede sem afetar nada
+ * que os analyzers avaliem (UI/UX/SEO/acessibilidade/performance do site em
+ * si). Bloquear isso aqui é diferente de reportar "script de terceiro lento"
+ * como problema de performance — para isso o NetworkAnalyzer já usa os dados
+ * reais de requests que passam por aqui (o bloqueio ocorre antes de contar).
+ */
+const TRACKER_DOMAINS = [
+  "google-analytics.com",
+  "googletagmanager.com",
+  "doubleclick.net",
+  "googlesyndication.com",
+  "google-analytics.com",
+  "connect.facebook.net",
+  "facebook.com/tr",
+  "hotjar.com",
+  "clarity.ms",
+  "criteo.com",
+  "criteo.net",
+  "taboola.com",
+  "outbrain.com",
+  "tiktok.com/i18n",
+  "analytics.tiktok.com",
+  "pinterest.com/ct",
+  "ct.pinterest.com",
+  "intercom.io",
+  "intercomcdn.com",
+  "drift.com",
+  "sentry.io",
+  "segment.io",
+  "segment.com",
+  "mixpanel.com",
+  "amplitude.com",
+  "hotmart.com/pixel",
+  "vwo.com",
+  "optimizely.com",
+  "crisp.chat",
+  "zendesk.com/embeddable",
+  "rdstation.com.br/js",
+  "clicktale.net",
+  "yandex.ru/metrika",
+  "mc.yandex.ru",
+  "bing.com/bat.js",
+];
+
+function isTrackerUrl(url: string): boolean {
+  return TRACKER_DOMAINS.some((d) => url.includes(d));
 }
 
 function slug(url: string): string {
