@@ -8,9 +8,13 @@ import { GoogleSignInButton } from "@/components/google-signin-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
+import { useLocale } from "@/lib/locale-context";
+import { AUTH_COPY } from "@/lib/public-copy";
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { locale, href } = useLocale();
+  const copy = AUTH_COPY[locale].login;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -23,29 +27,26 @@ export default function LoginPage() {
     try {
       await login(email.trim(), password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível entrar.");
+      setError(err instanceof Error ? err.message : copy.error);
       setBusy(false);
     }
   }
 
   return (
-    <AuthShell
-      title="Entre no seu workspace"
-      description="Acesse seus projetos, análises e planos de aplicação."
-    >
+    <AuthShell title={copy.title} description={copy.description}>
       <div className="space-y-6">
         <GoogleSignInButton />
 
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <div className="h-px flex-1 bg-border" />
-          ou continue com e-mail
+          {copy.divider}
           <div className="h-px flex-1 bg-border" />
         </div>
 
         <form onSubmit={submit} className="space-y-4">
           <div>
             <label htmlFor="email" className="mb-1.5 block text-sm font-medium">
-              E-mail
+              {copy.email}
             </label>
             <Input
               id="email"
@@ -53,7 +54,7 @@ export default function LoginPage() {
               type="email"
               autoComplete="email"
               inputMode="email"
-              placeholder="voce@empresa.com"
+              placeholder={copy.emailPlaceholder}
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
@@ -70,14 +71,14 @@ export default function LoginPage() {
               htmlFor="password"
               className="mb-1.5 block text-sm font-medium"
             >
-              Senha
+              {copy.password}
             </label>
             <Input
               id="password"
               name="password"
               type="password"
               autoComplete="current-password"
-              placeholder="Sua senha"
+              placeholder={copy.passwordPlaceholder}
               value={password}
               onChange={(event) => {
                 setPassword(event.target.value);
@@ -101,21 +102,21 @@ export default function LoginPage() {
           <Button type="submit" className="w-full" disabled={busy}>
             {busy ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Entrando…
+                <Loader2 className="h-4 w-4 animate-spin" /> {copy.submitting}
               </>
             ) : (
-              "Entrar"
+              copy.submit
             )}
           </Button>
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
-          Ainda não tem uma conta?{" "}
+          {copy.noAccount}{" "}
           <Link
-            href="/register"
+            href={href("/register")}
             className="font-medium text-primary hover:underline"
           >
-            Criar conta
+            {copy.create}
           </Link>
         </p>
       </div>

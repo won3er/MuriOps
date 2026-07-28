@@ -1,51 +1,55 @@
+"use client";
+
 import Link from "next/link";
 import { LogoFull } from "@/components/logo";
-
-const GROUPS = [
-  {
-    title: "Produto",
-    links: [
-      { href: "/docs/guia", label: "Guia de uso" },
-      { href: "/docs/funcionalidades", label: "Funcionalidades" },
-      { href: "/docs/integracoes", label: "Integrações" },
-    ],
-  },
-  {
-    title: "Recursos",
-    links: [
-      { href: "/docs", label: "Documentação" },
-      { href: "/login", label: "Entrar" },
-      { href: "/register", label: "Criar conta" },
-    ],
-  },
-  {
-    title: "Legal",
-    links: [
-      { href: "/termos", label: "Termos de uso" },
-      { href: "/privacidade", label: "Privacidade" },
-      {
-        href: "mailto:jadsonpavia@gmail.com",
-        label: "Contato",
-        external: true,
-      },
-    ],
-  },
-] as const;
+import { PUBLIC_COPY } from "@/lib/i18n";
+import { useLocale } from "@/lib/locale-context";
 
 export function SiteFooter() {
+  const { locale, href } = useLocale();
+  const copy = PUBLIC_COPY[locale];
+  const groups = [
+    {
+      title: copy.footer.product,
+      links: [
+        { href: "/docs/guia", label: copy.footer.guide },
+        { href: "/docs/funcionalidades", label: copy.footer.features },
+        { href: "/docs/integracoes", label: copy.footer.integrations },
+      ],
+    },
+    {
+      title: copy.footer.resources,
+      links: [
+        { href: "/docs", label: copy.footer.docs },
+        { href: "/login", label: copy.footer.signIn },
+        { href: "/register", label: copy.footer.createAccount },
+      ],
+    },
+    {
+      title: copy.footer.legal,
+      links: [
+        { href: "/termos", label: copy.footer.terms },
+        { href: "/privacidade", label: copy.footer.privacy },
+        {
+          href: "mailto:jadsonpavia@gmail.com",
+          label: copy.footer.contact,
+        },
+      ],
+    },
+  ];
+
   return (
     <footer className="mt-24 border-t bg-card/40">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 sm:grid-cols-2 lg:grid-cols-[minmax(240px,1fr)_repeat(3,180px)]">
         <div>
-          <Link href="/" aria-label="MuriOps — página inicial">
+          <Link href={href("/")} aria-label={copy.homeAria}>
             <LogoFull className="text-sm" />
           </Link>
           <p className="mt-3 max-w-xs text-sm leading-6 text-muted-foreground">
-            Gestão contínua de qualidade para produtos digitais, do diagnóstico
-            à aplicação.
+            {copy.footer.tagline}
           </p>
         </div>
-        {GROUPS.map((group) => (
+        {groups.map((group) => (
           <div key={group.title}>
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {group.title}
@@ -54,7 +58,7 @@ export function SiteFooter() {
               {group.links.map((item) => (
                 <li key={item.href}>
                   <Link
-                    href={item.href}
+                    href={href(item.href)}
                     className="text-muted-foreground hover:text-foreground"
                   >
                     {item.label}
@@ -68,7 +72,7 @@ export function SiteFooter() {
       <div className="border-t px-6 py-5">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <span>© {new Date().getFullYear()} MuriOps.</span>
-          <span>Qualidade é um processo contínuo.</span>
+          <span>{copy.footer.closing}</span>
         </div>
       </div>
     </footer>

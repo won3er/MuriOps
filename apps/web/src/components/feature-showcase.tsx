@@ -11,176 +11,69 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { LogoMark } from "@/components/logo";
+import { useLocale } from "@/lib/locale-context";
+import { FEATURE_COPY, PREVIEW_COPY } from "@/lib/public-copy";
 import { cn } from "@/lib/utils";
 
-const FEATURES = [
+const FEATURE_VISUALS = [
   {
     key: "analisar",
     number: "01",
-    label: "Analisar",
     icon: ScanSearch,
-    eyebrow: "Diagnóstico",
-    heading: "Encontre problemas com evidências, não com suposições",
-    description:
-      "O crawler percorre o site e reúne achados de UI/UX, performance, SEO, acessibilidade, console, rede e segurança em um relatório priorizado.",
-    outcomes: [
-      "Score por dimensão",
-      "Evidências por achado",
-      "Filtros por risco",
-    ],
     image: "/screens/analisar_crop.jpg",
     width: 1568,
     height: 545,
-    route: "Análises / Relatório",
     accent: "from-[#6e40c9]/55 via-[#6366f1]/22 to-[#2f81f7]/30",
     glow: "bg-[#8250df]/25",
   },
   {
     key: "projetar",
     number: "02",
-    label: "Projetar",
     icon: DraftingCompass,
-    eyebrow: "Planejamento",
-    heading: "Leve qualidade para o projeto antes da implementação",
-    description:
-      "Descreva o produto e gere uma base técnica com arquitetura, estratégia de testes, riscos, quality gates e roadmap para orientar o desenvolvimento.",
-    outcomes: [
-      "Arquitetura e stack",
-      "Matriz de riscos",
-      "Estratégia de testes",
-    ],
     image: "/screens/projetar_crop.jpg",
     width: 1568,
     height: 545,
-    route: "Projetar / Blueprint",
     accent: "from-[#1f6feb]/45 via-[#6366f1]/20 to-[#2ea043]/24",
     glow: "bg-[#2f81f7]/20",
   },
   {
     key: "aplicar",
     number: "03",
-    label: "Aplicar",
     icon: Wrench,
-    eyebrow: "Execução",
-    heading: "Converta recomendações em trabalho rastreável",
-    description:
-      "Análises, blueprints e upgrades viram checklists com contexto, prioridade e instruções para execução humana ou assistida pela sua ferramenta de desenvolvimento.",
-    outcomes: [
-      "Checklist priorizado",
-      "PDF e ponte universal",
-      "Progresso ao vivo",
-    ],
     image: "/screens/aplicar_crop.jpg",
     width: 1568,
     height: 545,
-    route: "Aplicações / Plano",
     accent: "from-[#238636]/36 via-[#6366f1]/20 to-[#2f81f7]/26",
     glow: "bg-[#3fb950]/16",
   },
   {
     key: "automatizar",
     number: "04",
-    label: "Automatizar",
     icon: RefreshCw,
-    eyebrow: "Orquestração",
-    heading: "Repita o ciclo com checkpoints e critérios claros",
-    description:
-      "A Orquestração organiza analisar, avaliar, gerar plano, aplicar e reanalisar. No modo atual, você mantém o controle dos checkpoints e das aprovações.",
-    outcomes: [
-      "Quality gates",
-      "Histórico por iteração",
-      "Retomada controlada",
-    ],
     image: "/screens/automatizar_crop.jpg",
     width: 1568,
     height: 330,
-    route: "Orquestrações / Execução",
     accent: "from-[#bf8700]/28 via-[#6366f1]/20 to-[#2f81f7]/28",
     glow: "bg-[#d29922]/14",
   },
   {
     key: "acompanhar",
     number: "05",
-    label: "Acompanhar",
     icon: LayoutDashboard,
-    eyebrow: "Gestão",
-    heading: "Veja onde agir sem perder o contexto dos projetos",
-    description:
-      "O workspace reúne scores, análises recentes, aplicações e projetos que exigem atenção para orientar a próxima decisão da equipe.",
-    outcomes: [
-      "Visão consolidada",
-      "Projetos prioritários",
-      "Próxima ação clara",
-    ],
     image: "/screens/acompanhar_crop.jpg",
     width: 1568,
     height: 340,
-    route: "Workspace / Visão geral",
     accent: "from-[#2f81f7]/38 via-[#6366f1]/20 to-[#8250df]/32",
     glow: "bg-[#6366f1]/20",
   },
 ] as const;
 
-type FeatureKey = (typeof FEATURES)[number]["key"];
+type FeatureKey = (typeof FEATURE_VISUALS)[number]["key"];
 
 function ProductPreview({ feature }: { feature: FeatureKey }) {
-  const preview = {
-    analisar: {
-      title: "Análise QA padrão",
-      badge: "Concluída",
-      metric: "92",
-      metricLabel: "score geral",
-      rows: [
-        ["UI/UX", "88", "3 achados"],
-        ["Acessibilidade", "94", "1 achado"],
-        ["Performance", "91", "2 achados"],
-      ],
-    },
-    projetar: {
-      title: "Blueprint do produto",
-      badge: "Gerado pela IA",
-      metric: "6",
-      metricLabel: "quality gates",
-      rows: [
-        ["Arquitetura", "Definida", "Next.js + Fastify"],
-        ["Estratégia de testes", "Pronta", "4 camadas"],
-        ["Riscos", "Priorizados", "8 mapeados"],
-      ],
-    },
-    aplicar: {
-      title: "Plano de aplicação",
-      badge: "Em progresso",
-      metric: "68%",
-      metricLabel: "concluído",
-      rows: [
-        ["Corrigir contraste do CTA", "Feito", "Alta"],
-        ["Reduzir JavaScript inicial", "Em curso", "Alta"],
-        ["Revisar hierarquia de títulos", "Pendente", "Média"],
-      ],
-    },
-    automatizar: {
-      title: "Ciclo de orquestração",
-      badge: "Iteração 02",
-      metric: "4/5",
-      metricLabel: "etapas",
-      rows: [
-        ["Analisar", "Concluído", "92 pontos"],
-        ["Avaliar gates", "Concluído", "6 aprovados"],
-        ["Reanalisar", "Aguardando", "Próxima etapa"],
-      ],
-    },
-    acompanhar: {
-      title: "Saúde do workspace",
-      badge: "Atualizado agora",
-      metric: "87",
-      metricLabel: "média geral",
-      rows: [
-        ["Loja principal", "Saudável", "94 pontos"],
-        ["Portal de clientes", "Atenção", "72 pontos"],
-        ["Documentação", "Saudável", "91 pontos"],
-      ],
-    },
-  }[feature];
+  const { locale } = useLocale();
+  const featureCopy = FEATURE_COPY[locale];
+  const preview = PREVIEW_COPY[locale][feature];
 
   return (
     <div className="grid min-h-64 bg-[#0d1117] lg:grid-cols-[190px_minmax(0,1fr)]">
@@ -190,21 +83,19 @@ function ProductPreview({ feature }: { feature: FeatureKey }) {
           Muri<span className="-ml-2 text-[#818cf8]">Ops</span>
         </div>
         <div className="mt-5 space-y-1.5">
-          {["Visão geral", "Projetos", "Análises", "Aplicações"].map(
-            (item, index) => (
-              <div
-                key={item}
-                className={cn(
-                  "rounded-md px-2.5 py-2 text-[11px]",
-                  index === 2
-                    ? "border border-[#6366f1]/20 bg-[#6366f1]/10 text-white"
-                    : "text-[#8b949e]",
-                )}
-              >
-                {item}
-              </div>
-            ),
-          )}
+          {featureCopy.sideNav.map((item, index) => (
+            <div
+              key={item}
+              className={cn(
+                "rounded-md px-2.5 py-2 text-[11px]",
+                index === 2
+                  ? "border border-[#6366f1]/20 bg-[#6366f1]/10 text-white"
+                  : "text-[#8b949e]",
+              )}
+            >
+              {item}
+            </div>
+          ))}
         </div>
       </aside>
 
@@ -212,7 +103,7 @@ function ProductPreview({ feature }: { feature: FeatureKey }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-[10px] uppercase tracking-[0.14em] text-[#8b949e]">
-              Workspace principal
+              {featureCopy.workspace}
             </p>
             <h4 className="mt-1 text-base font-semibold text-white sm:text-lg">
               {preview.title}
@@ -263,10 +154,10 @@ function ProductPreview({ feature }: { feature: FeatureKey }) {
 
         <div className="mt-4 flex items-center justify-between rounded-lg border border-white/[0.07] bg-[#161b22]/70 px-3.5 py-2.5">
           <span className="text-[10px] text-[#8b949e]">
-            Próxima decisão recomendada
+            {featureCopy.recommended}
           </span>
           <span className="text-[10px] font-medium text-[#a5b4fc]">
-            Revisar detalhes →
+            {featureCopy.review}
           </span>
         </div>
       </div>
@@ -275,14 +166,21 @@ function ProductPreview({ feature }: { feature: FeatureKey }) {
 }
 
 export function FeatureShowcase() {
+  const { locale, href } = useLocale();
+  const copy = FEATURE_COPY[locale];
+  const features = FEATURE_VISUALS.map((visual, index) => ({
+    ...visual,
+    ...copy.features[index],
+    key: visual.key,
+  }));
   const [active, setActive] = useState<FeatureKey>("analisar");
   const current =
-    FEATURES.find((feature) => feature.key === active) ?? FEATURES[0];
+    features.find((feature) => feature.key === active) ?? features[0];
 
   function selectByOffset(offset: number) {
-    const index = FEATURES.findIndex((feature) => feature.key === active);
-    const next = (index + offset + FEATURES.length) % FEATURES.length;
-    setActive(FEATURES[next].key);
+    const index = features.findIndex((feature) => feature.key === active);
+    const next = (index + offset + features.length) % features.length;
+    setActive(features[next].key);
   }
 
   return (
@@ -323,7 +221,7 @@ export function FeatureShowcase() {
 
             <div className="lg:justify-self-end">
               <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#8b949e]">
-                O que você leva desta etapa
+                {copy.outcomeEyebrow}
               </p>
               <ul className="mt-3 flex flex-wrap gap-2">
                 {current.outcomes.map((outcome) => (
@@ -336,10 +234,10 @@ export function FeatureShowcase() {
                 ))}
               </ul>
               <Link
-                href="/docs/guia"
+                href={href("/docs/guia")}
                 className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-[#a5b4fc] hover:text-white"
               >
-                Entender o fluxo <ArrowRight className="h-3.5 w-3.5" />
+                {copy.understandFlow} <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
           </div>
@@ -387,10 +285,10 @@ export function FeatureShowcase() {
 
       <div
         role="tablist"
-        aria-label="Frentes do MuriOps"
+        aria-label={copy.tabsAria}
         className="mx-auto mt-5 flex max-w-3xl gap-1 overflow-x-auto rounded-xl border bg-card/90 p-1.5 shadow-sm backdrop-blur sm:justify-center sm:rounded-full"
       >
-        {FEATURES.map((feature) => {
+        {features.map((feature) => {
           const selected = feature.key === active;
           return (
             <button

@@ -4,6 +4,8 @@ import Script from "next/script";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { useLocale } from "@/lib/locale-context";
+import { AUTH_COPY } from "@/lib/public-copy";
 
 declare global {
   interface Window {
@@ -33,6 +35,8 @@ const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
  */
 export function GoogleSignInButton() {
   const { loginWithGoogle } = useAuth();
+  const { locale } = useLocale();
+  const copy = AUTH_COPY[locale].login;
   const containerRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
 
@@ -42,13 +46,11 @@ export function GoogleSignInButton() {
       try {
         await loginWithGoogle(resp.credential);
       } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : "Falha ao entrar com Google",
-        );
+        toast.error(err instanceof Error ? err.message : copy.googleError);
         setBusy(false);
       }
     },
-    [loginWithGoogle],
+    [copy.googleError, loginWithGoogle],
   );
 
   const initGoogle = useCallback(() => {
@@ -63,8 +65,9 @@ export function GoogleSignInButton() {
       width: Math.min(320, containerRef.current.clientWidth || 320),
       text: "continue_with",
       shape: "rectangular",
+      locale: locale === "pt" ? "pt-BR" : locale,
     });
-  }, [handleCredential]);
+  }, [handleCredential, locale]);
 
   if (!CLIENT_ID) return null;
 

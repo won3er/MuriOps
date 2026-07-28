@@ -9,9 +9,13 @@ import { GoogleSignInButton } from "@/components/google-signin-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
+import { useLocale } from "@/lib/locale-context";
+import { AUTH_COPY } from "@/lib/public-copy";
 
 function RegisterForm() {
   const { register } = useAuth();
+  const { locale, href } = useLocale();
+  const copy = AUTH_COPY[locale].register;
   const params = useSearchParams();
   const pendingUrl = params.get("url");
   const [name, setName] = useState("");
@@ -27,27 +31,23 @@ function RegisterForm() {
     try {
       await register(name.trim(), email.trim(), password);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Não foi possível criar sua conta.",
-      );
+      setError(err instanceof Error ? err.message : copy.error);
       setBusy(false);
     }
   }
 
   return (
     <AuthShell
-      title="Crie seu workspace"
+      title={copy.title}
       description={
         pendingUrl ? (
           <>
-            Depois do cadastro, você poderá adicionar{" "}
-            <span className="break-all text-foreground">{pendingUrl}</span> como
-            projeto.
+            {copy.pendingBefore}{" "}
+            <span className="break-all text-foreground">{pendingUrl}</span>{" "}
+            {copy.pendingAfter}
           </>
         ) : (
-          "Comece organizando seus projetos e acompanhando a qualidade em um único lugar."
+          copy.description
         )
       }
     >
@@ -56,20 +56,20 @@ function RegisterForm() {
 
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <div className="h-px flex-1 bg-border" />
-          ou cadastre-se com e-mail
+          {copy.divider}
           <div className="h-px flex-1 bg-border" />
         </div>
 
         <form onSubmit={submit} className="space-y-4">
           <div>
             <label htmlFor="name" className="mb-1.5 block text-sm font-medium">
-              Seu nome
+              {copy.name}
             </label>
             <Input
               id="name"
               name="name"
               autoComplete="name"
-              placeholder="Como devemos chamar você?"
+              placeholder={copy.namePlaceholder}
               value={name}
               onChange={(event) => {
                 setName(event.target.value);
@@ -83,7 +83,7 @@ function RegisterForm() {
           </div>
           <div>
             <label htmlFor="email" className="mb-1.5 block text-sm font-medium">
-              E-mail
+              {copy.email}
             </label>
             <Input
               id="email"
@@ -91,7 +91,7 @@ function RegisterForm() {
               type="email"
               inputMode="email"
               autoComplete="email"
-              placeholder="voce@empresa.com"
+              placeholder={copy.emailPlaceholder}
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
@@ -108,7 +108,7 @@ function RegisterForm() {
               htmlFor="new-password"
               className="mb-1.5 block text-sm font-medium"
             >
-              Senha
+              {copy.password}
             </label>
             <Input
               id="new-password"
@@ -116,7 +116,7 @@ function RegisterForm() {
               type="password"
               autoComplete="new-password"
               minLength={8}
-              placeholder="Mínimo de 8 caracteres"
+              placeholder={copy.passwordPlaceholder}
               value={password}
               onChange={(event) => {
                 setPassword(event.target.value);
@@ -135,7 +135,7 @@ function RegisterForm() {
               id="register-password-help"
               className="mt-1.5 text-xs text-muted-foreground"
             >
-              Use uma senha exclusiva, com pelo menos 8 caracteres.
+              {copy.passwordHelp}
             </p>
           </div>
           {error && (
@@ -150,32 +150,38 @@ function RegisterForm() {
           <Button type="submit" className="w-full" disabled={busy}>
             {busy ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Criando conta…
+                <Loader2 className="h-4 w-4 animate-spin" /> {copy.submitting}
               </>
             ) : (
-              "Criar conta"
+              copy.submit
             )}
           </Button>
         </form>
 
         <p className="text-center text-xs leading-5 text-muted-foreground">
-          Ao criar uma conta, você concorda com os{" "}
-          <Link href="/termos" className="text-foreground hover:underline">
-            Termos de uso
+          {copy.termsBefore}{" "}
+          <Link
+            href={href("/termos")}
+            className="text-foreground hover:underline"
+          >
+            {copy.terms}
           </Link>{" "}
-          e a{" "}
-          <Link href="/privacidade" className="text-foreground hover:underline">
-            Política de privacidade
+          {copy.termsJoin}{" "}
+          <Link
+            href={href("/privacidade")}
+            className="text-foreground hover:underline"
+          >
+            {copy.privacy}
           </Link>
           .
         </p>
         <p className="text-center text-sm text-muted-foreground">
-          Já possui uma conta?{" "}
+          {copy.haveAccount}{" "}
           <Link
-            href="/login"
+            href={href("/login")}
             className="font-medium text-primary hover:underline"
           >
-            Entrar
+            {copy.signIn}
           </Link>
         </p>
       </div>
@@ -184,6 +190,8 @@ function RegisterForm() {
 }
 
 export default function RegisterPage() {
+  const { locale } = useLocale();
+  const copy = AUTH_COPY[locale].register;
   return (
     <Suspense
       fallback={
@@ -192,7 +200,7 @@ export default function RegisterPage() {
           role="status"
         >
           <Loader2 className="h-5 w-5 animate-spin" />
-          <span className="mt-3 text-sm">Preparando cadastro…</span>
+          <span className="mt-3 text-sm">{copy.preparing}</span>
         </div>
       }
     >

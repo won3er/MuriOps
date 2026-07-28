@@ -1,5 +1,9 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { PublicHeader } from "@/components/public-header";
+import { useLocale } from "@/lib/locale-context";
+import { LEGAL_SHELL_COPY } from "@/lib/public-copy";
 
 export function LegalShell({
   title,
@@ -10,6 +14,9 @@ export function LegalShell({
   description: string;
   children: ReactNode;
 }) {
+  const { locale } = useLocale();
+  const copy = LEGAL_SHELL_COPY[locale];
+
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader />
@@ -19,15 +26,13 @@ export function LegalShell({
       >
         <aside>
           <p className="text-xs font-medium uppercase tracking-wider text-primary">
-            Legal
+            {copy.legal}
           </p>
           <h1 className="mt-2 text-3xl font-semibold">{title}</h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             {description}
           </p>
-          <p className="mt-5 text-xs text-muted-foreground">
-            Atualizado em 28 de julho de 2026
-          </p>
+          <p className="mt-5 text-xs text-muted-foreground">{copy.updated}</p>
         </aside>
         <article className="min-w-0 space-y-9">{children}</article>
       </main>

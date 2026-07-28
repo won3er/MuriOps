@@ -5,18 +5,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogoFull } from "@/components/logo";
+import { LanguageSelector } from "@/components/language-selector";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { PUBLIC_COPY } from "@/lib/i18n";
+import { useLocale } from "@/lib/locale-context";
 import { cn } from "@/lib/utils";
-
-const LINKS = [
-  { href: "/docs/guia", label: "Guia" },
-  { href: "/docs/funcionalidades", label: "Funcionalidades" },
-  { href: "/docs/integracoes", label: "Integrações" },
-];
 
 export function PublicHeader() {
   const { hasSession } = useAuth();
+  const { locale, href } = useLocale();
+  const copy = PUBLIC_COPY[locale];
+  const links = [
+    { href: "/docs/guia", label: copy.guide },
+    { href: "/docs/funcionalidades", label: copy.features },
+    { href: "/docs/integracoes", label: copy.integrations },
+  ];
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -41,43 +45,47 @@ export function PublicHeader() {
         href="#conteudo-principal"
         className="sr-only z-[100] rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
       >
-        Pular para o conteúdo
+        {copy.skip}
       </a>
       <header className="border-b bg-card">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6">
-          <Link href="/" aria-label="MuriOps — página inicial">
+          <Link href={href("/")} aria-label={copy.homeAria}>
             <LogoFull className="text-sm" />
           </Link>
           <nav
             className="hidden items-center gap-1 md:flex"
-            aria-label="Navegação pública"
+            aria-label={copy.navAria}
           >
-            {LINKS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={pathname === item.href ? "page" : undefined}
-                className={cn(
-                  "rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground",
-                  pathname === item.href && "bg-accent text-foreground",
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {links.map((item) => {
+              const localizedHref = href(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={localizedHref}
+                  aria-current={pathname === localizedHref ? "page" : undefined}
+                  className={cn(
+                    "rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground",
+                    pathname === localizedHref && "bg-accent text-foreground",
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
           <div className="ml-auto hidden items-center gap-2 md:flex">
+            <LanguageSelector />
             {!hasSession && (
               <Link
-                href="/login"
+                href={href("/login")}
                 className="px-2 text-sm text-muted-foreground hover:text-foreground"
               >
-                Entrar
+                {copy.signIn}
               </Link>
             )}
-            <Link href={hasSession ? "/dashboard" : "/register"}>
+            <Link href={hasSession ? "/dashboard" : href("/register")}>
               <Button size="sm">
-                {hasSession ? "Abrir workspace" : "Criar conta"}
+                {hasSession ? copy.openWorkspace : copy.createAccount}
               </Button>
             </Link>
           </div>
@@ -85,7 +93,7 @@ export function PublicHeader() {
             type="button"
             onClick={() => setOpen((current) => !current)}
             className="ml-auto grid h-9 w-9 place-items-center rounded-md hover:bg-accent md:hidden"
-            aria-label={open ? "Fechar menu" : "Abrir menu"}
+            aria-label={open ? copy.closeMenu : copy.openMenu}
             aria-expanded={open}
             aria-controls="public-mobile-menu"
           >
@@ -96,35 +104,41 @@ export function PublicHeader() {
           <nav
             id="public-mobile-menu"
             className="border-t px-4 py-3 md:hidden"
-            aria-label="Navegação pública móvel"
+            aria-label={copy.mobileNavAria}
           >
-            {LINKS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                aria-current={pathname === item.href ? "page" : undefined}
-                className={cn(
-                  "block rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground",
-                  pathname === item.href && "bg-accent text-foreground",
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
+            <div className="mb-3">
+              <LanguageSelector className="w-full justify-center" />
+            </div>
+            {links.map((item) => {
+              const localizedHref = href(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={localizedHref}
+                  onClick={() => setOpen(false)}
+                  aria-current={pathname === localizedHref ? "page" : undefined}
+                  className={cn(
+                    "block rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground",
+                    pathname === localizedHref && "bg-accent text-foreground",
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
             <div
               className={`mt-3 grid gap-2 border-t pt-3 ${hasSession ? "grid-cols-1" : "grid-cols-2"}`}
             >
               {!hasSession && (
-                <Link href="/login">
+                <Link href={href("/login")}>
                   <Button variant="outline" size="sm" className="w-full">
-                    Entrar
+                    {copy.signIn}
                   </Button>
                 </Link>
               )}
-              <Link href={hasSession ? "/dashboard" : "/register"}>
+              <Link href={hasSession ? "/dashboard" : href("/register")}>
                 <Button size="sm" className="w-full">
-                  {hasSession ? "Abrir app" : "Criar conta"}
+                  {hasSession ? copy.openApp : copy.createAccount}
                 </Button>
               </Link>
             </div>

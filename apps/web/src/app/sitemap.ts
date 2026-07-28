@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { LOCALES } from "@/lib/i18n";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://muriops.com.br";
 
@@ -26,10 +27,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  return pages.map((page) => ({
-    url: `${siteUrl}${page.path}`,
-    lastModified: now,
-    changeFrequency: page.changeFrequency,
-    priority: page.priority,
-  }));
+  return pages.flatMap((page) => {
+    const suffix = page.path;
+    const languages = {
+      en: `${siteUrl}${suffix}`,
+      "pt-BR": `${siteUrl}/pt${suffix}`,
+      es: `${siteUrl}/es${suffix}`,
+      "x-default": `${siteUrl}${suffix}`,
+    };
+
+    return LOCALES.map((locale) => ({
+      url:
+        locale === "en"
+          ? `${siteUrl}${suffix}`
+          : `${siteUrl}/${locale}${suffix}`,
+      lastModified: now,
+      changeFrequency: page.changeFrequency,
+      priority: page.priority,
+      alternates: { languages },
+    }));
+  });
 }

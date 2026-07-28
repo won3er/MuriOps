@@ -20,75 +20,24 @@ import { PublicHeader } from "@/components/public-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { useLocale } from "@/lib/locale-context";
+import { LANDING_COPY } from "@/lib/public-copy";
 
-const STEPS = [
-  {
-    n: "01",
-    title: "Cole a URL",
-    desc: "Sem instalar nada, sem plugin, sem acesso ao seu código.",
-  },
-  {
-    n: "02",
-    title: "A IA analisa",
-    desc: "Crawler explora as páginas e os analisadores levantam os problemas.",
-  },
-  {
-    n: "03",
-    title: "Leia o relatório",
-    desc: "Nota por dimensão, problemas priorizados e evidência de cada um.",
-  },
-  {
-    n: "04",
-    title: "Aplique as correções",
-    desc: "Exporte a Aplicação e corrija — manualmente ou via IA de dev.",
-  },
-];
-
-const MODULES = [
-  {
-    icon: Search,
-    label: "Crawler inteligente",
-    desc: "Descobre páginas, menus e fluxos sozinho.",
-  },
-  {
-    icon: Gauge,
-    label: "Performance",
-    desc: "LCP, CLS, INP e tempo de carregamento real.",
-  },
-  {
-    icon: Sparkles,
-    label: "UI & UX",
-    desc: "Hierarquia, contraste, alvos de clique e usabilidade.",
-  },
-  {
-    icon: Search,
-    label: "SEO",
-    desc: "Títulos, meta, canonical, Open Graph, sitemap e robots.",
-  },
-  {
-    icon: Lock,
-    label: "Acessibilidade",
-    desc: "Labels, alt, foco e navegação por teclado (WCAG).",
-  },
-  {
-    icon: ShieldAlert,
-    label: "Segurança",
-    desc: "Headers, HTTPS, CSP, TLS, DNS e segredos expostos.",
-  },
-  {
-    icon: Terminal,
-    label: "Console & Rede",
-    desc: "Erros de JS, requisições quebradas e recursos pesados.",
-  },
-  {
-    icon: GitCompare,
-    label: "Comparação de versões",
-    desc: "O que foi corrigido, o que surgiu e o que persiste.",
-  },
-];
+const MODULE_ICONS = [
+  Search,
+  Gauge,
+  Sparkles,
+  Search,
+  Lock,
+  ShieldAlert,
+  Terminal,
+  GitCompare,
+] as const;
 
 export default function LandingPage() {
   const { hasSession } = useAuth();
+  const { locale, href } = useLocale();
+  const copy = LANDING_COPY[locale];
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden">
@@ -108,50 +57,45 @@ export default function LandingPage() {
             className="absolute left-1/2 top-0 -z-10 h-80 w-[min(920px,100vw)] -translate-x-1/2 rounded-full border border-primary/10 bg-primary/[0.025] blur-3xl"
           />
           <span className="mb-5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary">
-            Gestão contínua de qualidade digital
+            {copy.eyebrow}
           </span>
           <h1 className="max-w-3xl text-balance text-4xl font-bold leading-[1.1] sm:text-5xl md:text-6xl">
-            Qualidade deixa de ser relatório e vira{" "}
-            <span className="text-primary">processo de gestão</span>
+            {copy.heroBefore}{" "}
+            <span className="text-primary">{copy.heroAccent}</span>
           </h1>
           <p className="mt-5 max-w-2xl text-balance text-lg text-muted-foreground">
-            Organize projetos, execute análises, transforme achados em planos e
-            acompanhe cada ciclo de melhoria em um workspace conectado.
+            {copy.heroDescription}
           </p>
 
           <div className="mt-9 flex flex-wrap justify-center gap-3">
-            <Link href={hasSession ? "/dashboard" : "/register"}>
+            <Link href={hasSession ? "/dashboard" : href("/register")}>
               <Button size="lg">
-                {hasSession ? "Abrir workspace" : "Criar meu workspace"}{" "}
+                {hasSession ? copy.openWorkspace : copy.createWorkspace}{" "}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
             {!hasSession && (
-              <Link href="/login">
+              <Link href={href("/login")}>
                 <Button size="lg" variant="outline">
-                  Já tem conta? Entrar
+                  {copy.signInPrompt}
                 </Button>
               </Link>
             )}
           </div>
-          <p className="mt-6 text-xs text-muted-foreground">
-            Comece sem cartão · Use sua própria chave de IA · Mantenha o
-            controle das aprovações
-          </p>
+          <p className="mt-6 text-xs text-muted-foreground">{copy.trustLine}</p>
         </section>
 
         {/* Destaques — pills + screenshot real, no espírito da home do GitHub */}
         <section className="mt-28 sm:mt-36">
           <div className="mb-9 max-w-3xl">
             <p className="mb-2 text-xs font-medium uppercase tracking-wider text-primary">
-              Um ciclo conectado
+              {copy.cycleEyebrow}
             </p>
             <h2 className="text-3xl font-semibold sm:text-4xl lg:text-5xl">
-              Cinco frentes, um só workspace
+              {copy.cycleTitle}
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-              Do primeiro diagnóstico ao acompanhamento das melhorias, cada
-              etapa preserva o contexto do projeto e prepara a próxima decisão.
+              {copy.cycleDescription}
             </p>
           </div>
           <FeatureShowcase />
@@ -160,14 +104,14 @@ export default function LandingPage() {
         {/* Como funciona */}
         <section className="mt-28">
           <div className="mb-10 text-center">
-            <h2 className="text-3xl font-semibold">Como funciona</h2>
+            <h2 className="text-3xl font-semibold">{copy.howItWorks}</h2>
           </div>
           <ol className="relative grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div
               aria-hidden="true"
               className="absolute left-[10%] right-[10%] top-8 -z-10 hidden h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent lg:block"
             />
-            {STEPS.map((s) => (
+            {copy.steps.map((s) => (
               <li
                 key={s.n}
                 className="group rounded-xl border border-border bg-card/35 p-5 transition-colors hover:border-primary/35 hover:bg-card"
@@ -201,64 +145,59 @@ export default function LandingPage() {
             />
             <div className="relative z-10">
               <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary">
-                <Bot className="h-3.5 w-3.5" /> Aplicação
+                <Bot className="h-3.5 w-3.5" /> {copy.application.eyebrow}
               </span>
               <h2 className="text-3xl font-semibold leading-tight">
-                O relatório não para no PDF
+                {copy.application.title}
               </h2>
               <p className="mt-4 text-muted-foreground">
-                A Aplicação transforma os achados em um plano de mudanças
-                concreto: o que alterar, em qual arquivo e como. Baixe em um
-                documento único para o seu time, ou envie o pacote para a IA que
-                você já usa para programar — ela aplica as correções e marca
-                cada item como feito aqui, em tempo real.
+                {copy.application.description}
               </p>
               <div className="mt-6 flex flex-wrap gap-3 text-sm text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1">
-                  <FileDown className="h-3.5 w-3.5 text-primary" /> Documento
-                  único
+                  <FileDown className="h-3.5 w-3.5 text-primary" />{" "}
+                  {copy.application.badges[0]}
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1">
-                  <Bot className="h-3.5 w-3.5 text-primary" /> Pacote para IA de
-                  dev
+                  <Bot className="h-3.5 w-3.5 text-primary" />{" "}
+                  {copy.application.badges[1]}
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1">
-                  <Wrench className="h-3.5 w-3.5 text-primary" /> Checklist ao
-                  vivo
+                  <Wrench className="h-3.5 w-3.5 text-primary" />{" "}
+                  {copy.application.badges[2]}
                 </span>
               </div>
             </div>
             {/* Mock do checklist — ilustra o resultado sem prometer nada falso. */}
             <div className="relative z-10 rounded-xl border border-border bg-background/80 p-5 shadow-[0_24px_60px_-42px_rgba(99,102,241,0.8)] backdrop-blur">
               <p className="mb-4 text-xs text-muted-foreground">
-                Plano de aplicação · 2 de 3 aplicados
+                {copy.application.planStatus}
               </p>
               <ul className="space-y-3 text-sm">
-                {[
-                  { t: "Adicionar meta description", done: true },
-                  { t: "Corrigir contraste do botão principal", done: true },
-                  { t: "Definir Content-Security-Policy", done: false },
-                ].map((it) => (
-                  <li key={it.t} className="flex items-start gap-3">
-                    <span
-                      aria-hidden="true"
-                      className={
-                        it.done
-                          ? "mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-primary text-[10px] text-primary-foreground"
-                          : "mt-0.5 h-4 w-4 shrink-0 rounded-full border border-border"
-                      }
-                    >
-                      {it.done ? "✓" : ""}
-                    </span>
-                    <span
-                      className={
-                        it.done ? "text-muted-foreground line-through" : ""
-                      }
-                    >
-                      {it.t}
-                    </span>
-                  </li>
-                ))}
+                {copy.application.checklist.map((text, index) => {
+                  const done = index < 2;
+                  return (
+                    <li key={text} className="flex items-start gap-3">
+                      <span
+                        aria-hidden="true"
+                        className={
+                          done
+                            ? "mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-primary text-[10px] text-primary-foreground"
+                            : "mt-0.5 h-4 w-4 shrink-0 rounded-full border border-border"
+                        }
+                      >
+                        {done ? "✓" : ""}
+                      </span>
+                      <span
+                        className={
+                          done ? "text-muted-foreground line-through" : ""
+                        }
+                      >
+                        {text}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </div>
@@ -269,14 +208,13 @@ export default function LandingPage() {
           <div className="mb-10 grid items-end gap-6 sm:grid-cols-[minmax(0,1fr)_260px]">
             <div className="max-w-2xl">
               <p className="mb-2 text-xs font-medium uppercase tracking-wider text-primary">
-                Profundidade de diagnóstico
+                {copy.coverage.eyebrow}
               </p>
               <h2 className="text-3xl font-semibold sm:text-4xl">
-                O que a análise cobre
+                {copy.coverage.title}
               </h2>
               <p className="mt-3 max-w-xl leading-7 text-muted-foreground">
-                Oito frentes trabalham em conjunto. Cada achado chega com
-                contexto, evidência e prioridade para orientar a próxima ação.
+                {copy.coverage.description}
               </p>
             </div>
             <div className="relative hidden h-44 sm:block">
@@ -295,20 +233,23 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {MODULES.map((m) => (
-              <div
-                key={m.label}
-                className="group rounded-xl border border-border bg-card/25 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-card"
-              >
-                <span className="mb-4 grid h-9 w-9 place-items-center rounded-lg border bg-background transition-colors group-hover:border-primary/30 group-hover:bg-primary/10">
-                  <m.icon className="h-4 w-4 text-primary" />
-                </span>
-                <h3 className="text-sm font-medium">{m.label}</h3>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  {m.desc}
-                </p>
-              </div>
-            ))}
+            {copy.coverage.modules.map(([label, desc], index) => {
+              const Icon = MODULE_ICONS[index];
+              return (
+                <div
+                  key={label}
+                  className="group rounded-xl border border-border bg-card/25 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-card"
+                >
+                  <span className="mb-4 grid h-9 w-9 place-items-center rounded-lg border bg-background transition-colors group-hover:border-primary/30 group-hover:bg-primary/10">
+                    <Icon className="h-4 w-4 text-primary" />
+                  </span>
+                  <h3 className="text-sm font-medium">{label}</h3>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    {desc}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </section>
 
@@ -320,21 +261,20 @@ export default function LandingPage() {
           />
           <div className="relative z-10 max-w-2xl text-center lg:text-left">
             <p className="mb-3 text-xs font-medium uppercase tracking-wider text-primary">
-              Próxima decisão, com contexto
+              {copy.cta.eyebrow}
             </p>
             <h2 className="text-balance text-3xl font-semibold sm:text-4xl">
-              Descubra o que está travando a qualidade do seu site
+              {copy.cta.title}
             </h2>
             <p className="mt-3 max-w-lg text-muted-foreground">
-              A primeira análise leva alguns minutos e não exige nenhuma mudança
-              no seu projeto.
+              {copy.cta.description}
             </p>
             <Link
-              href={hasSession ? "/dashboard" : "/register"}
+              href={hasSession ? "/dashboard" : href("/register")}
               className="mt-7 inline-flex"
             >
               <Button size="lg">
-                {hasSession ? "Ir para o Dashboard" : "Começar agora"}
+                {hasSession ? copy.cta.dashboard : copy.cta.start}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>

@@ -5,14 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { PublicHeader } from "@/components/public-header";
+import { useLocale } from "@/lib/locale-context";
+import { DOCS_SHELL_COPY } from "@/lib/public-copy";
 import { cn } from "@/lib/utils";
-
-const DOCS_NAV = [
-  { href: "/docs", label: "Visão geral", icon: BookOpen },
-  { href: "/docs/guia", label: "Guia de uso", icon: FileText },
-  { href: "/docs/funcionalidades", label: "Funcionalidades", icon: ListChecks },
-  { href: "/docs/integracoes", label: "Integrações", icon: Cable },
-];
 
 export function DocsShell({
   title,
@@ -26,6 +21,14 @@ export function DocsShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const { locale, href } = useLocale();
+  const copy = DOCS_SHELL_COPY[locale];
+  const docsNav = [
+    { href: "/docs", label: copy.overview, icon: BookOpen },
+    { href: "/docs/guia", label: copy.guide, icon: FileText },
+    { href: "/docs/funcionalidades", label: copy.features, icon: ListChecks },
+    { href: "/docs/integracoes", label: copy.integrations, icon: Cable },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -33,18 +36,19 @@ export function DocsShell({
       <div className="mx-auto grid w-full min-w-0 max-w-7xl grid-cols-[minmax(0,1fr)] md:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="min-w-0 border-b px-4 py-4 md:min-h-[calc(100vh-4rem)] md:border-b-0 md:border-r md:px-5 md:py-8">
           <p className="mb-2 px-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Primeiros passos
+            {copy.firstSteps}
           </p>
           <nav
             className="flex max-w-full gap-1 overflow-x-auto md:block md:space-y-1"
-            aria-label="Documentação"
+            aria-label={copy.navAria}
           >
-            {DOCS_NAV.map((item) => {
-              const active = pathname === item.href;
+            {docsNav.map((item) => {
+              const localizedHref = href(item.href);
+              const active = pathname === localizedHref;
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={localizedHref}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex min-w-max items-center gap-2 rounded-md px-2.5 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground",
