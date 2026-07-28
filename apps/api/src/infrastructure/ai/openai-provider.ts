@@ -18,10 +18,10 @@ import {
   type RemediationDesignInput,
 } from "./remediation-prompt.js";
 import {
+  buildUpgradeSystemPrompt,
   buildUpgradeUserPrompt,
   normalizeUpgrade,
   parseUpgradeJson,
-  UPGRADE_SYSTEM_PROMPT,
   type UpgradeDesignInput,
 } from "./upgrade-prompt.js";
 
@@ -83,12 +83,12 @@ export class OpenAiProvider implements AiProvider {
       model: env.OPENAI_MODEL,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: UPGRADE_SYSTEM_PROMPT },
+        { role: "system", content: buildUpgradeSystemPrompt(input.ecosystem) },
         { role: "user", content: buildUpgradeUserPrompt(input) },
       ],
     });
 
     const text = completion.choices[0]?.message?.content ?? "{}";
-    return normalizeUpgrade(parseUpgradeJson(text));
+    return normalizeUpgrade(parseUpgradeJson(text), input.ecosystem, input.manifestFile);
   }
 }

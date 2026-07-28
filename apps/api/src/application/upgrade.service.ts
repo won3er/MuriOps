@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type {
   CreateUpgradePlanRequest,
+  UpgradeEcosystem,
   UpgradeItemStatus,
   UpgradePlan,
   UpgradeProviderName,
@@ -17,6 +18,11 @@ import {
 import type { UpgradeDesignInput } from "../infrastructure/ai/upgrade-prompt.js";
 import { decryptSecret } from "../infrastructure/crypto/secret-box.js";
 import { prisma } from "../infrastructure/database/prisma.js";
+import {
+  detectManifest,
+  ecosystemLabel,
+  ecosystemManifestFile,
+} from "../modules/upgrade/manifest-detector.js";
 import { NotFoundError } from "./analysis.service.js";
 
 export class InvalidPackageJsonError extends Error {}
@@ -32,19 +38,34 @@ export const upgradeService = {
     userId: string,
     input: CreateUpgradePlanRequest,
   ): Promise<UpgradePlan> {
-    const packageJsonRaw = input.packageJson?.trim();
-    if (!packageJsonRaw) {
-      throw new InvalidPackageJsonError("Envie o conteúdo do package.json");
-    }
-    let parsedName: string | undefined;
-    try {
-      const pkg = JSON.parse(packageJsonRaw) as { name?: string };
-      parsedName = pkg.name;
-    } catch {
+    // Aceita `manifest` (novo, multi-linguagem) ou `packageJson` (alias
+    // legado — o cliente anterior ao suporte multi-linguagem só mandava esse).
+    const manifestRaw = (input.manifest ?? input.packageJson)?.trim();
+    if (!manifestRaw) {
       throw new InvalidPackageJsonError(
-        "O conteúdo enviado não é um JSON válido — confira se colou o package.json inteiro",
+        "Envie o conteúdo do manifesto de dependências (package.json, requirements.txt, pom.xml, go.mod, .csproj...)",
       );
     }
+
+    // Detecção de ecossistema substituiu o JSON.parse obrigatório: antes,
+    // qualquer manifesto que não fosse JSON era recusado na entrada — o que
+    // travava Python, Java, Go, .NET etc.
+    const detection = input.ecosystem
+      ? {
+          ecosystem: input.ecosystem,
+          label: ecosystemLabel(input.ecosystem),
+          manifestFile: input.fileName ?? ecosystemManifestFile(input.ecosystem),
+          confidence: "high" as const,
+        }
+      : detectManifest(manifestRaw, input.fileName);
+
+    if (detection.ecosystem === "unknown") {
+      throw new InvalidPackageJsonError(
+        "Não foi possível identificar o ecossistema deste manifesto. Confira se colou o arquivo inteiro, ou informe o nome do arquivo (ex.: pom.xml) para ajudar na detecção.",
+      );
+    }
+
+    const parsedName = extractProjectName(manifestRaw, detection.ecosystem);
 
     let projectId: string | null = null;
     if (input.projectId) {
@@ -58,7 +79,8 @@ export const upgradeService = {
 
     const providerName = await resolveProviderName(organizationId, input.provider);
     const title =
-      input.title?.trim() || `Atualização — ${parsedName ?? "package.json"}`;
+      input.title?.trim() ||
+      `Atualização — ${parsedName ?? detection.manifestFile} (${detection.label})`;
 
     const created = await prisma.upgradePlan.create({
       data: {
@@ -66,7 +88,10 @@ export const upgradeService = {
         projectId,
         createdById: userId,
         title,
-        packageJsonRaw,
+        // Coluna manteve o nome `packageJsonRaw` por compatibilidade com os
+        // planos já gravados, mas hoje guarda manifesto de qualquer ecossistema.
+        packageJsonRaw: manifestRaw,
+        ecosystem: detection.ecosystem,
         provider: providerName,
         status: "PENDING",
         apiToken: randomBytes(24).toString("base64url"),
@@ -75,7 +100,11 @@ export const upgradeService = {
 
     void generate(created.id, organizationId, {
       title,
-      packageJsonRaw,
+      manifestRaw,
+      ecosystem: detection.ecosystem,
+      ecosystemLabel: detection.label,
+      manifestFile: detection.manifestFile,
+      detectionConfidence: detection.confidence,
     });
     return toDto(created);
   },
@@ -209,6 +238,36 @@ export async function recoverStaleUpgradePlans(): Promise<void> {
 
 // ---------- helpers ----------
 
+/**
+ * Nome do projeto pra compor o título, por ecossistema. Best-effort: se não
+ * achar, o título cai no nome do arquivo de manifesto.
+ */
+function extractProjectName(raw: string, ecosystem: UpgradeEcosystem): string | undefined {
+  try {
+    switch (ecosystem) {
+      case "npm":
+      case "composer":
+        return (JSON.parse(raw) as { name?: string }).name;
+      case "maven":
+        // Pega o artifactId do <project>, não o das <dependency> — o primeiro
+        // artifactId do arquivo é o do próprio projeto na esmagadora maioria
+        // dos poms (vem antes do bloco <dependencies>).
+        return raw.match(/<artifactId>\s*([^<]+?)\s*<\/artifactId>/)?.[1];
+      case "go":
+        return raw.match(/^module\s+(\S+)/m)?.[1];
+      case "poetry":
+      case "cargo":
+        return raw.match(/^\s*name\s*=\s*["']([^"']+)["']/m)?.[1];
+      case "nuget":
+        return raw.match(/<(?:AssemblyName|RootNamespace)>\s*([^<]+?)\s*<\//)?.[1];
+      default:
+        return undefined;
+    }
+  } catch {
+    return undefined;
+  }
+}
+
 /** Provider efetivo: o pedido no request, ou o configurado na org, ou o do servidor. */
 async function resolveProviderName(
   organizationId: string,
@@ -244,11 +303,20 @@ async function loadAiOverride(organizationId: string): Promise<AiOverride | null
   }
 }
 
+/**
+ * Planos criados antes do suporte multi-linguagem têm `ecosystem` NULL no
+ * banco — nesse período o único ecossistema possível era npm.
+ */
+function readEcosystem(value: string | null | undefined): UpgradeEcosystem {
+  return (value as UpgradeEcosystem | null) ?? "npm";
+}
+
 function toDto(row: {
   id: string;
   projectId: string | null;
   title: string;
   packageJsonRaw: string;
+  ecosystem: string | null;
   provider: string;
   status: string;
   result: unknown;
@@ -261,7 +329,11 @@ function toDto(row: {
     id: row.id,
     projectId: row.projectId,
     title: row.title,
+    manifestRaw: row.packageJsonRaw,
+    // Mantido com o mesmo valor por compatibilidade com clientes anteriores
+    // ao suporte multi-linguagem (o front atual ainda lê este campo).
     packageJsonRaw: row.packageJsonRaw,
+    ecosystem: readEcosystem(row.ecosystem),
     provider: row.provider,
     status: row.status as UpgradePlan["status"],
     result: (row.result as UpgradeResult | null) ?? null,
@@ -276,6 +348,7 @@ function toSummary(row: {
   id: string;
   projectId: string | null;
   title: string;
+  ecosystem: string | null;
   status: string;
   result: unknown;
   createdAt: Date;
@@ -287,6 +360,7 @@ function toSummary(row: {
     id: row.id,
     projectId: row.projectId,
     title: row.title,
+    ecosystem: readEcosystem(row.ecosystem),
     status: row.status as UpgradeSummary["status"],
     itemCount: items.length,
     doneCount: items.filter((i) => i.status === "done").length,

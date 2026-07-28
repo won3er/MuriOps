@@ -8,12 +8,37 @@ import { generateUpgradeReportPdf } from "../../infrastructure/pdf/upgrade-repor
 
 const providerSchema = z.enum(["claude", "openai", "gemini"]);
 
-const createSchema = z.object({
-  projectId: z.string().min(1).optional().nullable(),
-  title: z.string().min(1).optional(),
-  packageJson: z.string().min(1),
-  provider: providerSchema.optional(),
-});
+const ecosystemSchema = z.enum([
+  "npm",
+  "pip",
+  "poetry",
+  "bundler",
+  "maven",
+  "gradle",
+  "go",
+  "nuget",
+  "composer",
+  "cargo",
+  "legacy",
+  "unknown",
+]);
+
+const createSchema = z
+  .object({
+    projectId: z.string().min(1).optional().nullable(),
+    title: z.string().min(1).optional(),
+    /** Manifesto de qualquer ecossistema suportado. */
+    manifest: z.string().min(1).optional(),
+    /** Alias legado — o cliente anterior ao multi-linguagem só mandava este. */
+    packageJson: z.string().min(1).optional(),
+    fileName: z.string().min(1).optional().nullable(),
+    ecosystem: ecosystemSchema.optional(),
+    provider: providerSchema.optional(),
+  })
+  .refine((b) => Boolean(b.manifest ?? b.packageJson), {
+    message: "Envie o conteúdo do manifesto de dependências",
+    path: ["manifest"],
+  });
 
 const itemStatusSchema = z.object({
   status: z.enum(["pending", "done"]),

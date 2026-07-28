@@ -1,4 +1,5 @@
 import type { BlueprintResult, RemediationResult, UpgradeResult } from "@qa-ai/shared";
+import { extractDependencies } from "../../modules/upgrade/manifest-detector.js";
 import type { BlueprintDesignInput } from "./blueprint-prompt.js";
 import type {
   AiAnalysisInput,
@@ -201,45 +202,51 @@ export class NoopProvider implements AiProvider {
   }
 
   /**
-   * Sem IA, lista as dependências do package.json literalmente (sem saber
-   * a versão-alvo real nem breaking changes) — mantém o fluxo funcional e
-   * orienta a configurar um provider pra obter o plano de verdade.
+   * Sem IA, lista as dependências do manifesto literalmente (sem saber a
+   * versão-alvo real nem breaking changes) — mantém o fluxo funcional e
+   * orienta a configurar um provider pra obter o plano de verdade. Funciona
+   * pra qualquer ecossistema suportado, não só npm.
    */
   async buildUpgradePlan(input: UpgradeDesignInput): Promise<UpgradeResult> {
-    let deps: Record<string, string> = {};
-    try {
-      const pkg = JSON.parse(input.packageJsonRaw) as {
-        dependencies?: Record<string, string>;
-        devDependencies?: Record<string, string>;
-      };
-      deps = { ...pkg.dependencies, ...pkg.devDependencies };
-    } catch {
-      // package.json inválido — devolve plano vazio com aviso no resumo.
-    }
+    const deps = extractDependencies(input.manifestRaw, input.ecosystem);
 
-    const entries = Object.entries(deps);
+    const encontradas =
+      deps.length > 0
+        ? `${deps.length} dependência(s) encontrada(s) em ${input.manifestFile}.`
+        : `Não foi possível extrair dependências automaticamente de ${input.manifestFile} — ` +
+          `configure um provider de IA para uma leitura completa do manifesto.`;
+
     return {
       summary:
-        `Plano-base sem IA para "${input.title}". Configure um provider ` +
-        `(Claude, OpenAI ou Gemini) em Configurações para receber risco, ` +
-        `breaking changes e passo a passo de migração reais por dependência. ` +
-        `${entries.length} dependência(s) encontrada(s) no package.json.`,
+        `Plano-base sem IA para "${input.title}" (${input.ecosystemLabel}). ` +
+        `Configure um provider (Claude, OpenAI ou Gemini) em Configurações ` +
+        `para receber risco, breaking changes e passo a passo de migração ` +
+        `reais por dependência. ${encontradas}`,
       overallRisk: "medium",
-      recommendedOrder: entries.map((_, i) => `item-${i + 1}`),
-      items: entries.map(([packageName, currentVersion], i) => ({
+      recommendedOrder: deps.map((_, i) => `item-${i + 1}`),
+      items: deps.map((dep, i) => ({
         id: `item-${i + 1}`,
-        packageName,
-        currentVersion,
+        packageName: dep.name,
+        currentVersion: dep.version,
         targetVersion: "verificar manualmente",
         riskLevel: "medium" as const,
         breakingChanges: [],
         migrationSteps:
           "Configure um provider de IA em Configurações e regenere este " +
           "plano para receber a versão-alvo, o risco real e o passo a " +
-          `passo de migração de ${packageName}.`,
-        filePath: "package.json",
+          `passo de migração de ${dep.name}.`,
+        filePath: input.manifestFile,
+        ecosystem: input.ecosystem,
         status: "pending" as const,
       })),
+      scopeNotes:
+        input.ecosystem === "legacy"
+          ? [
+              "Sistema legado: este produto recomenda atualização de versão " +
+                "dentro da tecnologia atual. Migração de tecnologia (ex.: RPG → " +
+                "Java, VB6 → .NET) está fora do escopo da ferramenta.",
+            ]
+          : [],
     };
   }
 }

@@ -17,10 +17,10 @@ import {
   type RemediationDesignInput,
 } from "./remediation-prompt.js";
 import {
+  buildUpgradeSystemPrompt,
   buildUpgradeUserPrompt,
   normalizeUpgrade,
   parseUpgradeJson,
-  UPGRADE_SYSTEM_PROMPT,
   type UpgradeDesignInput,
 } from "./upgrade-prompt.js";
 
@@ -165,9 +165,9 @@ export class GeminiProvider implements AiProvider {
 
   async buildUpgradePlan(input: UpgradeDesignInput): Promise<UpgradeResult> {
     const text = await this.generate(
-      UPGRADE_SYSTEM_PROMPT,
+      buildUpgradeSystemPrompt(input.ecosystem),
       buildUpgradeUserPrompt(input),
     );
-    return normalizeUpgrade(parseUpgradeJson(text));
+    return normalizeUpgrade(parseUpgradeJson(text), input.ecosystem, input.manifestFile);
   }
 }

@@ -339,8 +339,15 @@ model UpgradePlan {
   projectId      String?
   createdById    String
   title          String
-  // package.json original enviado pelo usuário (referência/auditoria).
+  // Manifesto original enviado pelo usuário (referência/auditoria). A coluna
+  // manteve o nome `packageJsonRaw` por compatibilidade com os planos já
+  // gravados, mas desde o suporte multi-linguagem ela guarda qualquer
+  // manifesto (requirements.txt, pom.xml, go.mod, .csproj...).
   packageJsonRaw String        @db.Text
+  // Ecossistema detectado (npm | pip | maven | go | nuget | legacy ...).
+  // Opcional: planos criados antes do suporte multi-linguagem não têm valor
+  // e são tratados como "npm" na leitura.
+  ecosystem      String?
   // provider de IA usado (claude | openai | gemini | noop)
   provider       String
   // Token da ponte universal — mesma mecânica do RemediationPlan.apiToken.

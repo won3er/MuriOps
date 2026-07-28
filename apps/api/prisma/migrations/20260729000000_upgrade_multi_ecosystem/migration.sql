@@ -1,0 +1,12 @@
+-- Suporte multi-linguagem no "Atualizar": o manifesto deixa de ser só
+-- package.json (npm) e passa a cobrir pip, Poetry, Bundler, Maven, Gradle,
+-- Go, NuGet, Composer, Cargo e sistemas legado.
+--
+-- A coluna "packageJsonRaw" mantém o nome por compatibilidade com os planos
+-- já gravados (renomear exigiria coordenar deploy de API e front ao mesmo
+-- tempo, sem ganho real); ela agora guarda o manifesto de qualquer
+-- ecossistema.
+--
+-- "ecosystem" é NULL nos planos antigos — a leitura trata NULL como 'npm',
+-- que era o único ecossistema possível antes desta migration.
+ALTER TABLE "UpgradePlan" ADD COLUMN "ecosystem" TEXT;

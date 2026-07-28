@@ -18,10 +18,10 @@ import {
   type RemediationDesignInput,
 } from "./remediation-prompt.js";
 import {
+  buildUpgradeSystemPrompt,
   buildUpgradeUserPrompt,
   normalizeUpgrade,
   parseUpgradeJson,
-  UPGRADE_SYSTEM_PROMPT,
   type UpgradeDesignInput,
 } from "./upgrade-prompt.js";
 
@@ -126,7 +126,7 @@ export class ClaudeProvider implements AiProvider {
       betas: ["server-side-fallback-2026-06-01"],
       fallbacks: [{ model: env.CLAUDE_FALLBACK_MODEL }],
       output_config: { effort: "high" },
-      system: UPGRADE_SYSTEM_PROMPT,
+      system: buildUpgradeSystemPrompt(input.ecosystem),
       messages: [{ role: "user", content: buildUpgradeUserPrompt(input) }],
     } as Parameters<
       typeof this.client.beta.messages.create
@@ -141,6 +141,6 @@ export class ClaudeProvider implements AiProvider {
       .map((b) => b.text)
       .join("\n");
 
-    return normalizeUpgrade(parseUpgradeJson(text));
+    return normalizeUpgrade(parseUpgradeJson(text), input.ecosystem, input.manifestFile);
   }
 }
