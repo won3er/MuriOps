@@ -45,6 +45,12 @@ const schema = z
     // clientes (erro 404 "no longer available to new users"). Flash normal
     // segue disponível e ainda é o tier mais barato/rápido ativo.
     GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
+
+    // Client ID do OAuth do Google (não é segredo — é público, usado também
+    // no frontend). Sem ele, o botão "Entrar com Google" fica desabilitado.
+    // Isso não é uma "chave de IA" — é a identidade do próprio Elevate QA
+    // como aplicação OAuth, igual ao JWT_SECRET.
+    GOOGLE_CLIENT_ID: z.string().optional(),
   })
   // Em produção, barra segredo fraco/placeholder e CORS aberto — os mesmos
   // erros que o próprio módulo de Segurança Avançada da ferramenta aponta.

@@ -28,6 +28,7 @@ interface AuthContextValue {
     email: string,
     password: string,
   ) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -80,6 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     register: async (name, email, password) => {
       apply(await api.register({ name, email, password }));
+      router.push("/dashboard");
+    },
+    loginWithGoogle: async (credential) => {
+      apply(await api.loginWithGoogle(credential));
       router.push("/dashboard");
     },
     logout: () => {

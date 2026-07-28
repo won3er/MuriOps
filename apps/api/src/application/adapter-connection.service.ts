@@ -58,6 +58,15 @@ export const adapterConnectionService = {
     return toDto(updated);
   },
 
+  /** Desconecta (apaga) a conexão MCP do projeto — permite reconectar/editar do zero depois. */
+  async disconnectMcp(organizationId: string, projectId: string): Promise<void> {
+    const existing = await prisma.adapterConnection.findFirst({
+      where: { projectId, organizationId, kind: "MCP" },
+    });
+    if (!existing) throw new NotFoundError("Conexão MCP não encontrada");
+    await prisma.adapterConnection.delete({ where: { id: existing.id } });
+  },
+
   /**
    * Todas as conexões ativas do projeto (sem credenciais) — alimenta o
    * seletor de "qual conexão usar" na tela de Orquestração. A ponte manual

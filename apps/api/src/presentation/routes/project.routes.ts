@@ -161,6 +161,21 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
     }
   });
 
+  // Desconecta a conexão MCP — permite reconfigurar do zero depois.
+  app.delete("/projects/:id/mcp-connection", async (req, reply) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    try {
+      await adapterConnectionService.disconnectMcp(req.user.organizationId, id);
+      return reply.status(204).send();
+    } catch (err) {
+      if (err instanceof NotFoundError)
+        return reply
+          .status(404)
+          .send({ statusCode: 404, error: "NotFound", message: err.message });
+      throw err;
+    }
+  });
+
   // Conexão GitHub deste projeto (Fase 2 — primeiro adapter push).
   app.post("/projects/:id/github-connection", async (req, reply) => {
     const { id } = z.object({ id: z.string() }).parse(req.params);

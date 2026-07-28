@@ -107,6 +107,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  loginWithGoogle: (credential: string) =>
+    request<AuthSession>("/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ credential }),
+    }),
   me: () => request<AuthSession>("/auth/me"),
 
   // ---- projects ----
@@ -144,6 +149,8 @@ export const api = {
       `/projects/${projectId}/mcp-connection/regenerate`,
       { method: "POST" },
     ),
+  disconnectMcp: (projectId: string) =>
+    request<void>(`/projects/${projectId}/mcp-connection`, { method: "DELETE" }),
 
   // ---- adapter GitHub (Fase 2) ----
   getGithubConnection: (projectId: string) =>

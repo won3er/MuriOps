@@ -1,12 +1,13 @@
 "use client";
 
-import { ClipboardCopy, Plug, RefreshCw } from "lucide-react";
+import { ClipboardCopy, Plug, RefreshCw, Unplug } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   useConnectMcp,
+  useDisconnectMcp,
   useMcpConnection,
   useRegenerateMcpToken,
 } from "@/lib/queries";
@@ -20,6 +21,7 @@ export function McpConnectionPanel({ projectId }: { projectId: string }) {
   const { data, isLoading } = useMcpConnection(projectId);
   const connect = useConnectMcp(projectId);
   const regenerate = useRegenerateMcpToken(projectId);
+  const disconnect = useDisconnectMcp(projectId);
 
   const connection = data && "mcpUrl" in data ? data : null;
 
@@ -66,10 +68,23 @@ export function McpConnectionPanel({ projectId }: { projectId: string }) {
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Gerar novo token
               </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground hover:text-destructive"
+                disabled={disconnect.isPending}
+                onClick={() => {
+                  if (confirm("Desconectar o MCP deste projeto? Você pode criar uma nova conexão depois."))
+                    disconnect.mutate();
+                }}
+              >
+                <Unplug className="h-3.5 w-3.5" /> Desconectar
+              </Button>
             </div>
             <p className="text-xs text-muted-foreground">
               Gerar um novo token invalida o anterior — ferramentas já
-              conectadas vão precisar da URL nova.
+              conectadas vão precisar da URL nova. Desconectar remove esta
+              conexão por completo, permitindo reconfigurar do zero.
             </p>
           </div>
         ) : (

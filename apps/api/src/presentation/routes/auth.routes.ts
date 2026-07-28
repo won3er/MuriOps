@@ -14,6 +14,10 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+const googleSchema = z.object({
+  credential: z.string().min(10),
+});
+
 // Limite estrito contra brute force / enumeração de credenciais.
 const authRateLimit = { rateLimit: { max: 10, timeWindow: "1 minute" } };
 
@@ -44,6 +48,27 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         body.email,
         body.password,
       );
+      const token = app.jwt.sign({
+        sub: user.id,
+        organizationId: user.organizationId,
+        email: user.email,
+      });
+      return reply.send(serialize(user, token));
+    } catch (err) {
+      if (err instanceof AuthError)
+        return reply
+          .status(err.statusCode)
+          .send({ statusCode: err.statusCode, error: "AuthError", message: err.message });
+      throw err;
+    }
+  });
+
+  // "Entrar com Google" — recebe o ID token do Google Identity Services,
+  // valida e loga/cadastra o usuário sem senha própria.
+  app.post("/auth/google", { config: authRateLimit }, async (req, reply) => {
+    const body = googleSchema.parse(req.body);
+    try {
+      const user = await authService.loginWithGoogle(body.credential);
       const token = app.jwt.sign({
         sub: user.id,
         organizationId: user.organizationId,

@@ -407,6 +407,18 @@ export function useRegenerateMcpToken(projectId: string) {
   });
 }
 
+export function useDisconnectMcp(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.disconnectMcp(projectId),
+    onSuccess: () => {
+      qc.setQueryData(qk.mcpConnection(projectId), { configured: false });
+      toast.message("Conexão MCP desconectada.");
+    },
+    onError: () => toast.error("Falha ao desconectar o MCP"),
+  });
+}
+
 export function useGithubConnection(projectId: string) {
   return useQuery({
     queryKey: qk.githubConnection(projectId),

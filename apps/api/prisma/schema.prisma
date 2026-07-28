@@ -45,7 +45,10 @@ model User {
   id             String   @id @default(cuid())
   name           String
   email          String   @unique
-  passwordHash   String
+  // Nula para contas criadas via Google — login OAuth não usa senha própria.
+  passwordHash   String?
+  // Preenchido só para contas criadas/logadas via "Entrar com Google".
+  googleId       String?  @unique
   organizationId String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
