@@ -93,9 +93,18 @@ export const authService = {
     if (existing) {
       // Conta já existia por e-mail/senha — vincula o Google a ela agora.
       if (!existing.googleId) {
+        // Zera a senha ao vincular: o Google acabou de provar (email_verified)
+        // que quem está logando é o dono de verdade do e-mail — mas a senha
+        // da conta pode ter sido definida por outra pessoa que só digitou
+        // esse e-mail no cadastro (não existe verificação de e-mail no
+        // registro comum). Sem zerar, quem criou a conta com senha continua
+        // com acesso permanente à conta do dono real depois do vínculo — e
+        // como não há fluxo de "esqueci minha senha", não haveria como o
+        // dono revogar esse acesso depois. Zerando, a conta vira Google-only
+        // (mesmo comportamento de uma conta criada direto via Google).
         return prisma.user.update({
           where: { id: existing.id },
-          data: { googleId },
+          data: { googleId, passwordHash: null },
           include: { organization: { include: { subscription: true } } },
         });
       }
