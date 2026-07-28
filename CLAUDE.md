@@ -227,8 +227,30 @@ anterior incompleta:
    `u.origin === origin`, então o crawl não passeia pra host interno por
    link de página — o gap de SSRF por redirect é mais estreito do que a
    nota anterior sugeria: sobra só um redirect na navegação inicial).
-   **Ainda não revisados:** `engine.ts` e os analyzers, resto de
-   `analysis-runner.ts`. Retomar a partir daqui quando continuar a Fase 3.
+   **Rodada 3 (29/07/2026, commit `01543a7`) — engine + analyzers:**
+   - `engine.ts`: os dois `.catch(() => [])` que engolem erro de analyzer
+     (por página e de site) não logavam nada. Engolir é proposital (um
+     módulo quebrado não pode derrubar a análise inteira), mas em silêncio
+     era ruim justamente num produto de QA — uma categoria que quebrou
+     ficava indistinguível de uma que rodou e não achou nada, e o relatório
+     dizia "sem problemas" pra uma checagem que nem executou. Agora loga
+     antes de seguir.
+   - `probes.ts`: `probeAllowedMethods()` usava `fetch` com redirect padrão
+     (*follow*), diferente do `probeGet()` logo acima que já usava
+     `redirect: "manual"`. Como a URL analisada é escolhida por quem usa o
+     app, um site respondendo 30x pra rede interna faria a sonda seguir pra
+     lá — furando o `url-guard` que só valida a URL inicial. Alinhado.
+   - `engine.ts`: comentário obsoleto de `EngineInput.aiOverride` dizia "se
+     ausente, usa a configuração do servidor" — não existe mais chave padrão
+     do servidor. Corrigido.
+   Revisados sem bug na rodada 3: `analyzers/index.ts`, `helpers.ts`,
+   `fingerprint.ts`, `types.ts`, `probeGet`/`probeCertificate`/`probeDns`
+   (já passivos, com timeout e redirect manual), `analysis-runner.ts`
+   (o `persist()` sem `$transaction` interativo é intencional e está
+   documentado no próprio arquivo — limitação do PgBouncer do Supabase).
+   **Revisão de backend da Fase 3 concluída.** Se for retomar, o que sobra é
+   o conteúdo/qualidade das regras de cada analyzer individual (UI, SEO,
+   acessibilidade etc.) — que é trabalho de produto, não de bug/segurança.
 7. **[Removido em 28/07/2026] Adapter Nuvemshop** — a loja de teste real
    (`qateste.lojavirtualnuvem.com.br`) estourava consistentemente os 512MB do
    Render free tier no crawl, mesmo após 3 rodadas de otimização de memória
