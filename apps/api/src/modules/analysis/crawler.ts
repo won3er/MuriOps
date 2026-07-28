@@ -191,7 +191,32 @@ async function launchWithRetry(
   let lastErr: unknown;
   for (let i = 0; i < attempts; i++) {
     try {
-      const browser = await chromium.launch({ headless: true });
+      // Flags de baixo consumo de memória — necessário no Render free tier
+      // (512MB RAM total pro processo Node + Chromium). Sem elas, sites
+      // pesados (muito JS/trackers, como lojas Nuvemshop/Shopify) estouram a
+      // memória e o Render mata o container inteiro no meio da análise.
+      const browser = await chromium.launch({
+        headless: true,
+        args: [
+          "--disable-gpu",
+          "--disable-dev-shm-usage", // usa /tmp em vez de /dev/shm (que é minúsculo em containers)
+          "--disable-extensions",
+          "--disable-background-networking",
+          "--disable-background-timer-throttling",
+          "--disable-backgrounding-occluded-windows",
+          "--disable-breakpad",
+          "--disable-component-update",
+          "--disable-default-apps",
+          "--disable-sync",
+          "--disable-translate",
+          "--metrics-recording-only",
+          "--mute-audio",
+          "--no-first-run",
+          "--no-zygote", // um processo a menos por browser (o zygote existe só pra acelerar forks)
+          "--renderer-process-limit=1", // um processo de renderer só, em vez de um por aba
+          "--js-flags=--max-old-space-size=128", // teto no heap do V8 por página
+        ],
+      });
       // Sem userAgent customizado: usa o Chromium real do Playwright. Um UA
       // que se anuncia como bot (ex.: "QA-AI-Bot/0.1") é bloqueado por
       // proteções anti-bot de hosts como Vercel/Cloudflare — o que gera

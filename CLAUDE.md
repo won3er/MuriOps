@@ -74,17 +74,39 @@ elevação); mascote texugo (`apps/web/public/badger-logo-512.png`). Componentes
   chave, e se um modelo passar a dar 404 "no longer available" tenta o próximo da
   lista automaticamente.
 
+## Fases do projeto (ordem combinada com o usuário em 27/07/2026)
+
+O trabalho segue estas 4 fases, nesta ordem — não pular pra fase seguinte com a
+anterior incompleta:
+
+1. **Construir** — implementar as funcionalidades e integrações que faltam.
+2. **Testar e fazer funcionar** — validar de ponta a ponta com dados/contas reais,
+   corrigir o que quebrar. **Fase atual — estamos aqui.**
+3. **Enxugar** — corrigir bugs remanescentes, gargalos de performance, revisão de
+   segurança, e ajustar arquitetura onde estiver errada/gambiarra.
+4. **Design geral** — só no final, com tudo funcionando e estável, revisar/polir a
+   aparência do site e do app como um todo.
+
 ## Pendências conhecidas / próximos passos
 
-1. **Testar de ponta a ponta o que foi construído recentemente** — conectar um
-   projeto real no WordPress/Shopify/Nuvemshop/FTP e confirmar que a aplicação
-   automática funciona; rodar um ciclo completo de Orquestração (incl. via MCP/ponte
-   com retomada automática); também validar o fluxo "Atualizar → Enviar para
-   Aplicação" agora que existe. **Próximo item a atacar.**
-2. **Wix, Squarespace, Webnode** — ficaram de fora dos adapters de plataforma
-   (sem API pra aplicar mudança de verdade). Decisão adiada a pedido do usuário —
-   só retomar quando ele pedir explicitamente ("me lembre depois").
-3. **Sandbox sem `git push`** — em ambientes de agente sem credencial de push, use
+1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —
+   conectar um projeto real no WordPress/Shopify/Nuvemshop/FTP e confirmar que a
+   aplicação automática funciona; rodar um ciclo completo de Orquestração (incl.
+   via MCP/ponte com retomada automática); validar o fluxo "Atualizar → Enviar
+   para Aplicação"; testar o login com Google de ponta a ponta assim que o
+   usuário configurar o Client ID. **Próximo item a atacar.**
+2. **[Fase 2] Configurar Google OAuth em produção** — usuário precisa criar o
+   Client ID no Google Cloud Console e colar em `GOOGLE_CLIENT_ID` (Render) e
+   `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (Vercel). Sem isso o botão "Entrar com Google"
+   fica invisível (degrada bem, não quebra nada).
+3. **[Fase 2] Confirmar migrations em produção** — o Render precisa rodar
+   `prisma migrate deploy` a cada deploy pra aplicar as migrations novas
+   (UPGRADE em RemediationSourceType, googleId/senha opcional em User). Confirmar
+   se isso já está automatizado no build command do Render.
+4. **[Fase 3/4, adiado a pedido do usuário] Wix, Squarespace, Webnode** — ficaram
+   de fora dos adapters de plataforma (sem API pra aplicar mudança de verdade).
+   Só retomar quando o usuário pedir explicitamente ("me lembre depois").
+5. **Sandbox sem `git push`** — em ambientes de agente sem credencial de push, use
    o upload manual pela interface web do GitHub (arquivo por arquivo/pasta) em
    `github.com/won3er/Elevate-QA/upload/main/<caminho>`.
 
