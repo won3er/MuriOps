@@ -17,10 +17,6 @@ const INTEGRATIONS = [
         desc: "Aplicação automática via Admin REST API de Shopify.",
       },
       {
-        name: "Nuvemshop / Tiendanube",
-        desc: "Integração com a API oficial v1 para e-commerce na América Latina.",
-      },
-      {
         name: "FTP",
         desc: "Escreve arquivos markdown diretamente em servidores FTP (Hostinger, Hostgator, etc).",
       },

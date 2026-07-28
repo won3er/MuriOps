@@ -86,7 +86,7 @@ export default function DocsPage() {
                     Integrações & Tecnologias
                   </h2>
                   <p className="mt-2 text-sm text-slate-400">
-                    Conheça as tecnologias que Elevate QA suporta: WordPress, Shopify, Nuvemshop, FTP, GitHub,
+                    Conheça as tecnologias que Elevate QA suporta: WordPress, Shopify, FTP, GitHub,
                     MCP e modelos de IA (Claude, OpenAI, Gemini).
                   </p>
                 </div>

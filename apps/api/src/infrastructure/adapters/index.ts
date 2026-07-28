@@ -3,7 +3,6 @@ import { decryptSecret } from "../crypto/secret-box.js";
 import { FtpAdapter } from "./ftp/ftp-adapter.js";
 import { GithubAdapter } from "./github/github-adapter.js";
 import { ManualBridgeAdapter } from "./manual-bridge.adapter.js";
-import { NuvemshopAdapter } from "./nuvemshop/nuvemshop-adapter.js";
 import { ShopifyAdapter } from "./shopify/shopify-adapter.js";
 import { WordpressAdapter } from "./wordpress/wordpress-adapter.js";
 
@@ -60,13 +59,6 @@ export function createAdapterFor(connection: AdapterConnectionRow): Adapter {
         throw new Error("Conexão SHOPIFY incompleta (access token ou domínio da loja ausente).");
       }
       return new ShopifyAdapter(config.shopDomain, decryptSecret(connection.credentialEncrypted));
-    }
-    case "NUVEMSHOP": {
-      const config = connection.config as { storeId?: string } | null;
-      if (!connection.credentialEncrypted || !config?.storeId) {
-        throw new Error("Conexão NUVEMSHOP incompleta (access token ou store ID ausente).");
-      }
-      return new NuvemshopAdapter(config.storeId, decryptSecret(connection.credentialEncrypted));
     }
     case "FTP": {
       const config = connection.config as

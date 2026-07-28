@@ -34,9 +34,10 @@ aplicar de verdade na plataforma real do cliente ou automatizar o ciclo inteiro.
      Windsurf lê e marca itens via `curl`, tela atualiza em tempo real por polling),
      ou MCP (servidor MCP por projeto, mesmas ações via protocolo).
    - **Conexões e integrações** (movidas de Projetos pra cá): MCP, GitHub, e os
-     adapters de plataforma que aplicam de verdade fora do repo — WordPress, Shopify,
-     Nuvemshop (via API oficial de cada um) e FTP (Hostinger/Hostgator/qualquer host
-     com acesso a arquivo). Ver `apps/api/src/infrastructure/adapters/`.
+     adapters de plataforma que aplicam de verdade fora do repo — WordPress, Shopify
+     (via API oficial de cada um) e FTP (Hostinger/Hostgator/qualquer host com acesso
+     a arquivo). Ver `apps/api/src/infrastructure/adapters/`. Nuvemshop foi removido
+     em 28/07/2026 (ver pendência abaixo).
 5. **Orquestração** (`/orquestracao`, seção própria no menu — não é mais aba dentro
    de Aplicação) — automatiza o ciclo analisar → avaliar quality gates → gerar plano
    → aplicar → reanalisar. Depende de Análise (pra analisar/reanalisar) e de
@@ -90,7 +91,7 @@ anterior incompleta:
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —
-   conectar um projeto real no WordPress/Shopify/Nuvemshop/FTP e confirmar que a
+   conectar um projeto real no WordPress/Shopify/FTP e confirmar que a
    aplicação automática funciona; rodar um ciclo completo de Orquestração (incl.
    via MCP/ponte com retomada automática); validar o fluxo "Atualizar → Enviar
    para Aplicação"; testar o login com Google de ponta a ponta assim que o
@@ -109,6 +110,18 @@ anterior incompleta:
 5. **Sandbox sem `git push`** — em ambientes de agente sem credencial de push, use
    o upload manual pela interface web do GitHub (arquivo por arquivo/pasta) em
    `github.com/won3er/Elevate-QA/upload/main/<caminho>`.
+6. **[Removido em 28/07/2026] Adapter Nuvemshop** — a loja de teste real
+   (`qateste.lojavirtualnuvem.com.br`) estourava consistentemente os 512MB do
+   Render free tier no crawl, mesmo após 3 rodadas de otimização de memória
+   (flags do Chromium, fechamento progressivo de páginas, bloqueio de
+   trackers/mídia/fontes). Suporte a Nuvemshop foi removido do produto —
+   `NuvemshopAdapter` (arquivo esvaziado, sandbox não permitiu apagar
+   fisicamente — rode `git rm -r apps/api/src/infrastructure/adapters/nuvemshop`
+   no seu terminal), rotas, hooks, painel de conexão, enum `AdapterKind` e
+   menções em docs. O valor `NUVEMSHOP` continua existindo no enum do Postgres
+   (não dá pra remover valor de enum sem recriar o tipo) mas não é mais
+   referenciado em nenhum lugar do código — inofensivo. WordPress/Shopify/FTP
+   continuam disponíveis normalmente.
 
 ## Convenções
 

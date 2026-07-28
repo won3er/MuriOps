@@ -18,7 +18,6 @@ import { GithubConnectionPanel } from "@/components/github-connection-panel";
 import { McpConnectionPanel } from "@/components/mcp-connection-panel";
 import {
   FtpConnectionPanel,
-  NuvemshopConnectionPanel,
   ShopifyConnectionPanel,
   WordpressConnectionPanel,
 } from "@/components/platform-connection-panels";
@@ -77,9 +76,9 @@ const SCOPE_LABEL: Record<string, string> = {
 /**
  * Aplicação é o executor final das mudanças vindas de Análise, Projetar e
  * Atualizar: exporta os achados num plano, conecta a plataforma real do
- * cliente (GitHub, MCP, WordPress, Shopify, Nuvemshop, FTP...) e aplica —
- * manualmente ou via ponte universal. Orquestração usa essas mesmas conexões
- * pra automatizar o ciclo analisar → plano → aplicar → reanalisar.
+ * cliente (GitHub, MCP, WordPress, Shopify, FTP...) e aplica — manualmente ou
+ * via ponte universal. Orquestração usa essas mesmas conexões pra automatizar
+ * o ciclo analisar → plano → aplicar → reanalisar.
  */
 export default function AplicacaoPage() {
   return (
@@ -204,7 +203,7 @@ function AplicacaoPageInner() {
         {!projectId ? (
           <p className="text-sm text-muted-foreground">
             Selecione um projeto acima pra ver ou configurar as conexões e
-            integrações dele (GitHub, MCP, WordPress, Shopify, Nuvemshop, FTP).
+            integrações dele (GitHub, MCP, WordPress, Shopify, FTP).
           </p>
         ) : (
           <>
@@ -234,7 +233,6 @@ function AplicacaoPageInner() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <WordpressConnectionPanel projectId={projectId} />
                   <ShopifyConnectionPanel projectId={projectId} />
-                  <NuvemshopConnectionPanel projectId={projectId} />
                   <FtpConnectionPanel projectId={projectId} />
                 </div>
               </div>

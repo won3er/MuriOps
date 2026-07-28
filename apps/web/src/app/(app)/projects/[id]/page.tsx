@@ -312,7 +312,7 @@ export default function ProjectDetailPage() {
               <div className="min-w-0 flex-1">
                 <p className="font-medium">Conexões e integrações</p>
                 <p className="text-sm text-muted-foreground">
-                  GitHub, MCP, WordPress, Shopify, Nuvemshop, FTP — tudo em
+                  GitHub, MCP, WordPress, Shopify, FTP — tudo em
                   Aplicação, o executor final das mudanças.
                 </p>
               </div>

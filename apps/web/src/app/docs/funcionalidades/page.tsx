@@ -51,11 +51,6 @@ const FEATURES = [
     desc: "Aplicação automática via API do Shopify.",
   },
   {
-    name: "Adapters: Nuvemshop",
-    status: "available",
-    desc: "Aplicação automática via API oficial de Tiendanube.",
-  },
-  {
     name: "Adapters: FTP",
     status: "available",
     desc: "Aplicação automática em servidores FTP (Hostinger, Hostgator, etc).",

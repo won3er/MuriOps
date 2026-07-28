@@ -43,7 +43,6 @@ export const qk = {
   githubConnection: (projectId: string) => ["github-connection", projectId] as const,
   wordpressConnection: (projectId: string) => ["wordpress-connection", projectId] as const,
   shopifyConnection: (projectId: string) => ["shopify-connection", projectId] as const,
-  nuvemshopConnection: (projectId: string) => ["nuvemshop-connection", projectId] as const,
   ftpConnection: (projectId: string) => ["ftp-connection", projectId] as const,
   adapterConnections: (projectId: string) => ["adapter-connections", projectId] as const,
   orchestrationRuns: (projectId: string) => ["orchestration-runs", projectId] as const,
@@ -487,29 +486,6 @@ export function useConnectShopify(projectId: string) {
     },
     onError: (err) =>
       toast.error(err instanceof Error ? err.message : "Falha ao conectar a Shopify"),
-  });
-}
-
-export function useNuvemshopConnection(projectId: string) {
-  return useQuery({
-    queryKey: qk.nuvemshopConnection(projectId),
-    queryFn: () => api.getNuvemshopConnection(projectId),
-    enabled: !!projectId,
-    retry: false,
-  });
-}
-
-export function useConnectNuvemshop(projectId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body: { storeId: string; accessToken: string }) =>
-      api.connectNuvemshop(projectId, body),
-    onSuccess: (connection) => {
-      qc.setQueryData(qk.nuvemshopConnection(projectId), connection);
-      toast.success("Conexão Nuvemshop criada");
-    },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao conectar a Nuvemshop"),
   });
 }
 

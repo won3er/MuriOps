@@ -196,20 +196,6 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
-  getNuvemshopConnection: (projectId: string) =>
-    request<
-      | (AdapterConnection & { maskedCredential: string | null })
-      | { configured: false }
-    >(`/projects/${projectId}/nuvemshop-connection`),
-  connectNuvemshop: (
-    projectId: string,
-    body: { storeId: string; accessToken: string },
-  ) =>
-    request<AdapterConnection>(`/projects/${projectId}/nuvemshop-connection`, {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
-
   getFtpConnection: (projectId: string) =>
     request<
       | (AdapterConnection & { maskedCredential: string | null })

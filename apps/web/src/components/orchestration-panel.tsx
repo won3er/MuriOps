@@ -27,7 +27,6 @@ const CONNECTION_KIND_LABEL: Record<string, string> = {
   MCP: "MCP",
   WORDPRESS: "WordPress",
   SHOPIFY: "Shopify",
-  NUVEMSHOP: "Nuvemshop",
   FTP: "FTP",
 };
 
@@ -208,7 +207,7 @@ export function OrchestrationPanel({
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Com conexão push (GitHub, WordPress, Shopify, Nuvemshop, FTP) o
+            Com conexão push (GitHub, WordPress, Shopify, FTP) o
             Atlas aplica sozinho a cada iteração. Sem conexão — ou com MCP —
             você aplica pela sua própria IA de dev (ex.: Claude Code
             conectado via MCP em Aplicação); a execução retoma sozinha

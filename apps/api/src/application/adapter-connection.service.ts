@@ -189,20 +189,6 @@ export const adapterConnectionService = {
     });
   },
 
-  /** Conexão Nuvemshop (Fase 4 — adapter push via API v1 + app privado). */
-  async upsertNuvemshopConnection(
-    organizationId: string,
-    projectId: string,
-    userId: string,
-    input: { storeId: string; accessToken: string },
-  ): Promise<AdapterConnection> {
-    return upsertPlatformConnection(organizationId, projectId, userId, {
-      kind: "NUVEMSHOP",
-      config: { storeId: input.storeId },
-      secret: input.accessToken,
-    });
-  },
-
   /** Conexão FTP (Fase 4 — Hostinger/Hostgator e qualquer host com acesso a arquivo). */
   async upsertFtpConnection(
     organizationId: string,
@@ -234,7 +220,7 @@ export const adapterConnectionService = {
   async getPlatformConnectionMasked(
     organizationId: string,
     projectId: string,
-    kind: "WORDPRESS" | "SHOPIFY" | "NUVEMSHOP" | "FTP",
+    kind: "WORDPRESS" | "SHOPIFY" | "FTP",
   ): Promise<(AdapterConnection & { maskedCredential: string | null }) | null> {
     const row = await prisma.adapterConnection.findFirst({
       where: { projectId, organizationId, kind },
@@ -256,7 +242,7 @@ async function upsertPlatformConnection(
   projectId: string,
   userId: string,
   input: {
-    kind: "WORDPRESS" | "SHOPIFY" | "NUVEMSHOP" | "FTP";
+    kind: "WORDPRESS" | "SHOPIFY" | "FTP";
     config: Prisma.InputJsonObject;
     secret: string;
   },

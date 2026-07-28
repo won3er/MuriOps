@@ -37,11 +37,6 @@ const shopifyConnectionSchema = z.object({
   accessToken: z.string().min(8),
 });
 
-const nuvemshopConnectionSchema = z.object({
-  storeId: z.string().min(1),
-  accessToken: z.string().min(8),
-});
-
 const ftpConnectionSchema = z.object({
   host: z.string().min(1),
   port: z.number().int().positive().optional(),
@@ -213,7 +208,7 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
     };
   });
 
-  // Conexões de plataforma (Fase 4 — apply real): WordPress, Shopify, Nuvemshop, FTP.
+  // Conexões de plataforma (Fase 4 — apply real): WordPress, Shopify, FTP.
   app.post("/projects/:id/wordpress-connection", async (req, reply) => {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const body = wordpressConnectionSchema.parse(req.body);
@@ -254,26 +249,6 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
     }
   });
 
-  app.post("/projects/:id/nuvemshop-connection", async (req, reply) => {
-    const { id } = z.object({ id: z.string() }).parse(req.params);
-    const body = nuvemshopConnectionSchema.parse(req.body);
-    try {
-      const connection = await adapterConnectionService.upsertNuvemshopConnection(
-        req.user.organizationId,
-        id,
-        req.user.sub,
-        body,
-      );
-      return reply.status(201).send(connection);
-    } catch (err) {
-      if (err instanceof NotFoundError)
-        return reply
-          .status(404)
-          .send({ statusCode: 404, error: "NotFound", message: err.message });
-      throw err;
-    }
-  });
-
   app.post("/projects/:id/ftp-connection", async (req, reply) => {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const body = ftpConnectionSchema.parse(req.body);
@@ -297,7 +272,6 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
   const platformKinds = [
     ["wordpress-connection", "WORDPRESS"],
     ["shopify-connection", "SHOPIFY"],
-    ["nuvemshop-connection", "NUVEMSHOP"],
     ["ftp-connection", "FTP"],
   ] as const;
   for (const [path, kind] of platformKinds) {

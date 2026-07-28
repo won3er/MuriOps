@@ -136,7 +136,6 @@ export const AdapterKind = {
   // Adapters push que aplicam de verdade na plataforma do site (Fase 4).
   WORDPRESS: "WORDPRESS",
   SHOPIFY: "SHOPIFY",
-  NUVEMSHOP: "NUVEMSHOP",
   // Hostinger/Hostgator (e qualquer host com acesso a arquivo) via FTP/FTPS.
   FTP: "FTP",
 } as const;

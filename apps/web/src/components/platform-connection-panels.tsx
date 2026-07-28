@@ -1,29 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { Globe, ShoppingBag, Store, HardDrive } from "lucide-react";
+import { Globe, ShoppingBag, HardDrive } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   useConnectFtp,
-  useConnectNuvemshop,
   useConnectShopify,
   useConnectWordpress,
   useFtpConnection,
-  useNuvemshopConnection,
   useShopifyConnection,
   useWordpressConnection,
 } from "@/lib/queries";
 
 /**
  * Painéis "Conectar plataforma" (Fase 4) — adapters *push* que aplicam de
- * verdade fora do repositório de código: WordPress, Shopify e Nuvemshop via
- * API oficial da plataforma, e FTP pra Hostinger/Hostgator/qualquer host com
- * acesso a arquivo. Mesma filosofia do GitHub: a ação automática é sempre um
- * registro rastreável e reversível (página em rascunho, arquivo de
- * checklist) — nunca sobrescreve tema/código de produção sozinho.
+ * verdade fora do repositório de código: WordPress e Shopify via API oficial
+ * da plataforma, e FTP pra Hostinger/Hostgator/qualquer host com acesso a
+ * arquivo. Mesma filosofia do GitHub: a ação automática é sempre um registro
+ * rastreável e reversível (página em rascunho, arquivo de checklist) — nunca
+ * sobrescreve tema/código de produção sozinho.
+ *
+ * Nuvemshop foi removido (descontinuado) — a loja de teste real estourava
+ * consistentemente os 512MB do Render free tier no crawl, mesmo depois de
+ * três rodadas de otimização de memória no crawler.
  */
 
 function ConnectedBadge({ label }: { label: string }) {
@@ -169,74 +171,6 @@ export function ShopifyConnectionPanel({ projectId }: { projectId: string }) {
               onClick={submit}
             >
               <ShoppingBag className="h-3.5 w-3.5" /> Conectar
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-export function NuvemshopConnectionPanel({ projectId }: { projectId: string }) {
-  const { data, isLoading } = useNuvemshopConnection(projectId);
-  const connect = useConnectNuvemshop(projectId);
-  const [storeId, setStoreId] = useState("");
-  const [accessToken, setAccessToken] = useState("");
-
-  const connection = data && "maskedCredential" in data ? data : null;
-
-  function submit() {
-    if (!storeId.trim() || accessToken.trim().length < 8) return;
-    connect.mutate(
-      { storeId: storeId.trim(), accessToken: accessToken.trim() },
-      { onSuccess: () => setAccessToken("") },
-    );
-  }
-
-  return (
-    <Card>
-      <CardContent className="space-y-3 pt-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Store className="h-4 w-4 text-muted-foreground" />
-            <span className="font-medium">Conectar Nuvemshop</span>
-          </div>
-          {connection && (
-            <ConnectedBadge
-              label={(connection.config as { storeId?: string } | null)?.storeId ?? "Conectado"}
-            />
-          )}
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Usa Store ID + access token de um app privado (Painel → Meus apps).
-          O Atlas cria/atualiza uma página despublicada com o checklist —
-          tema/checkout continuam manuais.
-        </p>
-
-        {isLoading ? null : connection ? (
-          <p className="text-sm">
-            Access token: <span className="font-mono">{connection.maskedCredential}</span>
-          </p>
-        ) : (
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Input
-              placeholder="store ID"
-              value={storeId}
-              onChange={(e) => setStoreId(e.target.value)}
-            />
-            <Input
-              placeholder="access token"
-              type="password"
-              value={accessToken}
-              onChange={(e) => setAccessToken(e.target.value)}
-            />
-            <Button
-              size="sm"
-              className="sm:col-span-2"
-              disabled={connect.isPending}
-              onClick={submit}
-            >
-              <Store className="h-3.5 w-3.5" /> Conectar
             </Button>
           </div>
         )}
