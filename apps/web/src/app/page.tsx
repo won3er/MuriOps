@@ -6,7 +6,6 @@ import {
   FileDown,
   Gauge,
   GitCompare,
-  Loader2,
   Lock,
   Search,
   ShieldAlert,
@@ -15,14 +14,10 @@ import {
   Wrench,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { FeatureShowcase } from "@/components/feature-showcase";
 import { LogoIsotype } from "@/components/logo";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 const STEPS = [
@@ -44,32 +39,7 @@ const MODULES = [
 ];
 
 export default function LandingPage() {
-  const { user, hasSession } = useAuth();
-  const router = useRouter();
-  const [url, setUrl] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleStart() {
-    if (!url.trim()) return;
-    if (!user) {
-      router.push(`/register?url=${encodeURIComponent(url)}`);
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    try {
-      const project = await api.createProject({
-        name: new URL(normalize(url)).hostname,
-        url: normalize(url),
-      });
-      const analysis = await api.startAnalysis(project.id);
-      router.push(`/analyses/${analysis.id}`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Falha ao iniciar análise");
-      setBusy(false);
-    }
-  }
+  const { hasSession } = useAuth();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -113,33 +83,27 @@ export default function LandingPage() {
           <span className="text-primary">do diagnóstico à correção</span>
         </h1>
         <p className="mt-5 max-w-2xl text-balance text-lg text-muted-foreground">
-          Cole uma URL e a IA testa seu site inteiro — UI, performance, SEO,
-          acessibilidade e segurança. Depois entrega o plano de correção pronto
-          para você aplicar, ou para sua IA de desenvolvimento aplicar por você.
+          Análise de QA + IA: avalie performance, SEO, segurança, acessibilidade
+          e UX do seu site. Receba planos prontos para aplicar — manualmente ou
+          via integração automática com suas plataformas.
         </p>
 
-        <div className="mt-9 flex w-full max-w-xl flex-col gap-2 sm:flex-row">
-          <Input
-            aria-label="URL do site a analisar"
-            placeholder="https://seusite.com"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleStart()}
-            className="h-12 flex-1 text-base"
-          />
-          <Button size="lg" onClick={handleStart} disabled={busy}>
-            {busy ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                Analisar meu site <ArrowRight className="h-4 w-4" />
-              </>
-            )}
-          </Button>
+        <div className="mt-9 flex flex-wrap justify-center gap-3">
+          <Link href={hasSession ? "/dashboard" : "/register"}>
+            <Button size="lg">
+              {hasSession ? "Ir para o Dashboard" : "Cadastre-se agora"} <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+          {!hasSession && (
+            <Link href="/login">
+              <Button size="lg" variant="outline">
+                Já tem conta? Entrar
+              </Button>
+            </Link>
+          )}
         </div>
-        {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
-        <p className="mt-3 text-xs text-muted-foreground">
-          Grátis para começar · Sem instalar nada no seu site
+        <p className="mt-6 text-xs text-muted-foreground">
+          Grátis para começar · Integração com Google · Sem cartão de crédito
         </p>
       </section>
 
@@ -273,8 +237,4 @@ export default function LandingPage() {
     <SiteFooter />
     </div>
   );
-}
-
-function normalize(url: string): string {
-  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 }

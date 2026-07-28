@@ -14,7 +14,6 @@ import {
   type AiProviderName,
 } from "../infrastructure/ai/index.js";
 import type { BlueprintDesignInput } from "../infrastructure/ai/blueprint-prompt.js";
-import { env } from "../config/env.js";
 import { decryptSecret } from "../infrastructure/crypto/secret-box.js";
 import { prisma } from "../infrastructure/database/prisma.js";
 import { NotFoundError } from "./analysis.service.js";
@@ -248,11 +247,8 @@ async function resolveProviderName(
   if (org?.aiProvider && AI_PROVIDER_NAMES.includes(org.aiProvider as never)) {
     return org.aiProvider as AiProviderName;
   }
-  // Último fallback: o provider do servidor (AI_PROVIDER), não "claude" fixo —
-  // senão um servidor configurado com Gemini cai no Noop por falta de chave.
-  if (AI_PROVIDER_NAMES.includes(env.AI_PROVIDER as never)) {
-    return env.AI_PROVIDER as AiProviderName;
-  }
+  // Sem chave própria configurada na organização, o nome é só um rótulo —
+  // createAiProviderFor degrada pro noop de qualquer forma sem a chave.
   return "claude";
 }
 

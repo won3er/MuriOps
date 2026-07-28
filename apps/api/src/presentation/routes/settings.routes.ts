@@ -14,8 +14,10 @@ const saveSchema = z.object({
 });
 
 /**
- * Configuração de IA por organização: cada conta pode usar a própria chave
- * (Claude, OpenAI ou Gemini) em vez da chave padrão do servidor.
+ * Configuração de IA por organização: cada conta usa a própria chave
+ * (Claude, OpenAI ou Gemini) — não existe chave padrão compartilhada do
+ * servidor. Sem chave própria, os providers de IA degradam pro noop
+ * (resultado determinístico, sem IA de verdade).
  */
 export async function settingsRoutes(app: FastifyInstance): Promise<void> {
   app.addHook("onRequest", app.authenticate);

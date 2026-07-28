@@ -54,7 +54,12 @@ export default function SettingsPage() {
   }
 
   async function remove() {
-    if (!confirm("Remover sua chave de IA? As análises voltarão a usar a chave padrão do sistema.")) return;
+    if (
+      !confirm(
+        "Remover sua chave de IA? Sem uma chave própria, os resumos e sugestões de IA param de funcionar (a coleta e o score continuam normais).",
+      )
+    )
+      return;
     setRemoving(true);
     try {
       await api.deleteAiSettings();
@@ -74,9 +79,12 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold">Configurações</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Use sua própria chave de IA para gerar os resumos e sugestões das
-          análises. Sem chave configurada, o sistema usa a chave padrão do
-          servidor — a coleta e o score funcionam normalmente de qualquer forma.
+          Cole sua própria chave de IA (Claude, OpenAI ou Gemini) para gerar
+          os resumos e sugestões de Análise, Projetar, Aplicação e Atualizar
+          — cada conta usa só a própria chave, não existe chave compartilhada
+          do sistema. Sem chave configurada, essas telas mostram um
+          resultado básico sem IA; a coleta e o score sempre funcionam
+          normalmente.
         </p>
       </div>
 

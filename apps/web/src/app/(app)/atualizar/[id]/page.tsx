@@ -14,6 +14,7 @@ import {
   Loader2,
   PackageSearch,
   Trash2,
+  Wrench,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -23,7 +24,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
-import { useDeleteUpgradePlan, useUpdateUpgradeItem, useUpgradePlan } from "@/lib/queries";
+import {
+  useCreateRemediationPlan,
+  useDeleteUpgradePlan,
+  useUpdateUpgradeItem,
+  useUpgradePlan,
+} from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 const RISK_ORDER = ["critical", "high", "medium", "low"];
@@ -46,6 +52,7 @@ export default function UpgradePlanDetailPage() {
   const { data: plan, isLoading } = useUpgradePlan(id);
   const toggleItem = useUpdateUpgradeItem(id);
   const del = useDeleteUpgradePlan();
+  const createRemediation = useCreateRemediationPlan();
   const [downloading, setDownloading] = useState(false);
 
   const orderedItems = useMemo(() => {
@@ -89,6 +96,14 @@ export default function UpgradePlanDetailPage() {
     } catch {
       toast.error("Falha ao gerar o pacote");
     }
+  }
+
+  function sendToApplication() {
+    if (!plan) return;
+    createRemediation.mutate(
+      { sourceType: "upgrade", sourceId: plan.id },
+      { onSuccess: (rp) => router.push(`/aplicacao/${rp.id}`) },
+    );
   }
 
   /** Copia o pacote pra colar direto no chat da IA (Claude Code, Windsurf...). */
@@ -165,6 +180,22 @@ export default function UpgradePlanDetailPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          {plan.status === "READY" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={sendToApplication}
+              disabled={createRemediation.isPending}
+              title="Transforma este plano de atualização num checklist de mudanças aplicáveis"
+            >
+              {createRemediation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Wrench className="h-3.5 w-3.5" />
+              )}
+              Enviar para Aplicação
+            </Button>
+          )}
           {plan.status === "READY" && (
             <Button
               variant="outline"

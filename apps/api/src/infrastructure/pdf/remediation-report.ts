@@ -9,6 +9,13 @@ const SEVERITY_LABEL: Record<string, string> = {
   info: "Informativa",
 };
 
+const SOURCE_TYPE_LABEL: Record<RemediationPlan["sourceType"], string> = {
+  analysis: "análise",
+  blueprint: "blueprint",
+  project: "projeto",
+  upgrade: "atualização de dependências",
+};
+
 /** Gera o relatório em PDF do plano de aplicação: checklist de mudanças. */
 export function generateRemediationReportPdf(
   plan: RemediationPlan,
@@ -20,7 +27,7 @@ export function generateRemediationReportPdf(
   doc.moveDown(0.3);
   doc.fontSize(10).fillColor("#666").text(plan.title);
   doc.text(
-    `IA: ${plan.provider} · origem: ${plan.sourceType === "analysis" ? "análise" : "blueprint"} · gerado em ${new Date().toLocaleString("pt-BR")}`,
+    `IA: ${plan.provider} · origem: ${SOURCE_TYPE_LABEL[plan.sourceType]} · gerado em ${new Date().toLocaleString("pt-BR")}`,
   );
   doc.fillColor("#000");
   doc.moveDown(1);

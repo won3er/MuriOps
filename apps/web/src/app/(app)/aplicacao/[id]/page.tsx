@@ -132,7 +132,9 @@ export default function RemediationPlanDetailPage() {
   const backHref =
     plan.sourceType === "blueprint" && !plan.projectId
       ? `/blueprints/${plan.sourceId}`
-      : "/aplicacao";
+      : plan.sourceType === "upgrade"
+        ? `/atualizar/${plan.sourceId}`
+        : "/aplicacao";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -157,11 +159,13 @@ export default function RemediationPlanDetailPage() {
                 ? "análise"
                 : plan.sourceType === "blueprint"
                   ? "blueprint"
-                  : plan.scope === "qa"
-                    ? "projeto · Análise QA padrão"
-                    : plan.scope === "security"
-                      ? "projeto · Análise de Segurança"
-                      : "projeto · completo"}
+                  : plan.sourceType === "upgrade"
+                    ? "atualização de dependências"
+                    : plan.scope === "qa"
+                      ? "projeto · Análise QA padrão"
+                      : plan.scope === "security"
+                        ? "projeto · Análise de Segurança"
+                        : "projeto · completo"}
             </span>
             {sortedItems.length > 0 && (
               <>

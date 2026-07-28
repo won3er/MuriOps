@@ -30,7 +30,7 @@ export class OpenAiProvider implements AiProvider {
   readonly name = "openai";
   private readonly client: OpenAI;
 
-  constructor(apiKey: string = env.OPENAI_API_KEY) {
+  constructor(apiKey: string) {
     this.client = new OpenAI({ apiKey });
   }
 

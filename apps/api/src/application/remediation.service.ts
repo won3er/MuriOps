@@ -1,12 +1,14 @@
 import { randomBytes } from "node:crypto";
 import type {
   CreateRemediationPlanRequest,
+  RemediationItem,
   RemediationItemStatus,
   RemediationPlan,
   RemediationProviderName,
   RemediationResult,
   RemediationScope,
   RemediationSummary,
+  UpgradeResult,
 } from "@qa-ai/shared";
 import type { Prisma } from "@prisma/client";
 import {
@@ -16,7 +18,6 @@ import {
   type AiProviderName,
 } from "../infrastructure/ai/index.js";
 import type { RemediationDesignInput } from "../infrastructure/ai/remediation-prompt.js";
-import { env } from "../config/env.js";
 import { decryptSecret } from "../infrastructure/crypto/secret-box.js";
 import { prisma } from "../infrastructure/database/prisma.js";
 import { NotFoundError } from "./analysis.service.js";
@@ -33,6 +34,13 @@ export const remediationService = {
     userId: string,
     input: CreateRemediationPlanRequest,
   ): Promise<RemediationPlan> {
+    // "Atualizar" (UpgradePlan) já vem com o resultado pronto — sem passar
+    // por loadSource/geração de IA, só mapeia os itens e envia direto pra
+    // Aplicação, que é o executor final.
+    if (input.sourceType === "upgrade") {
+      return createFromUpgrade(organizationId, userId, input.sourceId);
+    }
+
     const source = await loadSource(
       organizationId,
       input.sourceType,
@@ -227,6 +235,81 @@ async function generate(
       err instanceof Error ? err.message : err,
     );
   }
+}
+
+/**
+ * Cria uma Aplicação a partir de um plano de "Atualizar" (UpgradePlan) já
+ * pronto — sem loadSource nem chamada de IA, é só reaproveitar o resultado
+ * do upgrade (os itens já vêm com título, risco e passo a passo prontos).
+ */
+async function createFromUpgrade(
+  organizationId: string,
+  userId: string,
+  upgradePlanId: string,
+): Promise<RemediationPlan> {
+  const upgrade = await prisma.upgradePlan.findFirst({
+    where: { id: upgradePlanId, organizationId },
+  });
+  if (!upgrade) throw new NotFoundError("Plano de atualização não encontrado");
+  if (upgrade.status !== "READY" || !upgrade.result)
+    throw new NotFoundError(
+      "O plano de atualização ainda não foi gerado — aguarde para enviar pra Aplicação",
+    );
+
+  const upgradeResult = upgrade.result as unknown as UpgradeResult;
+  const result: RemediationResult = {
+    summary: upgradeResult.summary,
+    items: upgradeResult.items.map(upgradeItemToRemediationItem),
+  };
+
+  const created = await prisma.remediationPlan.create({
+    data: {
+      organizationId,
+      projectId: upgrade.projectId,
+      createdById: userId,
+      sourceType: "UPGRADE",
+      sourceId: upgradePlanId,
+      scope: null,
+      title: `Aplicação — ${upgrade.title}`,
+      provider: "claude",
+      status: "READY",
+      result: result as unknown as Prisma.InputJsonValue,
+      apiToken: randomBytes(24).toString("base64url"),
+    },
+  });
+  return toDto(created);
+}
+
+const RISK_LABEL: Record<string, string> = {
+  low: "Baixo",
+  medium: "Médio",
+  high: "Alto",
+  critical: "Crítico",
+};
+
+function upgradeItemToRemediationItem(
+  item: UpgradeResult["items"][number],
+): RemediationItem {
+  const howToParts = [item.migrationSteps];
+  if (item.breakingChanges.length > 0) {
+    howToParts.push(
+      `Mudanças que quebram compatibilidade:\n${item.breakingChanges.map((b) => `- ${b}`).join("\n")}`,
+    );
+  }
+  return {
+    id: item.id,
+    title: `Atualizar ${item.packageName} de ${item.currentVersion} para ${item.targetVersion}`,
+    category: "DEPENDENCY_UPGRADE",
+    severity: RISK_LABEL[item.riskLevel] ?? item.riskLevel,
+    filePath: item.filePath ?? "package.json",
+    description: `Risco: ${RISK_LABEL[item.riskLevel] ?? item.riskLevel}. ${
+      item.breakingChanges.length > 0
+        ? `${item.breakingChanges.length} mudança(s) que quebram compatibilidade.`
+        : "Sem mudanças que quebram compatibilidade conhecidas."
+    }`,
+    howTo: howToParts.join("\n\n"),
+    status: item.status,
+  };
 }
 
 /** No boot, aplicações presas em PENDING (processo caiu) viram FAILED. */
@@ -425,11 +508,8 @@ async function resolveProviderName(
   if (org?.aiProvider && AI_PROVIDER_NAMES.includes(org.aiProvider as never)) {
     return org.aiProvider as AiProviderName;
   }
-  // Último fallback: o provider do servidor (AI_PROVIDER), não "claude" fixo —
-  // senão um servidor configurado com Gemini cai no Noop por falta de chave.
-  if (AI_PROVIDER_NAMES.includes(env.AI_PROVIDER as never)) {
-    return env.AI_PROVIDER as AiProviderName;
-  }
+  // Sem chave própria configurada na organização, o nome é só um rótulo —
+  // createAiProviderFor degrada pro noop de qualquer forma sem a chave.
   return "claude";
 }
 
@@ -456,6 +536,7 @@ async function loadAiOverride(
 function toSourceType(dbValue: string): RemediationPlan["sourceType"] {
   if (dbValue === "ANALYSIS") return "analysis";
   if (dbValue === "BLUEPRINT") return "blueprint";
+  if (dbValue === "UPGRADE") return "upgrade";
   return "project";
 }
 

@@ -15,7 +15,6 @@ import {
   type AiProviderName,
 } from "../infrastructure/ai/index.js";
 import type { UpgradeDesignInput } from "../infrastructure/ai/upgrade-prompt.js";
-import { env } from "../config/env.js";
 import { decryptSecret } from "../infrastructure/crypto/secret-box.js";
 import { prisma } from "../infrastructure/database/prisma.js";
 import { NotFoundError } from "./analysis.service.js";
@@ -223,9 +222,8 @@ async function resolveProviderName(
   if (org?.aiProvider && AI_PROVIDER_NAMES.includes(org.aiProvider as never)) {
     return org.aiProvider as AiProviderName;
   }
-  if (AI_PROVIDER_NAMES.includes(env.AI_PROVIDER as never)) {
-    return env.AI_PROVIDER as AiProviderName;
-  }
+  // Sem chave própria configurada na organização, o nome é só um rótulo —
+  // createAiProviderFor degrada pro noop de qualquer forma sem a chave.
   return "claude";
 }
 

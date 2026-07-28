@@ -35,13 +35,12 @@ const schema = z
     // deduzir dos headers da requisição (x-forwarded-proto/host).
     PUBLIC_API_URL: z.string().url().optional(),
 
-    AI_PROVIDER: z.enum(["claude", "openai", "gemini", "noop"]).default("noop"),
-    ANTHROPIC_API_KEY: z.string().optional().default(""),
+    // Sem chave padrão do servidor — cada organização usa a própria chave de
+    // IA (Configurações). Estas variáveis só configuram o *nome do modelo*
+    // usado quando uma organização escolhe cada provider, nunca um segredo.
     CLAUDE_MODEL: z.string().default("claude-fable-5"),
     CLAUDE_FALLBACK_MODEL: z.string().default("claude-opus-4-8"),
-    OPENAI_API_KEY: z.string().optional().default(""),
     OPENAI_MODEL: z.string().default("gpt-4o"),
-    GEMINI_API_KEY: z.string().optional().default(""),
     // gemini-2.5-flash-lite foi descontinuado pelo Google para novos
     // clientes (erro 404 "no longer available to new users"). Flash normal
     // segue disponível e ainda é o tier mais barato/rápido ativo.

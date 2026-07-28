@@ -96,7 +96,7 @@ function isModelNotFound(status: number, body: string): boolean {
 export class GeminiProvider implements AiProvider {
   readonly name = "gemini";
 
-  constructor(private readonly apiKey: string = env.GEMINI_API_KEY) {}
+  constructor(private readonly apiKey: string) {}
 
   private async generate(
     systemPrompt: string,

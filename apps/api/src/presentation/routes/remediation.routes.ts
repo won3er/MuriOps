@@ -9,7 +9,7 @@ import { generateRemediationReportPdf } from "../../infrastructure/pdf/remediati
 const providerSchema = z.enum(["claude", "openai", "gemini"]);
 
 const createSchema = z.object({
-  sourceType: z.enum(["analysis", "blueprint", "project"]),
+  sourceType: z.enum(["analysis", "blueprint", "project", "upgrade"]),
   sourceId: z.string().min(1),
   scope: z.enum(["qa", "security", "full"]).optional(),
   provider: providerSchema.optional(),

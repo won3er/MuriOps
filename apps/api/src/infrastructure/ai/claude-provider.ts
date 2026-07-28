@@ -34,7 +34,7 @@ export class ClaudeProvider implements AiProvider {
   readonly name = "claude";
   private readonly client: Anthropic;
 
-  constructor(apiKey: string = env.ANTHROPIC_API_KEY) {
+  constructor(apiKey: string) {
     this.client = new Anthropic({ apiKey });
   }
 

@@ -273,6 +273,9 @@ enum RemediationSourceType {
   // Exportação por projeto: junta as análises do projeto conforme o escopo
   // (qa | security | full) — o fluxo principal da seção "Aplicação".
   PROJECT
+  // Atualizar (UpgradePlan) enviado pra Aplicação — o item já vem pronto do
+  // plano de upgrade (sem nova chamada de IA), Aplicação só executa.
+  UPGRADE
 }
 
 enum RemediationStatus {

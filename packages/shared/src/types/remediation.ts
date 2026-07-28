@@ -5,7 +5,7 @@
  * marca cada item como feito conforme aplica as mudanças.
  */
 
-export type RemediationSourceType = "analysis" | "blueprint" | "project";
+export type RemediationSourceType = "analysis" | "blueprint" | "project" | "upgrade";
 export type RemediationStatus = "PENDING" | "READY" | "FAILED";
 export type RemediationItemStatus = "pending" | "done";
 export type RemediationProviderName = "claude" | "openai" | "gemini";

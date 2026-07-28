@@ -36,35 +36,28 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <h4 className="text-sm font-semibold">Como usar</h4>
-          <ol className="mt-4 space-y-4">
-            {HOW_TO_USE.map((s) => (
-              <li key={s.n} className="flex gap-3 text-sm">
-                <span className="tabular mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/15 text-[11px] font-semibold text-primary">
-                  {s.n}
-                </span>
-                <span>
-                  <span className="font-medium">{s.t}</span>
-                  <span className="block text-muted-foreground">{s.d}</span>
-                </span>
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        <div>
-          <h4 className="text-sm font-semibold">Status das funcionalidades</h4>
-          <ul className="mt-4 space-y-2.5 text-sm">
-            {STATUS.map((s) => (
-              <li key={s.label} className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">{s.label}</span>
-                <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[s.status]}`}
-                >
-                  {s.status}
-                </span>
-              </li>
-            ))}
+          <h4 className="text-sm font-semibold">Documentação</h4>
+          <ul className="mt-4 space-y-2.5 text-sm text-muted-foreground">
+            <li>
+              <Link href="/docs" className="transition-colors hover:text-foreground">
+                Documentação completa
+              </Link>
+            </li>
+            <li>
+              <Link href="/docs/guia" className="transition-colors hover:text-foreground">
+                Guia de uso
+              </Link>
+            </li>
+            <li>
+              <Link href="/docs/funcionalidades" className="transition-colors hover:text-foreground">
+                Status das funcionalidades
+              </Link>
+            </li>
+            <li>
+              <Link href="/docs/integracoes" className="transition-colors hover:text-foreground">
+                Integrações & tecnologias
+              </Link>
+            </li>
           </ul>
         </div>
 
