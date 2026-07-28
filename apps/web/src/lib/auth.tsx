@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api, clearToken, getToken, setToken } from "./api";
+import { api, ApiError, clearToken, getToken, setToken } from "./api";
 
 interface AuthContextValue {
   user: User | null;
@@ -56,9 +56,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(s.user);
         setPlan(s.plan);
       })
-      .catch(() => {
-        clearToken();
-        setHasSession(false);
+      .catch((err) => {
+        // Só desloga em erro de autenticação de verdade (401/403 — token
+        // inválido/expirado). Qualquer outra falha (rede caiu, API em cold
+        // start no Render free tier, 5xx transitório) não invalida a
+        // sessão — o usuário só ainda não teve os dados de /auth/me
+        // confirmados; tenta de novo depois em vez de forçar logout.
+        const isAuthError =
+          err instanceof ApiError && (err.status === 401 || err.status === 403);
+        if (isAuthError) {
+          clearToken();
+          setHasSession(false);
+        }
       })
       .finally(() => setLoading(false));
   }, []);
