@@ -76,12 +76,41 @@ aplicar de verdade na plataforma real do cliente ou automatizar o ciclo inteiro.
    `waitForAnalysisCompleted`). Antes ele reusava a última análise concluída em
    toda iteração — o ciclo nunca reanalisava de fato e gerava planos duplicados
    sobre dados velhos.
-6. **Atualizar** (`/atualizar`) — cola um `package.json`, IA gera plano de upgrade de
-   dependências. Botão **"Enviar para Aplicação"** manda o plano pronto pra Aplicação
+6. **Atualizar** (`/atualizar`) — IA gera plano de upgrade de dependências.
+   Botão **"Enviar para Aplicação"** manda o plano pronto pra Aplicação
    (`RemediationSourceType.UPGRADE` — os itens do upgrade já vêm prontos, sem nova
    chamada de IA, só mapeados pro formato de `RemediationItem`). Mantém também seu
    fluxo de aplicação próprio e separado (PDF + ponte própria `/apply-upgrade/:token`)
    como caminho alternativo, já que os dois convivem sem conflito.
+   **Multi-linguagem + GitHub (29/07/2026):** duas formas de entrada —
+   - *colar manifesto*: aceita qualquer ecossistema suportado (npm, pip,
+     Poetry, Bundler, Maven, Gradle, Go, NuGet, Composer, Cargo) e sistemas
+     legado. `modules/upgrade/manifest-detector.ts` detecta o ecossistema
+     pelo conteúdo (nome do arquivo tem prioridade quando informado) e
+     extrai as dependências. Antes disso o fluxo era só npm — fazia
+     `JSON.parse` obrigatório e recusava tudo que não fosse `package.json`.
+   - *investigar pelo GitHub* (`POST /projects/:id/upgrade-plans/from-github`):
+     usa a conexão GITHUB do projeto, varre a árvore do repo, acha todos os
+     manifestos (ignorando `node_modules`, `vendor`, `target`, `dist`...) e
+     gera um plano consolidado — pensado pra monorepo poliglota, com cada
+     item carregando seu `ecosystem` e o `filePath` real do repo. Uma
+     chamada de IA por manifesto (teto de 8, `MAX_MANIFESTS`), mescladas num
+     plano só; limites atingidos viram `scopeNotes`, não somem.
+   **Regra de escopo pra legado (decisão de produto):** quando o ecossistema
+   é `legacy` (RPG/CL, AS-400/IBM i, COBOL, VB6, Delphi, PL/SQL antigo...), o
+   prompt ganha `LEGACY_SCOPE_RULE`: recomenda atualização de **versão** de
+   forma padronizada (4.0.0 → 4.0.1) e é **proibido** de recomendar
+   **migração de tecnologia** (RPG → Java, VB6 → .NET, COBOL → C#), porque
+   migração de sistema completo exige uma arquitetura que o produto não tem
+   hoje. Se a IA concluir que a migração seria o ideal, registra uma frase em
+   `scopeNotes` em vez de criar um item inaplicável.
+   Compatibilidade: a rota aceita `manifest` (novo) ou `packageJson` (alias
+   legado); o DTO devolve `manifestRaw` e `packageJsonRaw` com o mesmo valor;
+   a coluna do banco manteve o nome `packageJsonRaw` e a nova coluna
+   `ecosystem` é opcional (NULL = planos antigos = `npm`).
+   **Pendente:** a tela (`apps/web`) ainda diz "package.json" e não mostra o
+   ecossistema nem o botão de investigar pelo GitHub — o backend está pronto
+   e retrocompatível, falta a UI (não mexi por causa do redesign em paralelo).
 
 Identidade visual: laranja, isotipo (monograma "E" em barras — letra + gráfico de
 elevação); mascote texugo (`apps/web/public/badger-logo-512.png`). Componentes em
