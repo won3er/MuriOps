@@ -154,8 +154,21 @@ async function getLatestAnalysisSummary(projectId: string) {
   };
 }
 
+/**
+ * Uma conexão MCP é escopada a UM projeto (`connection.projectId` em
+ * `mcp.routes.ts`) — mas `remediationService.getById` só filtra por
+ * organizationId, não por projeto. Sem a checagem de `projectId` abaixo, um
+ * `planId` explícito (parâmetro aceito pelos tools `list_remediation_items`
+ * e `mark_item_done`) deixava ler/marcar itens de QUALQUER Aplicação da
+ * mesma organização, inclusive de outros projetos — furando o escopo por
+ * projeto que a própria conexão promete (bug encontrado e corrigido em
+ * 28/07/2026, revisão de segurança Fase 3).
+ */
 async function resolvePlan(scope: McpScope, planId?: string) {
-  if (planId) return remediationService.getById(scope.organizationId, planId);
+  if (planId) {
+    const plan = await remediationService.getById(scope.organizationId, planId);
+    return plan && plan.projectId === scope.projectId ? plan : null;
+  }
   const plans = await remediationService.list(scope.organizationId, scope.projectId);
   const latest = plans[0];
   if (!latest) return null;

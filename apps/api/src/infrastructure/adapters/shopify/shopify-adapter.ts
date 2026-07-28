@@ -97,12 +97,25 @@ function slugify(id: string): string {
   return id.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 60) || "item";
 }
 
+// Mesmo motivo do WordpressAdapter: achados de Segurança podem citar um
+// payload (ex.: um <script> refletido) encontrado no site analisado dentro
+// de title/description/howTo. Sem escapar, essa citação vira HTML de
+// verdade em body_html — reintroduzindo o XSS na página criada na Shopify.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function renderHtml(item: RemediationItem): string {
   return [
-    `<p><strong>Categoria:</strong> ${item.category} · <strong>Severidade:</strong> ${item.severity}</p>`,
-    item.filePath ? `<p><strong>Local sugerido:</strong> <code>${item.filePath}</code></p>` : "",
-    `<h3>Descrição</h3><p>${item.description}</p>`,
-    `<h3>Como aplicar</h3><p>${item.howTo}</p>`,
+    `<p><strong>Categoria:</strong> ${escapeHtml(item.category)} · <strong>Severidade:</strong> ${escapeHtml(item.severity)}</p>`,
+    item.filePath ? `<p><strong>Local sugerido:</strong> <code>${escapeHtml(item.filePath)}</code></p>` : "",
+    `<h3>Descrição</h3><p>${escapeHtml(item.description)}</p>`,
+    `<h3>Como aplicar</h3><p>${escapeHtml(item.howTo)}</p>`,
     `<hr/><p><em>Criado automaticamente pelo Atlas QA. Mudanças de tema/app continuam exigindo o time de dev.</em></p>`,
   ]
     .filter(Boolean)

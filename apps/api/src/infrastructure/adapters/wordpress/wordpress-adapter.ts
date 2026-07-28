@@ -98,12 +98,27 @@ function slugify(id: string): string {
   return id.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 60) || "item";
 }
 
+// Achados de Segurança podem legitimamente citar um payload encontrado no
+// site analisado (ex.: um <script> refletido usado como prova de um XSS) no
+// meio de title/description/howTo. Sem escapar, esse texto vira HTML de
+// verdade na página criada aqui — ou seja, o próprio relatório de segurança
+// reintroduziria o XSS na página de rascunho do WordPress do cliente. Escapa
+// tudo que vem do RemediationItem antes de montar o HTML.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function renderHtml(item: RemediationItem): string {
   return [
-    `<p><strong>Categoria:</strong> ${item.category} · <strong>Severidade:</strong> ${item.severity}</p>`,
-    item.filePath ? `<p><strong>Local sugerido:</strong> <code>${item.filePath}</code></p>` : "",
-    `<h3>Descrição</h3><p>${item.description}</p>`,
-    `<h3>Como aplicar</h3><p>${item.howTo}</p>`,
+    `<p><strong>Categoria:</strong> ${escapeHtml(item.category)} · <strong>Severidade:</strong> ${escapeHtml(item.severity)}</p>`,
+    item.filePath ? `<p><strong>Local sugerido:</strong> <code>${escapeHtml(item.filePath)}</code></p>` : "",
+    `<h3>Descrição</h3><p>${escapeHtml(item.description)}</p>`,
+    `<h3>Como aplicar</h3><p>${escapeHtml(item.howTo)}</p>`,
     `<hr/><p><em>Criado automaticamente pelo Atlas QA. Esta página é só o registro do que precisa ser feito — publicar/ajustar o WordPress em si continua manual.</em></p>`,
   ]
     .filter(Boolean)
