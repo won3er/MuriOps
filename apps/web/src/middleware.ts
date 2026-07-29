@@ -7,7 +7,29 @@ import {
   stripLocale,
 } from "@/lib/i18n";
 
+const CANONICAL_HOST = "muriops.com.br";
+const LEGACY_HOSTS = new Set([
+  "www.muriops.com.br",
+  "elevate-qa.vercel.app",
+]);
+
 export function middleware(request: NextRequest) {
+  const requestHost =
+    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ??
+    request.headers.get("host")?.split(":")[0];
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    requestHost &&
+    LEGACY_HOSTS.has(requestHost.toLowerCase())
+  ) {
+    const canonicalUrl = request.nextUrl.clone();
+    canonicalUrl.protocol = "https:";
+    canonicalUrl.host = CANONICAL_HOST;
+    canonicalUrl.port = "";
+    return NextResponse.redirect(canonicalUrl, 308);
+  }
+
   const { pathname } = request.nextUrl;
   if (!isPublicPath(pathname)) return NextResponse.next();
 
