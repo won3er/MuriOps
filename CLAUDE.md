@@ -63,7 +63,17 @@ aplicar de verdade na plataforma real do cliente ou automatizar o ciclo inteiro.
    de Aplicação) — automatiza o ciclo analisar → avaliar quality gates → gerar plano
    → aplicar → reanalisar. Depende de Análise (pra analisar/reanalisar) e de
    Aplicação (usa as conexões de lá pra aplicar) — não tem lógica própria de apply.
-   Autonomia MANUAL é a única implementada (Supervisionado/Autônomo ainda faltam).
+   **Autonomia (implementada em 29/07/2026, commit `5e58760`):** os três
+   níveis funcionam e diferem em um ponto só — o que fazer depois de aplicar
+   (`decidirProximoPasso` em `orchestration.service.ts`). MANUAL sempre espera
+   aprovação; SUPERVISED segue sozinho se a aplicação não teve falha e a nota
+   não regrediu (compara com a análise da iteração anterior); AUTONOMOUS segue
+   até bater os gates ou o limite. **Trava comum aos três:** só segue sozinho
+   com adapter *push* que aplicou algo (`mode === "push" && applied > 0`) — em
+   *pull* (MCP/ponte) ou sem conexão, avançar só reanalisaria um site
+   inalterado gastando a chave de IA do usuário, então espera e retoma via
+   `maybeAutoResumeFromPlan`. `applyViaAdapter` devolve `{mode, applied,
+   failed}` pra alimentar essa decisão.
    Ao criar uma execução dá pra escolher qual conexão usar: com adapter *push*
    (GitHub/WordPress/Shopify/FTP) ela aplica sozinha a cada iteração; sem
    conexão ou com MCP, quem aplica é a IA de dev do próprio usuário (ex.: Claude Pro
@@ -108,9 +118,14 @@ aplicar de verdade na plataforma real do cliente ou automatizar o ciclo inteiro.
    legado); o DTO devolve `manifestRaw` e `packageJsonRaw` com o mesmo valor;
    a coluna do banco manteve o nome `packageJsonRaw` e a nova coluna
    `ecosystem` é opcional (NULL = planos antigos = `npm`).
-   **Pendente:** a tela (`apps/web`) ainda diz "package.json" e não mostra o
-   ecossistema nem o botão de investigar pelo GitHub — o backend está pronto
-   e retrocompatível, falta a UI (não mexi por causa do redesign em paralelo).
+   **UI concluída pelo GPT em 29/07/2026** — a tela já aceita manifesto de
+   qualquer ecossistema e tem o card "Investigar pelo GitHub" ligado na rota.
+   **Validado em produção (29/07/2026):** `requirements.txt` → detectou `pip`,
+   plano gerado com Django 3.2 (EOL) marcado como crítico e versões
+   preservadas corretamente; inventário AS/400 → detectou `legacy`, gerou
+   **só** upgrades de versão, **nenhum** item de migração de tecnologia, e
+   registrou a nota de escopo em `scopeNotes`. A regra de legado funciona
+   ponta a ponta.
 
 Identidade visual: laranja, isotipo (monograma "E" em barras — letra + gráfico de
 elevação); mascote texugo (`apps/web/public/badger-logo-512.png`). Componentes em
