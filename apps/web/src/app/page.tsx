@@ -256,41 +256,28 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* CTA final */}
-        <section className="relative mt-28 overflow-hidden rounded-2xl border border-primary/25 bg-primary/[0.055] px-6 py-12 sm:px-10 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center lg:px-14 lg:py-14">
-          <div
-            aria-hidden="true"
-            className="absolute -right-20 -top-28 h-96 w-96 rounded-full bg-primary/15 blur-3xl"
-          />
-          <div className="relative z-10 max-w-2xl text-center lg:text-left">
+        {/* Entrada no sistema — estrutura sóbria, sem estética de campanha. */}
+        <section className="mt-28 border-y bg-card/25">
+          <div className="mx-auto grid max-w-5xl gap-7 px-6 py-10 sm:px-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div className="max-w-2xl">
             <p className="mb-3 text-xs font-medium uppercase tracking-wider text-primary">
               {copy.cta.eyebrow}
             </p>
-            <h2 className="text-balance text-3xl font-semibold sm:text-4xl">
+            <h2 className="text-balance text-2xl font-semibold sm:text-3xl">
               {copy.cta.title}
             </h2>
-            <p className="mt-3 max-w-lg text-muted-foreground">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
               {copy.cta.description}
             </p>
-            <Link
-              href={hasSession ? "/dashboard" : href("/register")}
-              className="mt-7 inline-flex"
-            >
-              <Button size="lg">
+            </div>
+            <div className="flex flex-wrap gap-3 lg:justify-end">
+              <Link href={hasSession ? "/dashboard" : href("/register")}>
+                <Button variant="outline">
                 {hasSession ? copy.cta.dashboard : copy.cta.start}
                 <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-          <div className="relative z-10 hidden h-56 lg:block">
-            <Image
-              src="/mascot-monitor.png"
-              alt=""
-              width={1536}
-              height={1024}
-              sizes="340px"
-              className="absolute -bottom-16 right-0 h-72 w-auto select-none object-contain"
-            />
+                </Button>
+              </Link>
+            </div>
           </div>
         </section>
       </main>
