@@ -14,6 +14,7 @@ import type {
   ProjectWithStats,
   RemediationItemStatus,
   RemediationPlan,
+  RemediationSummary,
   CreateUpgradePlanRequest,
   UpgradeItemStatus,
   UpgradePlan,
@@ -221,8 +222,15 @@ export function useDeleteRemediationPlan() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.deleteRemediationPlan(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["remediation-plans"] });
+    onSuccess: (_result, id) => {
+      // A API confirma a exclusão com 204. Removemos do cache imediatamente
+      // para que o histórico não mantenha um item que já não existe.
+      qc.setQueriesData<RemediationSummary[]>(
+        { queryKey: qk.remediationPlans },
+        (plans) => plans?.filter((plan) => plan.id !== id),
+      );
+      qc.removeQueries({ queryKey: qk.remediationPlan(id) });
+      qc.invalidateQueries({ queryKey: qk.remediationPlans });
       toast.success("Aplicação apagada");
     },
     onError: () => toast.error("Falha ao apagar Aplicação"),
