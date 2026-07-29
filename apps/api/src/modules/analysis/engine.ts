@@ -304,10 +304,10 @@ async function enrichWithAi(
     }
 
     return result.summary;
-  } catch (err) {
-    const raw = err instanceof Error ? err.message : String(err);
-    const short = raw.slice(0, 200).replace(/\s+/g, " ").trim();
-    return `Coleta concluída, mas a revisão por IA falhou: ${short}`;
+  } catch {
+    // A indisponibilidade do provedor não invalida a coleta. Não exponha a
+    // resposta bruta do provedor como se fosse um resumo executivo.
+    return "Coleta concluída. A revisão por IA não ficou disponível neste momento; os achados coletados continuam disponíveis.";
   }
 }
 
