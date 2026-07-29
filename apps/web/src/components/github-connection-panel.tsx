@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ClipboardCopy, Github, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ClipboardCopy, Github, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,12 +22,20 @@ export function GithubConnectionPanel({ projectId }: { projectId: string }) {
   const [owner, setOwner] = useState("");
   const [repo, setRepo] = useState("");
   const [token, setToken] = useState("");
+  const [editing, setEditing] = useState(false);
   const [justConnected, setJustConnected] = useState<{
     webhookSecret: string;
     webhookUrl: string;
   } | null>(null);
 
   const connection = data && "webhookUrl" in data ? data : null;
+
+  useEffect(() => {
+    if (!connection) return;
+    const config = connection.config as { owner?: string; repo?: string } | null;
+    setOwner(config?.owner ?? "");
+    setRepo(config?.repo ?? "");
+  }, [connection]);
 
   function submit() {
     if (!owner.trim() || !repo.trim() || token.trim().length < 10) return;
@@ -40,6 +48,7 @@ export function GithubConnectionPanel({ projectId }: { projectId: string }) {
             webhookUrl: res.webhookUrl,
           });
           setToken("");
+          setEditing(false);
         },
       },
     );
@@ -82,10 +91,18 @@ export function GithubConnectionPanel({ projectId }: { projectId: string }) {
           <ConnectionQueryState state="loading" />
         ) : isError ? (
           <ConnectionQueryState state="error" />
-        ) : connection ? (
+        ) : connection && !editing ? (
           <div className="space-y-2 text-sm">
-            <p>
-              Token: <span className="font-mono">{connection.maskedToken}</span>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p>
+                Token: <span className="font-mono">{connection.maskedToken}</span>
+              </p>
+              <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+                <Pencil className="h-3.5 w-3.5" /> Atualizar conexão
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Use esta opção se o repositório mudou, o token expirou ou o GitHub devolveu erro de acesso.
             </p>
             {justConnected && (
               <div className="space-y-2 rounded-md border bg-muted/30 p-3">
@@ -145,7 +162,7 @@ export function GithubConnectionPanel({ projectId }: { projectId: string }) {
             />
             <Input
               aria-label="Token pessoal do GitHub"
-              placeholder="token (PAT)"
+              placeholder={connection ? "novo token (PAT)" : "token (PAT)"}
               type="password"
               autoComplete="new-password"
               value={token}
@@ -154,7 +171,12 @@ export function GithubConnectionPanel({ projectId }: { projectId: string }) {
             <Button
               size="sm"
               className="sm:col-span-3"
-              disabled={connect.isPending}
+              disabled={
+                connect.isPending ||
+                !owner.trim() ||
+                !repo.trim() ||
+                token.trim().length < 10
+              }
               onClick={submit}
             >
               {connect.isPending ? (
@@ -164,6 +186,20 @@ export function GithubConnectionPanel({ projectId }: { projectId: string }) {
               )}
               {connect.isPending ? "Conectando…" : "Conectar"}
             </Button>
+            {connection && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="sm:col-span-3"
+                onClick={() => {
+                  setEditing(false);
+                  setToken("");
+                }}
+              >
+                Cancelar
+              </Button>
+            )}
             {connect.error && (
               <div className="sm:col-span-3">
                 <ActionError

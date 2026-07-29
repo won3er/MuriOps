@@ -2,7 +2,14 @@
 
 import type { AutonomyLevel } from "@qa-ai/shared";
 import { useState } from "react";
-import { CheckCircle2, Loader2, Play, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronRight,
+  History,
+  Loader2,
+  Play,
+  XCircle,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -373,28 +380,43 @@ export function OrchestrationPanel({
               onRetry={() => void refetchRuns()}
             />
           ) : runs.length > 0 ? (
-            <div
-              className="flex flex-wrap gap-1.5"
-              role="tablist"
-              aria-label="Execuções"
-            >
-              {runs.map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeRunId === r.id}
-                  onClick={() => setSelectedRunId(r.id)}
-                  className={cn(
-                    "rounded-md border px-2 py-1 text-xs",
-                    activeRunId === r.id
-                      ? "border-primary bg-primary/10"
-                      : "border-border",
-                  )}
-                >
-                  {timeAgo(r.createdAt)} · {STATUS_LABEL[r.status] ?? r.status}
-                </button>
-              ))}
+            <div className="overflow-hidden rounded-lg border" role="list" aria-label="Histórico de execuções">
+              {runs.map((r) => {
+                const selected = activeRunId === r.id;
+                return (
+                  <div key={r.id} role="listitem" className="border-b last:border-b-0">
+                    <button
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => setSelectedRunId(r.id)}
+                      className={cn(
+                        "grid w-full gap-3 px-3.5 py-3 text-left transition-colors sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center",
+                        selected
+                          ? "bg-primary/[0.09] shadow-[inset_3px_0_0_hsl(var(--primary))]"
+                          : "hover:bg-accent/55",
+                      )}
+                    >
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full border", STATUS_CLASS[r.status] ?? "border-border bg-muted text-muted-foreground")}>
+                        <History className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium">
+                          {STATUS_LABEL[r.status] ?? r.status}
+                        </span>
+                        <span className="block text-xs text-muted-foreground">
+                          Iniciada {timeAgo(r.createdAt)} · {r.autonomyLevel === "AUTONOMOUS" ? "Autônoma" : r.autonomyLevel === "SUPERVISED" ? "Supervisionada" : "Manual"}
+                        </span>
+                      </span>
+                      </span>
+                      <span className="text-xs tabular-nums text-muted-foreground">
+                        Iteração {r.iteration}/{r.maxIterations}
+                      </span>
+                      <ChevronRight className={cn("hidden h-4 w-4 text-muted-foreground sm:block", selected && "text-primary")} />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p className="rounded-md border border-dashed px-3 py-4 text-sm text-muted-foreground">

@@ -52,12 +52,12 @@ export default function GuiaPage() {
       </ol>
 
       <div className="mt-9 flex flex-wrap items-center gap-3">
-        <Link href={href("/register")}>
+        <Link href={href("/register")} target="_blank" rel="noreferrer">
           <Button>
             {copy.create} <ArrowRight className="h-4 w-4" />
           </Button>
         </Link>
-        <Link href={href("/docs/integracoes")}>
+        <Link href={href("/docs/integracoes")} target="_blank" rel="noreferrer">
           <Button variant="outline">{copy.compare}</Button>
         </Link>
       </div>

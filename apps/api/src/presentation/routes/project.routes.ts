@@ -1,6 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { adapterConnectionService } from "../../application/adapter-connection.service.js";
+import {
+  adapterConnectionService,
+  InvalidGithubConnectionError,
+} from "../../application/adapter-connection.service.js";
 import {
   analysisService,
   NotFoundError,
@@ -191,6 +194,10 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
         return reply
           .status(404)
           .send({ statusCode: 404, error: "NotFound", message: err.message });
+      if (err instanceof InvalidGithubConnectionError)
+        return reply
+          .status(400)
+          .send({ statusCode: 400, error: "GitHubConnection", message: err.message });
       throw err;
     }
   });

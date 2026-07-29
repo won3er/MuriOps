@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
+import { ActionError } from "@/components/action-error";
 import { QueryErrorState } from "@/components/query-error-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -240,6 +241,29 @@ export default function AtualizarPage() {
               )}
               Investigar atualizações
             </Button>
+            <Link
+              href={
+                projectId
+                  ? `/aplicacao?projectId=${projectId}&view=connections`
+                  : "/aplicacao?view=connections"
+              }
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 text-center text-xs font-medium text-primary hover:underline"
+            >
+              Configurar ou atualizar conexão GitHub
+            </Link>
+            <p className="mt-1 text-center text-[11px] leading-4 text-muted-foreground">
+              As conexões GitHub e MCP ficam em Aplicações → selecione o projeto → Conexões e integrações.
+            </p>
+            {createFromGithub.error && (
+              <div className="mt-3">
+                <ActionError
+                  error={createFromGithub.error}
+                  message="Não foi possível investigar pelo GitHub. Abra a conexão do projeto, valide owner/repo e substitua o token se necessário."
+                />
+              </div>
+            )}
             {!projectId && (
               <p className="mt-2 text-center text-[11px] text-muted-foreground">
                 Selecione um projeto no formulário ao lado.

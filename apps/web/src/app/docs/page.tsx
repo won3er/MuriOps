@@ -46,6 +46,8 @@ export default function DocsPage() {
               <Link
                 key={section.href}
                 href={href(section.href)}
+                target="_blank"
+                rel="noreferrer"
                 className="group flex gap-4 px-5 py-5 hover:bg-accent/40"
               >
                 <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md border bg-muted">

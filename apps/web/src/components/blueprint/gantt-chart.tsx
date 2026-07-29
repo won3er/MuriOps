@@ -41,5 +41,11 @@ export function GanttChart({
     return lines.join("\n");
   }, [milestones]);
 
-  return <MermaidDiagram code={code} />;
+  return (
+    <MermaidDiagram
+      code={code}
+      initialZoom={1.35}
+      viewportHeight={440}
+    />
+  );
 }

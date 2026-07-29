@@ -5,6 +5,10 @@ import { decryptSecret, encryptSecret, maskSecret } from "../infrastructure/cryp
 import { prisma } from "../infrastructure/database/prisma.js";
 import { NotFoundError } from "./analysis.service.js";
 
+export class InvalidGithubConnectionError extends Error {
+  readonly statusCode = 400;
+}
+
 /**
  * Gerencia `AdapterConnection` — MCP (Fase 1, pull) e GitHub (Fase 2, push).
  * O adapter de ponte manual não precisa de conexão própria (usa o `apiToken`
@@ -111,6 +115,8 @@ export const adapterConnectionService = {
       select: { id: true },
     });
     if (!project) throw new NotFoundError("Projeto não encontrado");
+
+    await validateGithubRepository(input);
 
     const existing = await prisma.adapterConnection.findUnique({
       where: { projectId_kind: { projectId, kind: "GITHUB" } },
@@ -273,6 +279,54 @@ async function upsertPlatformConnection(
     : await prisma.adapterConnection.create({ data });
 
   return toDto(row);
+}
+
+/**
+ * Confere o acesso antes de persistir a credencial. A API do GitHub devolve
+ * 404 tanto para repo inexistente quanto para repo privado sem permissão, por
+ * isso a mensagem orienta sobre os dois cenários sem revelar dados externos.
+ */
+async function validateGithubRepository(input: {
+  owner: string;
+  repo: string;
+  token: string;
+}): Promise<void> {
+  const owner = encodeURIComponent(input.owner.trim());
+  const repo = encodeURIComponent(input.repo.trim());
+  try {
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+      headers: {
+        Authorization: `Bearer ${input.token}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (response.ok) return;
+    if (response.status === 401) {
+      throw new InvalidGithubConnectionError(
+        "O token do GitHub foi recusado. Gere um token novo e tente novamente.",
+      );
+    }
+    if (response.status === 403) {
+      throw new InvalidGithubConnectionError(
+        "O GitHub recusou o acesso. Confira se o token tem permissão para ler este repositório e, se a organização exigir SSO, autorize o token nela.",
+      );
+    }
+    if (response.status === 404) {
+      throw new InvalidGithubConnectionError(
+        "Não foi possível acessar este repositório. Confira owner/repo e se o token tem acesso a repositórios privados.",
+      );
+    }
+    throw new InvalidGithubConnectionError(
+      `O GitHub não confirmou a conexão agora (status ${response.status}). Tente novamente em instantes.`,
+    );
+  } catch (error) {
+    if (error instanceof InvalidGithubConnectionError) throw error;
+    throw new InvalidGithubConnectionError(
+      "Não foi possível validar a conexão com o GitHub agora. Confira sua rede e tente novamente.",
+    );
+  }
 }
 
 function toDto(row: {

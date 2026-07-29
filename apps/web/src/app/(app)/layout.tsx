@@ -19,6 +19,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { LogoFull } from "@/components/logo";
+import { WorkspaceSearch } from "@/components/workspace-search";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 
@@ -172,6 +173,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         {brand}
 
         <div className="ml-auto flex items-center gap-1">
+          <div className="md:hidden">
+            <WorkspaceSearch />
+          </div>
           <Link
             href="/docs"
             aria-label="Ajuda e documentação"
@@ -234,9 +238,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <div className="flex min-h-[calc(100vh-4rem)]">
         {/* Navegação local persistente no desktop. */}
         <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-60 shrink-0 flex-col border-r bg-card/38 p-4 backdrop-blur-xl md:flex">
-          <div className="mb-5 flex items-center gap-2 rounded-lg border bg-background/55 px-2.5 py-2.5 text-xs text-muted-foreground shadow-sm">
+          <div className="mb-5 flex items-center gap-2 rounded-lg border bg-background/55 px-2.5 py-2 text-xs text-muted-foreground shadow-sm">
             <Boxes className="h-4 w-4 text-primary" />
             <span className="truncate">Workspace principal</span>
+            <span className="ml-auto"><WorkspaceSearch compact /></span>
           </div>
           {navLinks}
           {accountFooter}

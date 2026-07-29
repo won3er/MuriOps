@@ -9,7 +9,15 @@ import { useEffect, useId, useRef, useState } from "react";
  * só roda no efeito. Sintaxe inválida vinda da IA cai num fallback legível
  * (mostra o código-fonte).
  */
-export function MermaidDiagram({ code }: { code: string }) {
+export function MermaidDiagram({
+  code,
+  initialZoom = 1,
+  viewportHeight = 320,
+}: {
+  code: string;
+  initialZoom?: number;
+  viewportHeight?: number;
+}) {
   const hostRef = useRef<HTMLDivElement>(null);
   const rawId = useId().replace(/[^a-zA-Z0-9]/g, "");
   const [error, setError] = useState(false);
@@ -20,7 +28,7 @@ export function MermaidDiagram({ code }: { code: string }) {
   useEffect(() => {
     let cancelled = false;
     setError(false);
-    setZoom(1);
+    setZoom(initialZoom);
     setPan({ x: 0, y: 0 });
 
     (async () => {
@@ -49,7 +57,7 @@ export function MermaidDiagram({ code }: { code: string }) {
     return () => {
       cancelled = true;
     };
-  }, [code, rawId]);
+  }, [code, initialZoom, rawId]);
 
   function onWheel(e: React.WheelEvent) {
     e.preventDefault();
@@ -71,7 +79,7 @@ export function MermaidDiagram({ code }: { code: string }) {
   }
 
   function resetView() {
-    setZoom(1);
+    setZoom(initialZoom);
     setPan({ x: 0, y: 0 });
   }
 
@@ -181,8 +189,8 @@ export function MermaidDiagram({ code }: { code: string }) {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerLeave={onPointerUp}
-        className="relative h-[320px] touch-none overflow-hidden rounded-md border border-border bg-black/20 [&_svg]:h-auto [&_svg]:max-w-none"
-        style={{ cursor: dragRef.current ? "grabbing" : "grab" }}
+        className="relative touch-none overflow-hidden rounded-md border border-border bg-black/20 [&_svg]:h-auto [&_svg]:max-w-none"
+        style={{ height: viewportHeight, cursor: dragRef.current ? "grabbing" : "grab" }}
       >
         <div
           ref={hostRef}
