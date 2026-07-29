@@ -68,7 +68,7 @@ export function GithubConnectionPanel({ projectId }: { projectId: string }) {
             <span className="font-medium">Conectar GitHub</span>
           </div>
           {connection && (
-            <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-300">
+            <Badge className="border-border bg-muted text-muted-foreground">
               {
                 (connection.config as { owner?: string; repo?: string } | null)
                   ?.owner
@@ -95,7 +95,7 @@ export function GithubConnectionPanel({ projectId }: { projectId: string }) {
           <div className="space-y-2 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p>
-                Token: <span className="font-mono">{connection.maskedToken}</span>
+                Configuração salva · token <span className="font-mono">{connection.maskedToken}</span>
               </p>
               <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
                 <Pencil className="h-3.5 w-3.5" /> Atualizar conexão

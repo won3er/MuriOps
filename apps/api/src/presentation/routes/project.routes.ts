@@ -132,7 +132,7 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
       id,
       "MCP",
     );
-    if (!connection) return reply.status(404).send({ configured: false });
+    if (!connection) return { configured: false };
     return {
       ...connection,
       mcpUrl: `${apiBaseUrl(req)}/mcp/${connection.bridgeToken}`,
@@ -208,7 +208,7 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
       req.user.organizationId,
       id,
     );
-    if (!connection) return reply.status(404).send({ configured: false });
+    if (!connection) return { configured: false };
     return {
       ...connection,
       webhookUrl: `${apiBaseUrl(req)}/webhooks/github/${connection.id}`,
