@@ -30,6 +30,13 @@ export async function buildApp(): Promise<FastifyInstance> {
           ? { target: "pino-pretty" }
           : undefined,
       level: "info",
+      // Rotas de ponte/MCP carregam tokens na URL para que ferramentas de
+      // desenvolvimento possam se conectar sem sessão de navegador. Nunca
+      // deixe URLs, Authorization ou cookies irem para os logs do Render.
+      redact: {
+        paths: ["req.url", "req.headers.authorization", "req.headers.cookie"],
+        censor: "[REDACTED]",
+      },
     },
   });
 

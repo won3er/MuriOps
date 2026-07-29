@@ -21,6 +21,10 @@ export class NotFoundError extends Error {
   readonly statusCode = 404;
 }
 
+export class AnalysisConflictError extends Error {
+  readonly statusCode = 409;
+}
+
 export const analysisService = {
   /**
    * Hub "Análise": todas as análises da organização, de qualquer projeto,
@@ -70,6 +74,29 @@ export const analysisService = {
     // desta análise precisa ser checada contra IP interno/reservado.
     const effectiveUrl = input.url ?? project.url;
     await assertPublicUrl(effectiveUrl);
+
+    // Um segundo crawl do mesmo projeto não traz informação nova enquanto o
+    // primeiro ainda está rodando e pode esgotar a memória do Render (cada um
+    // inicia um Chromium). A UI acompanha o existente por polling.
+    const active = await prisma.analysis.findFirst({
+      where: {
+        projectId,
+        status: {
+          in: [
+            "QUEUED",
+            "CRAWLING",
+            "ANALYZING",
+            "AI_REVIEW",
+          ],
+        },
+      },
+      select: { id: true },
+    });
+    if (active) {
+      throw new AnalysisConflictError(
+        "Já existe uma análise em andamento para este projeto. Aguarde a conclusão antes de iniciar outra.",
+      );
+    }
 
     const last = await prisma.analysis.findFirst({
       where: { projectId },

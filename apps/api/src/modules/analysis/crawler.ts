@@ -1,5 +1,6 @@
 import { chromium, type Browser, type BrowserContext } from "playwright";
 import { storage } from "../../infrastructure/storage/storage.js";
+import { assertPublicUrl } from "../../infrastructure/security/url-guard.js";
 import { pageKey } from "./fingerprint.js";
 import type {
   ConsoleEntry,
@@ -65,17 +66,28 @@ export async function crawl(options: CrawlOptions): Promise<CrawlResult> {
 
   const { browser, context } = await launchWithRetry();
   await context.addInitScript(VITALS_INIT);
+  // A URL inicial é validada antes de entrar na fila, mas uma página pública
+  // ainda pode tentar redirecionar um documento, script ou imagem para uma
+  // rede privada. Interceptar toda requisição fecha esse caminho de SSRF.
+  // A validação por host fica em cache por pouco tempo para não fazer uma
+  // consulta DNS para cada asset do mesmo domínio.
+  const publicRequestGuard = createPublicRequestGuard();
   // Bloqueia vídeo/áudio/fontes e domínios conhecidos de tracker/analytics/ads
   // — puro overhead de memória/rede que não muda o que os analyzers avaliam
   // (mantém imagens e scripts do próprio site, necessários pra screenshot,
   // detecção de imagem quebrada e renderização real da página). Reduz bastante
   // o consumo de memória em e-commerces (Nuvemshop/Shopify) que carregam
   // dezenas de pixels de rastreamento por página.
-  await context.route("**/*", (route) => {
+  await context.route("**/*", async (route) => {
     const req = route.request();
     const type = req.resourceType();
     if (type === "media" || type === "font") return route.abort();
     if (isTrackerUrl(req.url())) return route.abort();
+    try {
+      await publicRequestGuard(req.url());
+    } catch {
+      return route.abort("blockedbyclient");
+    }
     return route.continue();
   });
 
@@ -221,6 +233,42 @@ export async function crawl(options: CrawlOptions): Promise<CrawlResult> {
   }
 
   return { browser, context, pages: results };
+}
+
+/**
+ * Revalida destinos de rede usados pelo Chromium. Mantém o resultado por 30s
+ * somente para reduzir overhead de assets repetidos; um domínio novo continua
+ * sendo resolvido antes de qualquer acesso.
+ */
+function createPublicRequestGuard() {
+  const cache = new Map<string, { expiresAt: number; check: Promise<void> }>();
+  const ttlMs = 30_000;
+
+  return async (rawUrl: string) => {
+    let host: string;
+    try {
+      const parsed = new URL(rawUrl);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return;
+      host = parsed.hostname.toLowerCase();
+    } catch {
+      return;
+    }
+
+    const now = Date.now();
+    const cached = cache.get(host);
+    if (cached && cached.expiresAt > now) return cached.check;
+
+    const check = assertPublicUrl(rawUrl);
+    cache.set(host, { expiresAt: now + ttlMs, check });
+    try {
+      await check;
+    } catch (error) {
+      // Não mantém falhas em cache: uma correção DNS legítima deve poder ser
+      // tentada imediatamente numa nova análise.
+      cache.delete(host);
+      throw error;
+    }
+  };
 }
 
 /**

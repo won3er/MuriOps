@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
+  AnalysisConflictError,
   analysisService,
   NotFoundError,
 } from "../../application/analysis.service.js";
@@ -36,6 +37,10 @@ export async function analysisRoutes(app: FastifyInstance): Promise<void> {
         return reply
           .status(404)
           .send({ statusCode: 404, error: "NotFound", message: err.message });
+      if (err instanceof AnalysisConflictError)
+        return reply
+          .status(409)
+          .send({ statusCode: 409, error: "Conflict", message: err.message });
       throw err;
     }
   };
@@ -46,7 +51,9 @@ export async function analysisRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // Inicia uma nova análise em um projeto.
-  app.post("/projects/:id/analyses", async (req, reply) => {
+  app.post("/projects/:id/analyses", {
+    config: { rateLimit: { max: 6, timeWindow: "1 minute" } },
+  }, async (req, reply) => {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const body = startSchema.parse(req.body ?? {});
     return guard(reply, async () => {
