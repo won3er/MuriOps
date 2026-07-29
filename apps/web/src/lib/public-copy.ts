@@ -84,12 +84,12 @@ export const LANDING_COPY = {
       ],
     },
     cta: {
-      eyebrow: "Your next decision, with context",
-      title: "Turn website signals into an informed next action",
+      eyebrow: "Workspace access",
+      title: "Start a quality baseline for a project",
       description:
-        "Start with a non-invasive QA analysis, see evidence by category, then decide what your team should address first.",
-      dashboard: "Go to Dashboard",
-      start: "Start now",
+        "Create a project, run a non-invasive analysis and keep findings, plans and execution history in one technical workspace.",
+      dashboard: "Open workspace",
+      start: "Create workspace",
     },
   },
   pt: {
@@ -171,12 +171,12 @@ export const LANDING_COPY = {
       ],
     },
     cta: {
-      eyebrow: "Próxima decisão, com contexto",
-      title: "Transforme sinais do seu site na próxima ação certa",
+      eyebrow: "Acesso ao workspace",
+      title: "Crie a linha de base de qualidade de um projeto",
       description:
-        "Comece com uma análise QA não invasiva, veja evidências por categoria e decida com clareza o que o time deve tratar primeiro.",
-      dashboard: "Ir para o Dashboard",
-      start: "Começar agora",
+        "Cadastre um projeto, rode uma análise não invasiva e mantenha achados, planos e histórico de execução no mesmo workspace técnico.",
+      dashboard: "Abrir workspace",
+      start: "Criar workspace",
     },
   },
   es: {
@@ -265,12 +265,12 @@ export const LANDING_COPY = {
       ],
     },
     cta: {
-      eyebrow: "Tu próxima decisión, con contexto",
-      title: "Convierte las señales de tu sitio en la próxima acción correcta",
+      eyebrow: "Acceso al workspace",
+      title: "Crea la línea base de calidad de un proyecto",
       description:
-        "Empieza con un análisis QA no invasivo, revisa evidencias por categoría y decide qué debe atender primero tu equipo.",
-      dashboard: "Ir al Dashboard",
-      start: "Empezar ahora",
+        "Registra un proyecto, ejecuta un análisis no invasivo y mantén hallazgos, planes e historial de ejecución en un mismo workspace técnico.",
+      dashboard: "Abrir workspace",
+      start: "Crear workspace",
     },
   },
 } satisfies Record<Locale, unknown>;
