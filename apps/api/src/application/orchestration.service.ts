@@ -48,9 +48,12 @@ export const orchestrationService = {
     if (input.adapterConnectionId) {
       const connection = await prisma.adapterConnection.findFirst({
         where: { id: input.adapterConnectionId, projectId, organizationId },
-        select: { id: true },
+        select: { id: true, kind: true },
       });
       if (!connection) throw new NotFoundError("Conexão não encontrada para este projeto");
+      if (connection.kind !== "GITHUB" && connection.kind !== "MCP") {
+        throw new NotFoundError("Esta conexão não está disponível para novas execuções");
+      }
       adapterConnectionId = connection.id;
     }
 

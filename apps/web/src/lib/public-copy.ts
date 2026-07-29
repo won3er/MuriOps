@@ -45,7 +45,7 @@ export const LANDING_COPY = {
       eyebrow: "Application",
       title: "One execution plan for every source",
       description:
-        "Application receives completed analyses, blueprints and dependency upgrades, then organizes the selected output as a prioritized checklist. Export it as PDF, expose it through the universal bridge or MCP, or use a configured GitHub, WordPress, Shopify or FTP adapter for the actions that integration supports. Item status remains visible in the workspace.",
+        "Application receives completed analyses, blueprints and dependency upgrades, then organizes the selected output as a prioritized checklist. Export it as PDF, expose it through the universal bridge or MCP, or use a configured GitHub connection to register a pull request. Item status remains visible in the workspace.",
       badges: [
         "Single document",
         "Package for development AI",
@@ -136,7 +136,7 @@ export const LANDING_COPY = {
       eyebrow: "Aplicação",
       title: "Um plano de execução para cada origem",
       description:
-        "Aplicação recebe análises concluídas, blueprints e planos de atualização de dependências e organiza o resultado selecionado como checklist priorizado. Exporte em PDF, disponibilize pela ponte universal ou MCP, ou use um adapter configurado de GitHub, WordPress, Shopify ou FTP nas ações que a integração suporta. O status dos itens permanece visível no workspace.",
+        "Aplicação recebe análises concluídas, blueprints e planos de atualização de dependências e organiza o resultado selecionado como checklist priorizado. Exporte em PDF, disponibilize pela ponte universal ou MCP, ou use uma conexão GitHub para registrar uma pull request. O status dos itens permanece visível no workspace.",
       badges: ["Documento único", "Pacote para IA de dev", "Checklist ao vivo"],
       planStatus: "Plano de aplicação · 2 de 3 aplicados",
       checklist: [
@@ -223,7 +223,7 @@ export const LANDING_COPY = {
       eyebrow: "Aplicación",
       title: "Un plan de ejecución para cada origen",
       description:
-        "Aplicación recibe análisis completados, blueprints y planes de actualización de dependencias, y organiza el resultado seleccionado como checklist priorizado. Expórtalo en PDF, publícalo mediante el puente universal o MCP, o usa un adapter configurado de GitHub, WordPress, Shopify o FTP para las acciones compatibles. El estado permanece visible en el workspace.",
+        "Aplicación recibe análisis completados, blueprints y planes de actualización de dependencias, y organiza el resultado seleccionado como checklist priorizado. Expórtalo en PDF, publícalo mediante el puente universal o MCP, o usa una conexión GitHub para registrar una pull request. El estado permanece visible en el workspace.",
       badges: [
         "Documento único",
         "Paquete para IA de desarrollo",

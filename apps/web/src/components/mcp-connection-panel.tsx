@@ -33,6 +33,17 @@ export function McpConnectionPanel({ projectId }: { projectId: string }) {
     toast.success("URL do MCP copiada");
   }
 
+  async function copyConfiguration() {
+    if (!connection) return;
+    const config = JSON.stringify(
+      { mcpServers: { muriops: { url: connection.mcpUrl } } },
+      null,
+      2,
+    );
+    await navigator.clipboard.writeText(config);
+    toast.success("Configuração MCP copiada");
+  }
+
   return (
     <Card>
       <CardContent className="space-y-3 pt-6">
@@ -65,6 +76,9 @@ export function McpConnectionPanel({ projectId }: { projectId: string }) {
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="outline" onClick={copyUrl}>
                 <ClipboardCopy className="h-3.5 w-3.5" /> Copiar URL
+              </Button>
+              <Button size="sm" variant="outline" onClick={copyConfiguration}>
+                <ClipboardCopy className="h-3.5 w-3.5" /> Copiar configuração
               </Button>
               <Button
                 size="sm"
@@ -102,9 +116,7 @@ export function McpConnectionPanel({ projectId }: { projectId: string }) {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Gerar um novo token invalida o anterior — ferramentas já
-              conectadas vão precisar da URL nova. Desconectar remove esta
-              conexão por completo, permitindo reconfigurar do zero.
+              Em clientes compatíveis com MCP por HTTP, use “Copiar configuração” e cole o bloco no arquivo de configuração da ferramenta. Gerar um novo token invalida o anterior — ferramentas já conectadas vão precisar da URL nova. Desconectar remove esta conexão por completo, permitindo reconfigurar do zero.
             </p>
             <ActionError
               error={regenerate.error || disconnect.error}

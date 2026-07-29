@@ -18,6 +18,7 @@ export function buildRemediationBridgeMarkdown(
   const items = plan.result?.items ?? [];
   const base = apiBaseUrl.replace(/\/+$/, "");
   const applyUrl = `${base}/apply/${plan.apiToken}`;
+  const isProjectBuild = plan.sourceType === "blueprint";
 
   const header = [
     `# Plano de Aplicação — ${plan.title}`,
@@ -28,13 +29,20 @@ export function buildRemediationBridgeMarkdown(
     "",
     "## Instruções para a IA (leia primeiro)",
     "",
-    "Você é responsável por aplicar as mudanças listadas abaixo no código deste projeto.",
+    isProjectBuild
+      ? "Este plano veio de uma projeção de produto. Prepare ou evolua o projeto no ambiente de desenvolvimento de acordo com a arquitetura, os marcos e os quality gates descritos nos itens abaixo."
+      : "Você é responsável por aplicar as mudanças listadas abaixo no código deste projeto.",
     "",
     "REGRAS:",
-    "1. Aplique UMA mudança por vez, na ordem apresentada (estão priorizadas por severidade).",
-    "2. Após aplicar e verificar cada mudança, marque o item como FEITO executando o comando `curl` indicado no próprio item. Isso atualiza o checklist do usuário em tempo real — não pule este passo.",
-    "3. Se uma mudança não se aplicar a este projeto (arquivo não existe, decisão fora do código, etc.), explique o motivo ao usuário e NÃO marque como feito.",
-    "4. Os caminhos de arquivo são sugestões heurísticas — confirme a estrutura real do projeto antes de editar.",
+    isProjectBuild
+      ? "1. Antes de criar arquivos, inspecione a estrutura existente. Se o repositório estiver vazio, monte o esqueleto inicial; se já existir código, preserve o que for compatível e explique conflitos."
+      : "1. Aplique UMA mudança por vez, na ordem apresentada (estão priorizadas por severidade).",
+    isProjectBuild
+      ? "2. Implemente uma etapa por vez, respeitando a stack e os quality gates do plano. Não publique, não faça merge e não sobrescreva arquivos fora do escopo sem confirmação."
+      : "2. Após aplicar e verificar cada mudança, marque o item como FEITO executando o comando `curl` indicado no próprio item. Isso atualiza o checklist do usuário em tempo real — não pule este passo.",
+    "3. Após implementar e verificar cada etapa, marque o item como FEITO executando o comando `curl` indicado no próprio item. Isso atualiza o checklist do usuário em tempo real — não pule este passo.",
+    "4. Se uma etapa não se aplicar a este projeto (arquivo não existe, decisão fora do código, etc.), explique o motivo ao usuário e NÃO marque como feito.",
+    "5. Os caminhos de arquivo são sugestões heurísticas — confirme a estrutura real do projeto antes de editar.",
     "",
     `Para consultar o estado atual do checklist a qualquer momento:`,
     "",

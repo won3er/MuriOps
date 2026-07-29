@@ -166,6 +166,7 @@ export default function RemediationPlanDetailPage() {
       : plan.sourceType === "upgrade"
         ? `/atualizar/${plan.sourceId}`
         : "/aplicacao";
+  const isProjectBuild = plan.sourceType === "blueprint";
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -288,12 +289,14 @@ export default function RemediationPlanDetailPage() {
                 <Bot className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <div>
                   <p className="font-medium">
-                    Aplicar direto no desenvolvimento
+                    {isProjectBuild
+                      ? "Preparar implementação no desenvolvimento"
+                      : "Aplicar direto no desenvolvimento"}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Copie o pacote e cole na sua IA de desenvolvimento (Claude
-                    Code, Windsurf, Codex, Cursor…). Ela aplica as mudanças e
-                    marca cada item como “Feito” aqui, em tempo real.
+                    {isProjectBuild
+                      ? "Copie o briefing para sua IA de desenvolvimento. Em um repositório vazio, ela cria o esqueleto do projeto; em um existente, implementa as etapas compatíveis sem publicar ou fazer merge."
+                      : "Copie o pacote e cole na sua IA de desenvolvimento (Claude Code, Windsurf, Codex, Cursor…). Ela aplica as mudanças e marca cada item como “Feito” aqui, em tempo real."}
                   </p>
                 </div>
               </div>
@@ -308,7 +311,11 @@ export default function RemediationPlanDetailPage() {
                   ) : (
                     <ClipboardCopy className="h-3.5 w-3.5" />
                   )}
-                  {bridgeAction === "copy" ? "Copiando…" : "Copiar pacote"}
+                  {bridgeAction === "copy"
+                    ? "Copiando…"
+                    : isProjectBuild
+                      ? "Copiar briefing"
+                      : "Copiar pacote"}
                 </Button>
                 <Button
                   variant="outline"
@@ -321,7 +328,11 @@ export default function RemediationPlanDetailPage() {
                   ) : (
                     <Download className="h-3.5 w-3.5" />
                   )}
-                  {bridgeAction === "download" ? "Baixando…" : "Baixar .md"}
+                  {bridgeAction === "download"
+                    ? "Baixando…"
+                    : isProjectBuild
+                      ? "Baixar briefing .md"
+                      : "Baixar .md"}
                 </Button>
               </div>
             </CardContent>

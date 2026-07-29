@@ -23,7 +23,7 @@ export const LEGAL_COPY = {
         {
           title: "3. Application and integrations",
           paragraphs: [
-            "Some connections write data to external systems. GitHub may create branches, checklists and pull requests; WordPress and Shopify may create drafts; FTP may write Markdown files. These actions depend on the credentials and permissions you provide.",
+            "Some connections write data to external systems. GitHub may create branches, checklists and pull requests. These actions depend on the credentials and permissions you provide.",
             "These records do not guarantee that a technical fix was implemented. MuriOps does not automatically merge on GitHub and should not publish drafts without a subsequent action by an authorized person.",
           ],
         },
@@ -125,7 +125,7 @@ export const LEGAL_COPY = {
         {
           title: "3. Aplicação e integrações",
           paragraphs: [
-            "Algumas conexões escrevem dados em sistemas externos. GitHub pode criar branches, checklists e pull requests; WordPress e Shopify podem criar rascunhos; FTP pode gravar arquivos Markdown. Essas ações dependem das credenciais e permissões fornecidas.",
+            "Algumas conexões escrevem dados em sistemas externos. GitHub pode criar branches, checklists e pull requests. Essas ações dependem das credenciais e permissões fornecidas.",
             "Esses registros não garantem que a correção técnica tenha sido implementada. O MuriOps não faz merge automático no GitHub e não deve publicar rascunhos sem uma ação posterior de uma pessoa autorizada.",
           ],
         },
@@ -227,7 +227,7 @@ export const LEGAL_COPY = {
         {
           title: "3. Aplicación e integraciones",
           paragraphs: [
-            "Algunas conexiones escriben datos en sistemas externos. GitHub puede crear branches, checklists y pull requests; WordPress y Shopify pueden crear borradores; FTP puede escribir archivos Markdown. Estas acciones dependen de las credenciales y permisos proporcionados.",
+            "Algunas conexiones escriben datos en sistemas externos. GitHub puede crear branches, checklists y pull requests. Estas acciones dependen de las credenciales y permisos proporcionados.",
             "Estos registros no garantizan que la corrección técnica se haya implementado. MuriOps no hace merge automático en GitHub y no debe publicar borradores sin una acción posterior de una persona autorizada.",
           ],
         },

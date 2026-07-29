@@ -131,8 +131,12 @@ export async function scanGithubManifests(
 
   const repoRes = await fetch(`${API_BASE}/repos/${owner}/${repo}`, { headers });
   if (!repoRes.ok) {
+    const guidance =
+      repoRes.status === 404
+        ? "No GitHub, 404 também é retornado para repositórios privados sem acesso. Abra Aplicações → Conexões e integrações, confira owner/repo e salve um novo token com acesso de leitura a este repositório."
+        : "Confira se o token da conexão do GitHub ainda é válido e tem acesso a ele.";
     throw new GithubScanError(
-      `Não foi possível ler o repositório ${owner}/${repo} (${repoRes.status}). Confira se o token da conexão do GitHub ainda é válido e tem acesso a ele.`,
+      `Não foi possível ler o repositório ${owner}/${repo} (${repoRes.status}). ${guidance}`,
     );
   }
   const branch = ((await repoRes.json()) as { default_branch?: string }).default_branch ?? "main";

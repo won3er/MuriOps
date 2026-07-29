@@ -106,7 +106,7 @@ export default function AtualizarPage() {
       <PageHeader
         eyebrow="Ciclo de qualidade"
         title="Atualizar"
-        description="Investigue dependências, riscos e breaking changes antes de iniciar uma migração."
+        description="Investigue tecnologias, dependências, riscos e mudanças incompatíveis antes de atualizar sistemas atuais ou legados."
       />
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.65fr)]">
@@ -121,7 +121,7 @@ export default function AtualizarPage() {
                   Enviar manifesto de dependências
                 </h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Node.js, Python, Ruby, Java, Go, .NET, PHP ou Rust.
+                  Node.js, Python, Ruby, Java, Go, .NET, PHP ou Rust — incluindo arquivos legados como .csproj, packages.config, pom.xml e Gradle.
                 </p>
               </div>
             </div>
@@ -218,15 +218,15 @@ export default function AtualizarPage() {
               <Github className="h-5 w-5" />
             </span>
             <h2 className="mt-5 text-lg font-semibold">
-              Investigar pelo GitHub
+              Investigar atualizações de tecnologias
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               O MuriOps percorre o repositório conectado, encontra os manifestos
-              relevantes e monta um único plano, inclusive em monorepos.
+              relevantes e monta um único plano, inclusive em monorepos e sistemas legados suportados.
             </p>
             <ul className="mt-5 space-y-2 text-xs text-muted-foreground">
               <li>✓ Somente leitura do repositório</li>
-              <li>✓ Detecta múltiplos ecossistemas</li>
+              <li>✓ Detecta múltiplos ecossistemas e manifests legados</li>
               <li>✓ Prioriza manifestos da aplicação</li>
             </ul>
             <Button
@@ -239,7 +239,7 @@ export default function AtualizarPage() {
               ) : (
                 <SearchCode className="h-4 w-4" />
               )}
-              Investigar atualizações
+              Investigar tecnologias
             </Button>
             <Link
               href={

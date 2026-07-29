@@ -34,9 +34,6 @@ import { cn, timeAgo } from "@/lib/utils";
 const CONNECTION_KIND_LABEL: Record<string, string> = {
   GITHUB: "GitHub",
   MCP: "MCP",
-  WORDPRESS: "WordPress",
-  SHOPIFY: "Shopify",
-  FTP: "FTP",
 };
 
 const AUTONOMY_OPTIONS: {
@@ -119,6 +116,9 @@ export function OrchestrationPanel({
     refetch: refetchConnections,
   } = useAdapterConnections(projectId);
   const [adapterConnectionId, setAdapterConnectionId] = useState("");
+  const developmentConnections = connections.filter(
+    (connection) => connection.kind === "GITHUB" || connection.kind === "MCP",
+  );
 
   const activeRunId = selectedRunId ?? runs[0]?.id ?? null;
   const {
@@ -322,7 +322,7 @@ export function OrchestrationPanel({
                 disabled={connectionsLoading || connectionsError}
               >
                 <option value="">Sem conexão (manual / MCP / ponte)</option>
-                {connections.map((c) => (
+                {developmentConnections.map((c) => (
                   <option key={c.id} value={c.id}>
                     {CONNECTION_KIND_LABEL[c.kind] ?? c.kind}
                   </option>

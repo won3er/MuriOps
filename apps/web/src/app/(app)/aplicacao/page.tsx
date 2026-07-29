@@ -2,10 +2,8 @@
 
 import type { RemediationScope } from "@qa-ai/shared";
 import {
-  ArrowRight,
   ChevronDown,
   FileSearch,
-  GitBranch,
   Layers,
   Loader2,
   Plug,
@@ -19,11 +17,6 @@ import { GithubConnectionPanel } from "@/components/github-connection-panel";
 import { McpConnectionPanel } from "@/components/mcp-connection-panel";
 import { PageHeader } from "@/components/page-header";
 import { QueryErrorState } from "@/components/query-error-state";
-import {
-  FtpConnectionPanel,
-  ShopifyConnectionPanel,
-  WordpressConnectionPanel,
-} from "@/components/platform-connection-panels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -79,7 +72,7 @@ const SCOPE_LABEL: Record<string, string> = {
 /**
  * Aplicação é o executor final das mudanças vindas de Análise, Projetar e
  * Atualizar: exporta os achados num plano, conecta a plataforma real do
- * cliente (GitHub, MCP, WordPress, Shopify, FTP...) e aplica — manualmente ou
+ * cliente (GitHub ou MCP) e aplica — manualmente ou
  * via ponte universal. Orquestração usa essas mesmas conexões pra automatizar
  * o ciclo analisar → plano → aplicar → reanalisar.
  */
@@ -266,40 +259,15 @@ function AplicacaoPageInner() {
                   <GithubConnectionPanel projectId={projectId} />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Plataformas externas — cada adapter registra o plano de uma
-                  forma diferente:
+                  GitHub registra o plano em uma pull request. MCP disponibiliza
+                  o contexto para a sua ferramenta de desenvolvimento executar e
+                  sincronizar cada etapa.
                 </p>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <WordpressConnectionPanel projectId={projectId} />
-                  <ShopifyConnectionPanel projectId={projectId} />
-                  <FtpConnectionPanel projectId={projectId} />
-                </div>
               </div>
             )}
           </>
         )}
       </div>
-
-      {/* Orquestração — automatiza o ciclo usando estas mesmas conexões. */}
-      <Link
-        href={
-          projectId ? `/orquestracao?projectId=${projectId}` : "/orquestracao"
-        }
-      >
-        <Card className="border-primary/30 transition-colors hover:border-primary/60">
-          <CardContent className="flex items-center gap-3 py-4">
-            <GitBranch className="h-5 w-5 shrink-0 text-primary" />
-            <div className="min-w-0 flex-1">
-              <p className="font-medium">Abrir na Orquestração</p>
-              <p className="text-sm text-muted-foreground">
-                Continue o ciclo analisar → plano → aplicar → reanalisar com os
-                checkpoints disponíveis no modo Manual.
-              </p>
-            </div>
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
-          </CardContent>
-        </Card>
-      </Link>
 
       {/* Histórico de aplicações */}
       <div>
