@@ -7,6 +7,7 @@ import { Toaster } from "sonner";
 import { AuthProvider } from "./auth";
 import { LocaleProvider } from "./locale-context";
 import type { Locale } from "./i18n";
+import { CookieNotice } from "@/components/cookie-notice";
 
 /**
  * Provedores globais do app: tema escuro fixo, cache de dados (React Query),
@@ -42,6 +43,7 @@ export function Providers({
       <LocaleProvider initialLocale={initialLocale}>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>{children}</AuthProvider>
+          <CookieNotice />
           <Toaster
             richColors
             position="top-right"

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
 import { useLocale } from "@/lib/locale-context";
 import { AUTH_COPY } from "@/lib/public-copy";
+import { TermsAcceptance } from "@/components/terms-acceptance";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -19,13 +20,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (!acceptedTerms) return;
     setBusy(true);
     setError(null);
     try {
-      await login(email.trim(), password);
+      await login(email.trim(), password, true);
     } catch (err) {
       setError(err instanceof Error ? err.message : copy.error);
       setBusy(false);
@@ -35,7 +38,12 @@ export default function LoginPage() {
   return (
     <AuthShell title={copy.title} description={copy.description}>
       <div className="space-y-6">
-        <GoogleSignInButton />
+        <TermsAcceptance
+          checked={acceptedTerms}
+          onChange={setAcceptedTerms}
+          disabled={busy}
+        />
+        <GoogleSignInButton enabled={acceptedTerms} />
 
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <div className="h-px flex-1 bg-border" />
@@ -99,7 +107,11 @@ export default function LoginPage() {
               {error}
             </div>
           )}
-          <Button type="submit" className="w-full" disabled={busy}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={busy || !acceptedTerms}
+          >
             {busy ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" /> {copy.submitting}

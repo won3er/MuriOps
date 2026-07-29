@@ -138,11 +138,15 @@ function ProductPreview({ feature }: { feature: FeatureKey }) {
                 </span>
                 <span
                   className={cn(
-                    "text-[10px]",
+                    "flex items-center gap-1.5 text-[10px]",
                     index === 1 ? "text-[#d29922]" : "text-[#3fb950]",
                   )}
                 >
-                  ●&nbsp; {status}
+                  <span
+                    aria-hidden="true"
+                    className="h-1.5 w-1.5 shrink-0 rounded-full bg-current"
+                  />
+                  {status}
                 </span>
                 <span className="truncate text-[10px] text-[#8b949e]">
                   {detail}
@@ -235,6 +239,8 @@ export function FeatureShowcase() {
               </ul>
               <Link
                 href={href("/docs/guia")}
+                target="_blank"
+                rel="noreferrer"
                 className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-[#a5b4fc] hover:text-white"
               >
                 {copy.understandFlow} <ArrowRight className="h-3.5 w-3.5" />

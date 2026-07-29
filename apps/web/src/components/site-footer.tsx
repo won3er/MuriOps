@@ -60,6 +60,14 @@ export function SiteFooter() {
                 <li key={item.href}>
                   <Link
                     href={href(item.href)}
+                    target={
+                      item.href.startsWith("mailto:") ? undefined : "_blank"
+                    }
+                    rel={
+                      item.href.startsWith("mailto:")
+                        ? undefined
+                        : "noreferrer"
+                    }
                     className="text-muted-foreground hover:text-foreground"
                   >
                     {item.label}

@@ -5,6 +5,7 @@ import { env } from "../config/env.js";
 import { prisma } from "../infrastructure/database/prisma.js";
 
 const googleClient = env.GOOGLE_CLIENT_ID ? new OAuth2Client(env.GOOGLE_CLIENT_ID) : null;
+const CURRENT_TERMS_VERSION = "2026-07-28";
 
 export class AuthError extends Error {
   constructor(
@@ -37,6 +38,8 @@ export const authService = {
           name: input.name,
           email: input.email.toLowerCase(),
           passwordHash,
+          termsAcceptedAt: new Date(),
+          termsVersion: CURRENT_TERMS_VERSION,
           organizationId: org.id,
         },
         include: { organization: { include: { subscription: true } } },
@@ -61,6 +64,16 @@ export const authService = {
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) throw new AuthError("Credenciais inválidas", 401);
 
+    if (user.termsVersion !== CURRENT_TERMS_VERSION) {
+      return prisma.user.update({
+        where: { id: user.id },
+        data: {
+          termsAcceptedAt: new Date(),
+          termsVersion: CURRENT_TERMS_VERSION,
+        },
+        include: { organization: { include: { subscription: true } } },
+      });
+    }
     return user;
   },
 
@@ -104,7 +117,22 @@ export const authService = {
         // (mesmo comportamento de uma conta criada direto via Google).
         return prisma.user.update({
           where: { id: existing.id },
-          data: { googleId, passwordHash: null },
+          data: {
+            googleId,
+            passwordHash: null,
+            termsAcceptedAt: new Date(),
+            termsVersion: CURRENT_TERMS_VERSION,
+          },
+          include: { organization: { include: { subscription: true } } },
+        });
+      }
+      if (existing.termsVersion !== CURRENT_TERMS_VERSION) {
+        return prisma.user.update({
+          where: { id: existing.id },
+          data: {
+            termsAcceptedAt: new Date(),
+            termsVersion: CURRENT_TERMS_VERSION,
+          },
           include: { organization: { include: { subscription: true } } },
         });
       }
@@ -119,7 +147,14 @@ export const authService = {
         },
       });
       return tx.user.create({
-        data: { name, email, googleId, organizationId: org.id },
+        data: {
+          name,
+          email,
+          googleId,
+          termsAcceptedAt: new Date(),
+          termsVersion: CURRENT_TERMS_VERSION,
+          organizationId: org.id,
+        },
         include: { organization: { include: { subscription: true } } },
       });
     });

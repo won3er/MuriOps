@@ -57,7 +57,7 @@ export const LEGAL_COPY = {
           title: "1. Account and organization data",
           paragraphs: [
             "We store information required for authentication and workspace operation, such as name, email, Google identifier when used and organization membership. Passwords are stored as derived values, not plain text.",
-            "The browser stores the authenticated session token locally and a strictly functional cookie remembers the selected interface language. MuriOps currently does not use advertising or behavioral analytics cookies.",
+            "The browser stores the authenticated session token locally. Strictly functional cookies remember the selected interface language and whether the cookie notice was acknowledged. MuriOps currently does not use advertising or behavioral analytics cookies.",
           ],
         },
         {
@@ -159,7 +159,7 @@ export const LEGAL_COPY = {
           title: "1. Dados de conta e organização",
           paragraphs: [
             "Armazenamos informações necessárias para autenticação e operação do workspace, como nome, e-mail, identificador do Google quando usado e vínculo com a organização. Senhas são armazenadas de forma derivada, não em texto puro.",
-            "O navegador armazena localmente o token da sessão autenticada e um cookie estritamente funcional memoriza o idioma escolhido para a interface. O MuriOps atualmente não usa cookies de publicidade nem de análise comportamental.",
+            "O navegador armazena localmente o token da sessão autenticada. Cookies estritamente funcionais memorizam o idioma escolhido e se o aviso de cookies foi reconhecido. O MuriOps atualmente não usa cookies de publicidade nem de análise comportamental.",
           ],
         },
         {
@@ -261,7 +261,7 @@ export const LEGAL_COPY = {
           title: "1. Datos de cuenta y organización",
           paragraphs: [
             "Almacenamos información necesaria para la autenticación y operación del workspace, como nombre, email, identificador de Google cuando se usa y vínculo con la organización. Las contraseñas se almacenan como valores derivados, no en texto plano.",
-            "El navegador almacena localmente el token de la sesión autenticada y una cookie estrictamente funcional recuerda el idioma elegido para la interfaz. MuriOps actualmente no utiliza cookies publicitarias ni de analítica del comportamiento.",
+            "El navegador almacena localmente el token de la sesión autenticada. Las cookies estrictamente funcionales recuerdan el idioma elegido y si se reconoció el aviso de cookies. MuriOps actualmente no utiliza cookies publicitarias ni de analítica del comportamiento.",
           ],
         },
         {

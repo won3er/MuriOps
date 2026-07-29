@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
 import { useLocale } from "@/lib/locale-context";
 import { AUTH_COPY } from "@/lib/public-copy";
+import { TermsAcceptance } from "@/components/terms-acceptance";
 
 function RegisterForm() {
   const { register } = useAuth();
@@ -23,13 +24,15 @@ function RegisterForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (!acceptedTerms) return;
     setBusy(true);
     setError(null);
     try {
-      await register(name.trim(), email.trim(), password);
+      await register(name.trim(), email.trim(), password, true);
     } catch (err) {
       setError(err instanceof Error ? err.message : copy.error);
       setBusy(false);
@@ -52,7 +55,12 @@ function RegisterForm() {
       }
     >
       <div className="space-y-6">
-        <GoogleSignInButton />
+        <TermsAcceptance
+          checked={acceptedTerms}
+          onChange={setAcceptedTerms}
+          disabled={busy}
+        />
+        <GoogleSignInButton enabled={acceptedTerms} />
 
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <div className="h-px flex-1 bg-border" />
@@ -147,7 +155,11 @@ function RegisterForm() {
               {error}
             </div>
           )}
-          <Button type="submit" className="w-full" disabled={busy}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={busy || !acceptedTerms}
+          >
             {busy ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" /> {copy.submitting}
@@ -158,23 +170,6 @@ function RegisterForm() {
           </Button>
         </form>
 
-        <p className="text-center text-xs leading-5 text-muted-foreground">
-          {copy.termsBefore}{" "}
-          <Link
-            href={href("/termos")}
-            className="text-foreground hover:underline"
-          >
-            {copy.terms}
-          </Link>{" "}
-          {copy.termsJoin}{" "}
-          <Link
-            href={href("/privacidade")}
-            className="text-foreground hover:underline"
-          >
-            {copy.privacy}
-          </Link>
-          .
-        </p>
         <p className="text-center text-sm text-muted-foreground">
           {copy.haveAccount}{" "}
           <Link

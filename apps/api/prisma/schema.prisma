@@ -49,6 +49,9 @@ model User {
   passwordHash   String?
   // Preenchido só para contas criadas/logadas via "Entrar com Google".
   googleId       String?  @unique
+  // Registro da versão vigente aceita durante autenticação/cadastro.
+  termsAcceptedAt DateTime?
+  termsVersion    String?
   organizationId String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

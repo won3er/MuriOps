@@ -16,34 +16,36 @@ export const LANDING_COPY = {
     cycleTitle: "Five workflows, one workspace",
     cycleDescription:
       "From the first diagnosis to improvement tracking, every stage preserves project context and prepares the next decision.",
-    howItWorks: "How it works",
+    howItWorks: "From input to tracked work",
+    howItWorksDescription:
+      "The main workflow connects three real outputs: a diagnosis or plan, an Application checklist, and execution progress.",
     steps: [
       {
         n: "01",
-        title: "Paste the URL",
-        desc: "No installation, plugin or source-code access required.",
+        title: "Choose the source",
+        desc: "Run a website analysis, generate a product blueprint, or inspect a dependency manifest.",
       },
       {
         n: "02",
-        title: "MuriOps analyzes",
-        desc: "The crawler explores pages while analyzers identify issues.",
+        title: "Review the result",
+        desc: "Inspect findings, evidence, risks, quality gates, or upgrade items before taking action.",
       },
       {
         n: "03",
-        title: "Read the report",
-        desc: "Scores by dimension, prioritized issues and evidence for each finding.",
+        title: "Send to Application",
+        desc: "Convert the selected output into a prioritized checklist with context and instructions.",
       },
       {
         n: "04",
-        title: "Apply the fixes",
-        desc: "Export the Application plan and fix issues manually or with your development AI.",
+        title: "Execute and track",
+        desc: "Work manually, through the universal bridge or MCP, or with a configured adapter; then track item status and reanalysis.",
       },
     ],
     application: {
       eyebrow: "Application",
-      title: "The report does not end as a PDF",
+      title: "One execution plan for every source",
       description:
-        "Application turns findings into a concrete change plan: what to change, where and how. Download one document for your team or send the package to the development AI you already use. It applies fixes and marks each item complete here in real time.",
+        "Application receives completed analyses, blueprints and dependency upgrades, then organizes the selected output as a prioritized checklist. Export it as PDF, expose it through the universal bridge or MCP, or use a configured GitHub, WordPress, Shopify or FTP adapter for the actions that integration supports. Item status remains visible in the workspace.",
       badges: [
         "Single document",
         "Package for development AI",
@@ -70,7 +72,10 @@ export const LANDING_COPY = {
           "Accessibility",
           "Labels, alternatives, focus and keyboard navigation (WCAG).",
         ],
-        ["Security", "Headers, HTTPS, CSP, TLS, DNS and exposed secrets."],
+        [
+          "Passive security checks",
+          "HTTPS/TLS, security headers, cookie flags, CORS, DNS email records, exposed files and known client-library versions; no attack payloads or penetration testing.",
+        ],
         [
           "Console & network",
           "JavaScript errors, failed requests and heavy resources.",
@@ -102,34 +107,36 @@ export const LANDING_COPY = {
     cycleTitle: "Cinco frentes, um só workspace",
     cycleDescription:
       "Do primeiro diagnóstico ao acompanhamento das melhorias, cada etapa preserva o contexto do projeto e prepara a próxima decisão.",
-    howItWorks: "Como funciona",
+    howItWorks: "Da origem ao trabalho acompanhado",
+    howItWorksDescription:
+      "O fluxo principal conecta três resultados reais: um diagnóstico ou plano, um checklist em Aplicação e o acompanhamento da execução.",
     steps: [
       {
         n: "01",
-        title: "Cole a URL",
-        desc: "Sem instalar nada, sem plugin, sem acesso ao seu código.",
+        title: "Escolha a origem",
+        desc: "Execute uma análise de site, gere um blueprint de produto ou investigue um manifesto de dependências.",
       },
       {
         n: "02",
-        title: "O MuriOps analisa",
-        desc: "O crawler explora as páginas e os analisadores levantam os problemas.",
+        title: "Revise o resultado",
+        desc: "Confira achados, evidências, riscos, quality gates ou itens de atualização antes de agir.",
       },
       {
         n: "03",
-        title: "Leia o relatório",
-        desc: "Nota por dimensão, problemas priorizados e evidência de cada um.",
+        title: "Envie para Aplicação",
+        desc: "Converta o resultado selecionado em checklist priorizado, com contexto e instruções.",
       },
       {
         n: "04",
-        title: "Aplique as correções",
-        desc: "Exporte a Aplicação e corrija — manualmente ou via IA de desenvolvimento.",
+        title: "Execute e acompanhe",
+        desc: "Trabalhe manualmente, pela ponte universal ou MCP, ou com um adapter configurado; depois acompanhe status e reanálise.",
       },
     ],
     application: {
       eyebrow: "Aplicação",
-      title: "O relatório não para no PDF",
+      title: "Um plano de execução para cada origem",
       description:
-        "A Aplicação transforma os achados em um plano de mudanças concreto: o que alterar, em qual arquivo e como. Baixe um documento único para o time ou envie o pacote para a IA de desenvolvimento que você já usa. Ela aplica as correções e marca cada item como feito aqui, em tempo real.",
+        "Aplicação recebe análises concluídas, blueprints e planos de atualização de dependências e organiza o resultado selecionado como checklist priorizado. Exporte em PDF, disponibilize pela ponte universal ou MCP, ou use um adapter configurado de GitHub, WordPress, Shopify ou FTP nas ações que a integração suporta. O status dos itens permanece visível no workspace.",
       badges: ["Documento único", "Pacote para IA de dev", "Checklist ao vivo"],
       planStatus: "Plano de aplicação · 2 de 3 aplicados",
       checklist: [
@@ -152,7 +159,10 @@ export const LANDING_COPY = {
           "Acessibilidade",
           "Labels, textos alternativos, foco e teclado (WCAG).",
         ],
-        ["Segurança", "Headers, HTTPS, CSP, TLS, DNS e segredos expostos."],
+        [
+          "Segurança passiva",
+          "HTTPS/TLS, headers, flags de cookies, CORS, registros DNS de e-mail, arquivos expostos e versões conhecidas de bibliotecas; sem payloads de ataque ou pentest.",
+        ],
         [
           "Console & rede",
           "Erros de JavaScript, requisições quebradas e recursos pesados.",
@@ -184,34 +194,36 @@ export const LANDING_COPY = {
     cycleTitle: "Cinco frentes, un solo workspace",
     cycleDescription:
       "Desde el primer diagnóstico hasta el seguimiento de las mejoras, cada etapa conserva el contexto del proyecto y prepara la próxima decisión.",
-    howItWorks: "Cómo funciona",
+    howItWorks: "Del origen al trabajo acompañado",
+    howItWorksDescription:
+      "El flujo principal conecta tres resultados reales: un diagnóstico o plan, un checklist en Aplicación y el seguimiento de la ejecución.",
     steps: [
       {
         n: "01",
-        title: "Pega la URL",
-        desc: "Sin instalar nada, sin plugins y sin acceso al código fuente.",
+        title: "Elige el origen",
+        desc: "Ejecuta un análisis del sitio, genera un blueprint de producto o revisa un manifiesto de dependencias.",
       },
       {
         n: "02",
-        title: "MuriOps analiza",
-        desc: "El crawler explora las páginas y los analizadores detectan problemas.",
+        title: "Revisa el resultado",
+        desc: "Comprueba hallazgos, evidencias, riesgos, quality gates o elementos de actualización antes de actuar.",
       },
       {
         n: "03",
-        title: "Lee el informe",
-        desc: "Puntuación por dimensión, problemas priorizados y evidencia de cada hallazgo.",
+        title: "Envía a Aplicación",
+        desc: "Convierte el resultado seleccionado en un checklist priorizado con contexto e instrucciones.",
       },
       {
         n: "04",
-        title: "Aplica las correcciones",
-        desc: "Exporta el plan de Aplicación y corrige manualmente o con tu IA de desarrollo.",
+        title: "Ejecuta y acompaña",
+        desc: "Trabaja manualmente, con el puente universal o MCP, o con un adapter configurado; después acompaña estados y reanálisis.",
       },
     ],
     application: {
       eyebrow: "Aplicación",
-      title: "El informe no termina en un PDF",
+      title: "Un plan de ejecución para cada origen",
       description:
-        "Aplicación convierte los hallazgos en un plan de cambios concreto: qué modificar, dónde y cómo. Descarga un documento para tu equipo o envía el paquete a la IA de desarrollo que ya utilizas. Ella aplica las correcciones y marca cada elemento como completado aquí, en tiempo real.",
+        "Aplicación recibe análisis completados, blueprints y planes de actualización de dependencias, y organiza el resultado seleccionado como checklist priorizado. Expórtalo en PDF, publícalo mediante el puente universal o MCP, o usa un adapter configurado de GitHub, WordPress, Shopify o FTP para las acciones compatibles. El estado permanece visible en el workspace.",
       badges: [
         "Documento único",
         "Paquete para IA de desarrollo",
@@ -241,7 +253,10 @@ export const LANDING_COPY = {
           "Accesibilidad",
           "Etiquetas, alternativas, foco y navegación por teclado (WCAG).",
         ],
-        ["Seguridad", "Headers, HTTPS, CSP, TLS, DNS y secretos expuestos."],
+        [
+          "Seguridad pasiva",
+          "HTTPS/TLS, headers, flags de cookies, CORS, registros DNS de correo, archivos expuestos y versiones conocidas de bibliotecas; sin payloads de ataque ni pentest.",
+        ],
         [
           "Consola y red",
           "Errores de JavaScript, solicitudes fallidas y recursos pesados.",
@@ -276,7 +291,7 @@ export const FEATURE_COPY = {
         eyebrow: "Diagnosis",
         heading: "Find problems with evidence, not assumptions",
         description:
-          "The crawler explores the website and gathers UI/UX, performance, SEO, accessibility, console, network and security findings into one prioritized report.",
+          "Standard QA Analysis crawls pages and checks UI/UX, performance, SEO, accessibility, console and network behavior. The separate Security Analysis performs passive TLS, DNS, HTTP-header, CORS and exposure checks without attack payloads or penetration testing.",
         outcomes: [
           "Score by dimension",
           "Evidence per finding",
@@ -353,7 +368,7 @@ export const FEATURE_COPY = {
         eyebrow: "Diagnóstico",
         heading: "Encontre problemas com evidências, não com suposições",
         description:
-          "O crawler percorre o site e reúne achados de UI/UX, performance, SEO, acessibilidade, console, rede e segurança em um relatório priorizado.",
+          "A Análise QA padrão percorre páginas e verifica UI/UX, performance, SEO, acessibilidade, console e rede. A Análise de Segurança, executada separadamente, faz checagens passivas de TLS, DNS, headers HTTP, CORS e exposições, sem payloads de ataque ou pentest.",
         outcomes: [
           "Score por dimensão",
           "Evidências por achado",
@@ -434,7 +449,7 @@ export const FEATURE_COPY = {
         eyebrow: "Diagnóstico",
         heading: "Encuentra problemas con evidencia, no con suposiciones",
         description:
-          "El crawler recorre el sitio y reúne hallazgos de UI/UX, rendimiento, SEO, accesibilidad, consola, red y seguridad en un informe priorizado.",
+          "El Análisis QA estándar recorre páginas y revisa UI/UX, rendimiento, SEO, accesibilidad, consola y red. El Análisis de Seguridad, ejecutado por separado, realiza comprobaciones pasivas de TLS, DNS, headers HTTP, CORS y exposiciones, sin payloads de ataque ni pentest.",
         outcomes: [
           "Puntuación por dimensión",
           "Evidencia por hallazgo",

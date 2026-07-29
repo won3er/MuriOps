@@ -16,12 +16,14 @@ export interface RegisterRequest {
   name: string;
   email: string;
   password: string;
+  acceptTerms: true;
   organizationName?: string;
 }
 
 export interface LoginRequest {
   email: string;
   password: string;
+  acceptTerms: true;
 }
 
 export interface CreateProjectRequest {

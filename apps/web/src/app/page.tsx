@@ -101,10 +101,13 @@ export default function LandingPage() {
           <FeatureShowcase />
         </section>
 
-        {/* Como funciona */}
+        {/* Fluxo operacional */}
         <section className="mt-28">
           <div className="mb-10 text-center">
             <h2 className="text-3xl font-semibold">{copy.howItWorks}</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
+              {copy.howItWorksDescription}
+            </p>
           </div>
           <ol className="relative grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div

@@ -33,7 +33,7 @@ const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
  * server-side, o navegador troca o token direto com o Google e a gente só
  * valida o ID token resultante no backend (/auth/google).
  */
-export function GoogleSignInButton() {
+export function GoogleSignInButton({ enabled = true }: { enabled?: boolean }) {
   const { loginWithGoogle } = useAuth();
   const { locale } = useLocale();
   const copy = AUTH_COPY[locale].login;
@@ -44,7 +44,7 @@ export function GoogleSignInButton() {
     async (resp: { credential: string }) => {
       setBusy(true);
       try {
-        await loginWithGoogle(resp.credential);
+        await loginWithGoogle(resp.credential, true);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : copy.googleError);
         setBusy(false);
@@ -70,6 +70,17 @@ export function GoogleSignInButton() {
   }, [handleCredential, locale]);
 
   if (!CLIENT_ID) return null;
+  if (!enabled) {
+    return (
+      <div className="rounded-md border bg-muted/20 px-3 py-2 text-center text-xs text-muted-foreground">
+        {locale === "pt"
+          ? "Aceite os termos para continuar com o Google."
+          : locale === "es"
+            ? "Acepta los términos para continuar con Google."
+            : "Accept the terms to continue with Google."}
+      </div>
+    );
+  }
 
   return (
     <div className="flex w-full flex-col items-center gap-2">

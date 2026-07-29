@@ -64,7 +64,7 @@ export const DOCS_COPY = {
           description: "In Analyses, choose the project and verification type.",
           items: [
             "Standard QA Analysis covers UI/UX, performance, SEO, accessibility, console and network.",
-            "Security Analysis performs dedicated security checks.",
+            "Security Analysis performs passive TLS/certificate, DNS, HTTP-header, cookie, CORS, exposed-file, HTTP-method and client-library version checks. It does not send attack payloads or replace a penetration test.",
             "Wait for completion before comparing scores or creating an application.",
           ],
         },
@@ -316,7 +316,7 @@ export const DOCS_COPY = {
             "Em Análises, escolha o projeto e o tipo de verificação.",
           items: [
             "Análise QA padrão cobre UI/UX, performance, SEO, acessibilidade, console e rede.",
-            "Análise de Segurança executa verificações específicas de segurança.",
+            "Análise de Segurança verifica passivamente TLS/certificado, DNS, headers HTTP, cookies, CORS, arquivos expostos, métodos HTTP e versões de bibliotecas do cliente. Ela não envia payloads de ataque nem substitui um pentest.",
             "Aguarde a conclusão antes de comparar scores ou criar uma aplicação.",
           ],
         },
@@ -568,7 +568,7 @@ export const DOCS_COPY = {
             "En Análisis, elige el proyecto y el tipo de verificación.",
           items: [
             "Análisis QA estándar cubre UI/UX, rendimiento, SEO, accesibilidad, consola y red.",
-            "Análisis de Seguridad realiza verificaciones específicas de seguridad.",
+            "Análisis de Seguridad comprueba pasivamente TLS/certificado, DNS, headers HTTP, cookies, CORS, archivos expuestos, métodos HTTP y versiones de bibliotecas del cliente. No envía payloads de ataque ni sustituye un pentest.",
             "Espera a que termine antes de comparar puntuaciones o crear una aplicación.",
           ],
         },

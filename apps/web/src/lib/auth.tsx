@@ -22,13 +22,14 @@ interface AuthContextValue {
    * deixava a home parecendo quebrada.
    */
   hasSession: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, acceptTerms: true) => Promise<void>;
   register: (
     name: string,
     email: string,
     password: string,
+    acceptTerms: true,
   ) => Promise<void>;
-  loginWithGoogle: (credential: string) => Promise<void>;
+  loginWithGoogle: (credential: string, acceptTerms: true) => Promise<void>;
   logout: () => void;
 }
 
@@ -84,16 +85,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     plan,
     loading,
     hasSession,
-    login: async (email, password) => {
-      apply(await api.login({ email, password }));
+    login: async (email, password, acceptTerms) => {
+      apply(await api.login({ email, password, acceptTerms }));
       router.push("/dashboard");
     },
-    register: async (name, email, password) => {
-      apply(await api.register({ name, email, password }));
+    register: async (name, email, password, acceptTerms) => {
+      apply(await api.register({ name, email, password, acceptTerms }));
       router.push("/dashboard");
     },
-    loginWithGoogle: async (credential) => {
-      apply(await api.loginWithGoogle(credential));
+    loginWithGoogle: async (credential, acceptTerms) => {
+      apply(await api.loginWithGoogle(credential, acceptTerms));
       router.push("/dashboard");
     },
     logout: () => {

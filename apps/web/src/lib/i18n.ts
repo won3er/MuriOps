@@ -87,21 +87,21 @@ export const SEO_COPY: Record<
   en: {
     title: "MuriOps (Muri Ops) — Continuous Website Quality Management",
     description:
-      "MuriOps turns website QA findings into prioritized, actionable improvement cycles across UX, performance, SEO, accessibility and security.",
+      "MuriOps connects website QA findings across UX, performance, SEO, accessibility, console/network behavior and passive security configuration checks to prioritized, trackable work.",
     shortDescription:
       "Continuous quality management for digital products, from diagnosis to implementation.",
   },
   pt: {
     title: "MuriOps (Muri Ops) — Gestão contínua de qualidade digital",
     description:
-      "O MuriOps transforma achados de QA em ciclos priorizados e aplicáveis de melhoria para UX, performance, SEO, acessibilidade e segurança.",
+      "O MuriOps conecta achados de QA em UX, performance, SEO, acessibilidade, console/rede e verificações passivas de configuração de segurança a trabalho priorizado e rastreável.",
     shortDescription:
       "Gestão contínua de qualidade para produtos digitais, do diagnóstico à aplicação.",
   },
   es: {
     title: "MuriOps (Muri Ops) — Gestión continua de calidad digital",
     description:
-      "MuriOps convierte hallazgos de QA en ciclos de mejora priorizados y aplicables para UX, rendimiento, SEO, accesibilidad y seguridad.",
+      "MuriOps conecta hallazgos de QA en UX, rendimiento, SEO, accesibilidad, consola/red y verificaciones pasivas de configuración de seguridad con trabajo priorizado y rastreable.",
     shortDescription:
       "Gestión continua de calidad para productos digitales, del diagnóstico a la aplicación.",
   },

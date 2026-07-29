@@ -6,16 +6,19 @@ const registerSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(8),
+  acceptTerms: z.literal(true),
   organizationName: z.string().min(2).optional(),
 });
 
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+  acceptTerms: z.literal(true),
 });
 
 const googleSchema = z.object({
   credential: z.string().min(10),
+  acceptTerms: z.literal(true),
 });
 
 // Limite estrito contra brute force / enumeração de credenciais.

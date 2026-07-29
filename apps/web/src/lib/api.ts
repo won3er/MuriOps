@@ -99,10 +99,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  loginWithGoogle: (credential: string) =>
+  loginWithGoogle: (credential: string, acceptTerms: true) =>
     request<AuthSession>("/auth/google", {
       method: "POST",
-      body: JSON.stringify({ credential }),
+      body: JSON.stringify({ credential, acceptTerms }),
     }),
   me: () => request<AuthSession>("/auth/me"),
   downloadAccountData: async () => {

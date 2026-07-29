@@ -47,6 +47,8 @@ export const accountService = {
             email: true,
             createdAt: true,
             updatedAt: true,
+            termsAcceptedAt: true,
+            termsVersion: true,
             passwordHash: true,
             googleId: true,
           },
