@@ -245,22 +245,29 @@ export async function maybeAutoResumeFromPlan(planId: string): Promise<void> {
 /**
  * Avança o loop de reconciliação: analisa → avalia quality gates → (se não
  * passou) gera plano de remediação → aplica pelo adapter da conexão (se
- * houver) → para em `AWAITING_APPLY` esperando aprovação humana (autonomia
- * MANUAL, a única que funciona de fato — Fase 4 trata Supervisionado/Autônomo).
- * Cada chamada avança só até o próximo ponto de espera; retomar (aprovar ou
- * receber uma observação do adapter) chama de novo via a fila.
+ * houver) → decide se para pra aprovação humana ou segue sozinho, conforme o
+ * nível de autonomia do projeto. Cada chamada avança só até o próximo ponto
+ * de espera; retomar (aprovar ou receber uma observação do adapter) chama de
+ * novo via a fila.
+ *
+ * Os três níveis diferem em UM ponto só — o que fazer depois de aplicar:
+ * - MANUAL: sempre para e espera aprovação humana.
+ * - SUPERVISED: segue sozinho quando a aplicação deu certo por completo e a
+ *   nota não piorou; para pra revisão se algum item falhou ou se houve
+ *   regressão (sinal de que a correção fez mal).
+ * - AUTONOMOUS: segue sozinho enquanto houver o que aplicar, até bater os
+ *   gates ou o limite de iterações.
+ *
+ * Regra comum aos três: só dá pra seguir sozinho quando existe um adapter
+ * *push* que de fato aplicou algo. Sem isso (nenhuma conexão, ou conexão
+ * *pull* como MCP/ponte), quem aplica é um ator externo — seguir automático
+ * só reanalisaria um site inalterado, queimando a chave de IA do usuário à
+ * toa. Nesse caso os três níveis esperam igual, e a execução retoma sozinha
+ * via `maybeAutoResumeFromPlan` quando os itens forem marcados como feitos.
  */
 export async function advance(runId: string): Promise<void> {
   const run = await prisma.orchestrationRun.findUnique({ where: { id: runId } });
   if (!run) return;
-
-  if (run.autonomyLevel !== "MANUAL") {
-    await failRun(
-      runId,
-      `Nível de autonomia "${run.autonomyLevel}" ainda não tem execução automática implementada (Fase 4). Use MANUAL.`,
-    );
-    return;
-  }
 
   try {
     await prisma.orchestrationRun.update({
@@ -325,6 +332,22 @@ export async function advance(runId: string): Promise<void> {
       analysisId: analysis.id,
     });
 
+    // Nota da iteração anterior, capturada ANTES de `currentAnalysisId` ser
+    // sobrescrito abaixo — é com ela que a autonomia SUPERVISED detecta
+    // regressão (correção que piorou o site em vez de melhorar).
+    const notaAnterior =
+      run.currentAnalysisId && run.currentAnalysisId !== analysis.id
+        ? (
+            (
+              await prisma.analysis.findUnique({
+                where: { id: run.currentAnalysisId },
+                select: { score: true },
+              })
+            )?.score as unknown as ScoreBreakdown | null
+          )?.overall ?? null
+        : null;
+    const notaAtual = (analysis.score as unknown as ScoreBreakdown).overall;
+
     await prisma.orchestrationRun.update({
       where: { id: runId },
       data: { status: "EVALUATING_GATES", currentAnalysisId: analysis.id },
@@ -380,8 +403,9 @@ export async function advance(runId: string): Promise<void> {
     });
 
     // ---- APPLYING ----
+    let outcome: ApplyOutcome = { mode: "none", applied: 0, failed: 0 };
     if (run.adapterConnectionId) {
-      await applyViaAdapter(
+      outcome = await applyViaAdapter(
         runId,
         run.adapterConnectionId,
         run.organizationId,
@@ -396,15 +420,126 @@ export async function advance(runId: string): Promise<void> {
       );
     }
 
-    await prisma.orchestrationRun.update({ where: { id: runId }, data: { status: "AWAITING_APPLY" } });
-    await logEvent(
-      runId,
-      "APPLY_REQUESTED",
-      "Aguardando aprovação humana pra reanalisar (aprove manualmente, ou o adapter observa e retoma sozinho).",
+    // ---- DECISÃO DE AUTONOMIA ----
+    const decisao = decidirProximoPasso(
+      run.autonomyLevel,
+      outcome,
+      notaAnterior,
+      notaAtual,
     );
+
+    if (decisao.seguirSozinho) {
+      const proximaIteracao = run.iteration + 1;
+      // updateMany guardado por status (mesmo motivo do approve()): evita que
+      // um trigger concorrente avance a mesma execução duas vezes.
+      const { count } = await prisma.orchestrationRun.updateMany({
+        where: { id: runId, status: "APPLYING" },
+        data: { status: "REANALYZING", iteration: proximaIteracao },
+      });
+      if (count === 0) return;
+
+      await logEvent(runId, "APPLY_APPROVED", decisao.motivo);
+      await logEvent(
+        runId,
+        "ITERATION_ADVANCED",
+        `Iniciando iteração ${proximaIteracao}.`,
+      );
+      await enqueueOrchestrationRun(runId);
+      return;
+    }
+
+    await prisma.orchestrationRun.update({ where: { id: runId }, data: { status: "AWAITING_APPLY" } });
+    await logEvent(runId, "APPLY_REQUESTED", decisao.motivo);
   } catch (err) {
     await failRun(runId, err instanceof Error ? err.message : String(err));
   }
+}
+
+/** Resultado da tentativa de aplicação — alimenta a decisão de autonomia. */
+interface ApplyOutcome {
+  /**
+   * `push` = o orquestrador aplicou de verdade; `pull` = quem aplica é um
+   * ator externo (MCP/ponte); `none` = não havia o que aplicar automaticamente.
+   */
+  mode: "push" | "pull" | "none";
+  applied: number;
+  failed: number;
+}
+
+interface Decisao {
+  seguirSozinho: boolean;
+  motivo: string;
+}
+
+/**
+ * Decide, depois de aplicar, se a execução segue sozinha pra próxima
+ * iteração ou para esperando um humano. É aqui — e só aqui — que os três
+ * níveis de autonomia se diferenciam.
+ *
+ * Trava comum aos três: seguir sozinho exige `mode === "push"` com pelo menos
+ * um item aplicado. Em `pull` (MCP/ponte) quem aplica é a ferramenta externa,
+ * e em `none` não houve aplicação nenhuma — em ambos, avançar só produziria
+ * uma reanálise de um site inalterado, gastando a chave de IA do usuário sem
+ * mudar nada. Nesses casos a execução espera, e retoma sozinha via
+ * `maybeAutoResumeFromPlan` quando os itens forem marcados como feitos.
+ */
+function decidirProximoPasso(
+  autonomyLevel: string,
+  outcome: ApplyOutcome,
+  notaAnterior: number | null,
+  notaAtual: number,
+): Decisao {
+  const esperaPadrao =
+    "Aguardando aprovação humana pra reanalisar (aprove manualmente, ou o adapter observa e retoma sozinho).";
+
+  if (autonomyLevel === "MANUAL") {
+    return { seguirSozinho: false, motivo: esperaPadrao };
+  }
+
+  if (outcome.mode === "pull") {
+    return {
+      seguirSozinho: false,
+      motivo:
+        "Autonomia ativa, mas a aplicação depende da ferramenta externa (MCP/ponte). A execução retoma sozinha quando todos os itens forem marcados como feitos.",
+    };
+  }
+
+  if (outcome.mode === "none" || outcome.applied === 0) {
+    return {
+      seguirSozinho: false,
+      motivo:
+        "Autonomia ativa, mas nenhum item foi aplicado automaticamente (sem adapter de aplicação disponível). Aguardando aplicação/aprovação humana — seguir agora só reanalisaria o site sem nenhuma mudança.",
+    };
+  }
+
+  if (autonomyLevel === "SUPERVISED") {
+    if (outcome.failed > 0) {
+      return {
+        seguirSozinho: false,
+        motivo: `Supervisionado: ${outcome.failed} item(ns) falharam ao ser aplicados — parando pra revisão humana antes de reanalisar.`,
+      };
+    }
+    // Regressão: a rodada anterior existia e a nota piorou. Sinal de que a
+    // correção teve efeito colateral — é exatamente o caso em que o nível
+    // "supervisionado" deve chamar um humano em vez de insistir sozinho.
+    if (notaAnterior !== null && notaAtual < notaAnterior) {
+      return {
+        seguirSozinho: false,
+        motivo: `Supervisionado: a nota caiu de ${notaAnterior} para ${notaAtual} desde a iteração anterior — parando pra revisão humana.`,
+      };
+    }
+    return {
+      seguirSozinho: true,
+      motivo: `Supervisionado: ${outcome.applied} item(ns) aplicados sem falha e sem regressão — seguindo pra reanálise automaticamente.`,
+    };
+  }
+
+  // AUTONOMOUS
+  const nota = outcome.failed > 0 ? ` (${outcome.failed} item(ns) falharam e serão reavaliados na próxima análise)` : "";
+  return {
+    seguirSozinho: true,
+    motivo: `Autônomo: ${outcome.applied} item(ns) aplicados${nota} — seguindo pra reanálise automaticamente.`,
+  };
 }
 
 /**
@@ -425,13 +560,13 @@ async function applyViaAdapter(
   organizationId: string,
   projectId: string,
   items: RemediationItem[],
-): Promise<void> {
+): Promise<ApplyOutcome> {
   const connection = await prisma.adapterConnection.findFirst({
     where: { id: adapterConnectionId, organizationId, projectId },
   });
   if (!connection) {
     await logEvent(runId, "APPLY_REQUESTED", "Conexão de adapter não encontrada — pulando aplicação automática.");
-    return;
+    return { mode: "none", applied: 0, failed: 0 };
   }
 
   // MCP é *pull*: quem aplica é a ferramenta externa (ex.: Claude Code) do
@@ -445,23 +580,27 @@ async function applyViaAdapter(
       "APPLY_REQUESTED",
       "Plano exposto via MCP — aguardando a ferramenta externa (ex.: Claude Code) aplicar e marcar os itens. A execução retoma sozinha quando todos estiverem feitos.",
     );
-    return;
+    return { mode: "pull", applied: 0, failed: 0 };
   }
 
   const adapter = createAdapterFor(connection);
   if (!adapter.apply) {
     await logEvent(runId, "APPLY_REQUESTED", `Adapter ${connection.kind} não implementa apply() — pulando.`);
-    return;
+    return { mode: "none", applied: 0, failed: 0 };
   }
 
+  let applied = 0;
+  let failed = 0;
   for (const item of items.filter((i) => i.status === "pending")) {
     try {
       const result = await adapter.apply(item);
+      applied += 1;
       await logEvent(runId, "APPLY_REQUESTED", `[${connection.kind}] ${result.message}`, {
         itemId: item.id,
         reference: result.reference,
       });
     } catch (err) {
+      failed += 1;
       await logEvent(
         runId,
         "APPLY_REQUESTED",
@@ -470,6 +609,7 @@ async function applyViaAdapter(
       );
     }
   }
+  return { mode: "push", applied, failed };
 }
 
 /** Espera o plano de remediação sair de PENDING (poll simples — geração roda em background no mesmo processo). */

@@ -35,11 +35,24 @@ const CONNECTION_KIND_LABEL: Record<string, string> = {
 const AUTONOMY_OPTIONS: {
   value: AutonomyLevel;
   label: string;
+  hint: string;
   disabled?: boolean;
 }[] = [
-  { value: "MANUAL", label: "Manual" },
-  { value: "SUPERVISED", label: "Supervisionado (em breve)", disabled: true },
-  { value: "AUTONOMOUS", label: "Autônomo (em breve)", disabled: true },
+  {
+    value: "MANUAL",
+    label: "Manual",
+    hint: "Para a cada iteração e espera você aprovar antes de reanalisar.",
+  },
+  {
+    value: "SUPERVISED",
+    label: "Supervisionado",
+    hint: "Segue sozinho quando a aplicação dá certo; para pra revisão se algum item falhar ou se a nota piorar.",
+  },
+  {
+    value: "AUTONOMOUS",
+    label: "Autônomo",
+    hint: "Segue sozinho até bater os quality gates ou o limite de iterações.",
+  },
 ];
 
 const STATUS_LABEL: Record<string, string> = {
@@ -155,8 +168,13 @@ export function OrchestrationPanel({
             ))}
           </div>
           <p className="text-xs text-muted-foreground">
-            Manual: toda aplicação de mudança espera sua aprovação antes de
-            reanalisar. Os demais níveis ainda não executam sozinhos.
+            {AUTONOMY_OPTIONS.find((o) => o.value === autonomyLevel)?.hint}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Seguir sozinho exige uma conexão que aplique de verdade (GitHub,
+            WordPress, Shopify ou FTP). Com MCP/ponte, ou sem conexão, quem
+            aplica é sua ferramenta de desenvolvimento — a execução retoma
+            automaticamente quando os itens forem marcados como feitos.
           </p>
           <ActionError
             error={updateAutonomy.error}

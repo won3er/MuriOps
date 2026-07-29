@@ -57,10 +57,14 @@ function OrquestracaoPageInner() {
       <aside className="flex gap-3 rounded-lg border border-primary/25 bg-primary/[0.06] p-4">
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
         <p className="text-sm leading-6 text-muted-foreground">
-          O modo <strong className="text-foreground">Manual</strong> é o único
-          disponível. Modos Supervisionado e Autônomo permanecem desativados.
-          Adapters podem registrar checklists ou rascunhos sem implementar a
-          correção técnica.
+          <strong className="text-foreground">Manual</strong> espera sua
+          aprovação a cada iteração.{" "}
+          <strong className="text-foreground">Supervisionado</strong> segue
+          sozinho enquanto a aplicação der certo e a nota não piorar.{" "}
+          <strong className="text-foreground">Autônomo</strong> segue até bater
+          os quality gates ou o limite de iterações. Em todos, os adapters
+          registram checklists ou rascunhos — a publicação final continua sendo
+          humana.
         </p>
       </aside>
 
