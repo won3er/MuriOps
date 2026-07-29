@@ -203,7 +203,7 @@ export const DOCS_COPY = {
         [
           "GitHub",
           "Push with approval",
-          "Creates a branch, writes the checklist in .muriops/remediation and opens a pull request.",
+          "For example, creates a separate branch and stores a checklist file in .muriops/remediation inside your repository, then opens a pull request for review.",
           "It does not implement code fixes and never merges.",
         ],
       ],
@@ -422,7 +422,7 @@ export const DOCS_COPY = {
         [
           "GitHub",
           "Push com aprovação",
-          "Cria uma branch, grava o checklist em .muriops/remediation e abre uma pull request.",
+          "Por exemplo, cria uma branch separada e salva um arquivo de checklist em .muriops/remediation dentro do seu repositório; depois abre uma pull request para revisão.",
           "Não implementa a correção de código e nunca faz merge.",
         ],
       ],
@@ -641,7 +641,7 @@ export const DOCS_COPY = {
         [
           "GitHub",
           "Push con aprobación",
-          "Crea una branch, escribe el checklist en .muriops/remediation y abre una pull request.",
+          "Por ejemplo, crea una branch separada y guarda un archivo de checklist en .muriops/remediation dentro de tu repositorio; luego abre una pull request para revisión.",
           "No implementa la corrección de código y nunca hace merge.",
         ],
       ],

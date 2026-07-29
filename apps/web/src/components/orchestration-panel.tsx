@@ -179,7 +179,7 @@ export function OrchestrationPanel({
           </p>
           <p className="text-xs text-muted-foreground">
             Seguir sozinho exige uma conexão que aplique de verdade (GitHub,
-            WordPress, Shopify ou FTP). Com MCP/ponte, ou sem conexão, quem
+            GitHub). Com MCP/ponte, ou sem conexão, quem
             aplica é sua ferramenta de desenvolvimento — a execução retoma
             automaticamente quando os itens forem marcados como feitos.
           </p>
