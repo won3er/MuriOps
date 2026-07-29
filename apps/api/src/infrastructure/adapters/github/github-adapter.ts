@@ -24,7 +24,7 @@ interface GithubPr {
  * plano (como MCP/ponte manual), o próprio Atlas age no GitHub. Mas
  * `RemediationItem` só carrega instrução (`howTo`), não um diff de código —
  * então "aplicar" aqui é abrir uma branch com um checklist rastreável
- * (`.atlas-qa/remediation/<item>.md`) e uma PR referenciando o item, nunca
+ * (`.muriops/remediation/<item>.md`) e uma PR referenciando o item, nunca
  * commitar a correção de código em si. A PR é o checkpoint de aprovação
  * humana da autonomia manual: este adapter nunca faz merge sozinho.
  */
@@ -52,10 +52,10 @@ export class GithubAdapter implements Adapter {
     const defaultBranch = repo.default_branch;
     const baseSha = await this.getBranchSha(defaultBranch);
 
-    const branch = `atlas-qa/${slugify(item.id)}`;
+    const branch = `muriops/${slugify(item.id)}`;
     await this.ensureBranch(branch, baseSha);
 
-    const path = `.atlas-qa/remediation/${slugify(item.id)}.md`;
+    const path = `.muriops/remediation/${slugify(item.id)}.md`;
     await this.upsertFile(branch, path, renderChecklist(item));
 
     const pr = await this.findOrCreatePr(branch, defaultBranch, item);

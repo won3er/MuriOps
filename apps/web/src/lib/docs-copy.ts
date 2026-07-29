@@ -203,7 +203,7 @@ export const DOCS_COPY = {
         [
           "GitHub",
           "Push with approval",
-          "Creates a branch, writes the checklist in .atlas-qa/remediation and opens a pull request.",
+          "Creates a branch, writes the checklist in .muriops/remediation and opens a pull request.",
           "It does not implement code fixes and never merges.",
         ],
       ],
@@ -422,7 +422,7 @@ export const DOCS_COPY = {
         [
           "GitHub",
           "Push com aprovação",
-          "Cria uma branch, grava o checklist em .atlas-qa/remediation e abre uma pull request.",
+          "Cria uma branch, grava o checklist em .muriops/remediation e abre uma pull request.",
           "Não implementa a correção de código e nunca faz merge.",
         ],
       ],
@@ -641,7 +641,7 @@ export const DOCS_COPY = {
         [
           "GitHub",
           "Push con aprobación",
-          "Crea una branch, escribe el checklist en .atlas-qa/remediation y abre una pull request.",
+          "Crea una branch, escribe el checklist en .muriops/remediation y abre una pull request.",
           "No implementa la corrección de código y nunca hace merge.",
         ],
       ],

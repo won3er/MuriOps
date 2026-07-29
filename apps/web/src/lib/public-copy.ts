@@ -55,7 +55,7 @@ export const LANDING_COPY = {
       checklist: [
         "Add meta description",
         "Fix primary button contrast",
-        "Define Content-Security-Policy",
+        "Review Content-Security-Policy",
       ],
     },
     coverage: {
@@ -85,9 +85,9 @@ export const LANDING_COPY = {
     },
     cta: {
       eyebrow: "Your next decision, with context",
-      title: "Discover what is holding back your website quality",
+      title: "Turn website signals into an informed next action",
       description:
-        "The first analysis takes a few minutes and requires no changes to your project.",
+        "Start with a non-invasive QA analysis, see evidence by category, then decide what your team should address first.",
       dashboard: "Go to Dashboard",
       start: "Start now",
     },
@@ -142,7 +142,7 @@ export const LANDING_COPY = {
       checklist: [
         "Adicionar meta description",
         "Corrigir contraste do botão principal",
-        "Definir Content-Security-Policy",
+        "Revisar Content-Security-Policy",
       ],
     },
     coverage: {
@@ -172,9 +172,9 @@ export const LANDING_COPY = {
     },
     cta: {
       eyebrow: "Próxima decisão, com contexto",
-      title: "Descubra o que está travando a qualidade do seu site",
+      title: "Transforme sinais do seu site na próxima ação certa",
       description:
-        "A primeira análise leva alguns minutos e não exige nenhuma mudança no seu projeto.",
+        "Comece com uma análise QA não invasiva, veja evidências por categoria e decida com clareza o que o time deve tratar primeiro.",
       dashboard: "Ir para o Dashboard",
       start: "Começar agora",
     },
@@ -233,7 +233,7 @@ export const LANDING_COPY = {
       checklist: [
         "Añadir meta description",
         "Corregir el contraste del botón principal",
-        "Definir Content-Security-Policy",
+        "Revisar Content-Security-Policy",
       ],
     },
     coverage: {
@@ -266,9 +266,9 @@ export const LANDING_COPY = {
     },
     cta: {
       eyebrow: "Tu próxima decisión, con contexto",
-      title: "Descubre qué está frenando la calidad de tu sitio",
+      title: "Convierte las señales de tu sitio en la próxima acción correcta",
       description:
-        "El primer análisis tarda unos minutos y no exige cambios en tu proyecto.",
+        "Empieza con un análisis QA no invasivo, revisa evidencias por categoría y decide qué debe atender primero tu equipo.",
       dashboard: "Ir al Dashboard",
       start: "Empezar ahora",
     },

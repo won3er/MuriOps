@@ -150,7 +150,7 @@ export function GithubConnectionPanel({ projectId }: { projectId: string }) {
           <div className="grid gap-2 sm:grid-cols-3">
             <Input
               aria-label="Proprietário do repositório"
-              placeholder="owner (ex: won3er)"
+              placeholder="proprietário do repositório"
               value={owner}
               onChange={(e) => setOwner(e.target.value)}
             />

@@ -20,7 +20,7 @@ interface McpScope {
  */
 export function buildMcpServer(scope: McpScope): McpServer {
   const server = new McpServer(
-    { name: "atlas-qa", version: "1.0.0" },
+    { name: "muriops", version: "1.0.0" },
     { capabilities: { resources: {}, tools: {} } },
   );
 
