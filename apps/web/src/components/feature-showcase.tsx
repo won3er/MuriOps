@@ -269,13 +269,6 @@ export function FeatureShowcase() {
                 key={`image-${current.key}`}
                 className="feature-stage-enter relative overflow-hidden bg-[#090d12]"
               >
-                <div
-                  className={cn(
-                    "pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b to-transparent",
-                    current.accent,
-                  )}
-                  aria-hidden="true"
-                />
                 <div className="relative z-0">
                   <ProductPreview feature={current.key} />
                 </div>
