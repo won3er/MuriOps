@@ -17,7 +17,7 @@ Atualizado em 29/07/2026.
 | Análise → Aplicação | Aprovado | Plano de aplicação gerado com 7 itens para a análise QA v2. |
 | Projetar → Aplicação | Aprovado | Um blueprint técnico do laboratório foi gerado e convertido em checklist de 9 itens, com briefing para desenvolvimento sem publicação ou merge automático. |
 | Conexão GitHub | Aprovado | Token fine-grained restrito ao laboratório, com `Contents` e `Pull requests` em leitura/escrita; conexão validada e salva no MuriOps. |
-| Orquestração com GitHub | Aprovado | A primeira tentativa parou corretamente sem análise no projeto. Depois da análise QA v1 (99/100), o gate controlado de 100 gerou plano e abriu três pull requests de checklist no repositório de laboratório, sem merge automático. A execução ficou em “Aguardando aprovação”, como previsto para modo Manual. |
+| Orquestração com GitHub | Aprovado | A primeira tentativa parou corretamente sem análise no projeto. Depois da análise QA v1 (99/100), o gate controlado de 100 gerou plano e abriu três pull requests de checklist no repositório de laboratório, sem merge automático. A execução ficou em “Aguardando aprovação”, como previsto para modo Manual, e foi cancelada ao fim do teste. |
 | MCP | Parcialmente aprovado | Conexão criada e endpoint HTTP validado com `initialize` e `tools/list` (ambos 200). A marcação de item por ferramenta externa ainda precisa ser validada num cliente MCP real. |
 | Atualizações via GitHub | Aprovado | Leitura do repositório encontrou 1 `package.json`, reconheceu Node.js e gerou um plano de baixo risco. O envio “Atualizar → Aplicação” também criou o checklist de dependência corretamente. |
 | Integridade do resumo de IA | Corrigido e verificado localmente | Quando não houver achados válidos, o sistema agora usa uma conclusão determinística; a IA não pode apresentar notas ou riscos que não existam na coleta. |
@@ -27,7 +27,7 @@ Atualizado em 29/07/2026.
 - O GitHub cria branch, checklist e pull request; não altera código de produto nem faz merge automático.
 - O teste usa somente o repositório e o site públicos de laboratório.
 - Cabeçalhos HTTP que o GitHub Pages não permite configurar nativamente permanecem apontamentos de infraestrutura, não correções aplicáveis diretamente pelo repositório.
-- O teste de orquestração adicionou o gate `Teste controlado de integração` (100) ao projeto de laboratório; ele deve ser removido ou ajustado antes de reutilizar esse projeto fora do teste.
+- O gate temporário `Teste controlado de integração` (100) foi removido ao final do teste; o projeto de laboratório voltou a não ter gates configurados.
 
 ## Verificação local
 
