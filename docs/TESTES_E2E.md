@@ -13,7 +13,7 @@ Atualizado em 29/07/2026.
 | Fluxo | Situação | Evidência / próximo passo |
 | --- | --- | --- |
 | Análise QA padrão | Aprovado | O crawler identificou a referência de CSS incorreta; após a correção no repositório, a análise seguinte não registrou erros de console/rede. |
-| Análise de Segurança | Aprovado | O laboratório estático foi percorrido com uma página e sem achados acionáveis. A interface exibiu score geral 100/100. |
+| Análise de Segurança | Aprovado com ressalva de infraestrutura | O laboratório estático foi percorrido. Em uma execução, os alertas de DNS e headers foram descartados pela revisão contextual; em outra, a revisão de IA ficou indisponível e os 10 achados brutos foram preservados com aviso explícito. Isso evita apresentar uma conclusão inventada. Cabeçalhos e DNS de `github.io` não são corrigíveis pelo repositório do laboratório. |
 | Análise → Aplicação | Aprovado | Plano de aplicação gerado com 7 itens para a análise QA v2. |
 | Projetar → Aplicação | Aprovado | Um blueprint técnico do laboratório foi gerado e convertido em checklist de 9 itens, com briefing para desenvolvimento sem publicação ou merge automático. |
 | Conexão GitHub | Aprovado | Token fine-grained restrito ao laboratório, com `Contents` e `Pull requests` em leitura/escrita; conexão validada e salva no MuriOps. |
