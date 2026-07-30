@@ -24,6 +24,7 @@ const CATEGORY_WEIGHT: Record<AnalysisCategory, number> = {
   CONSOLE: 0.7,
   NETWORK: 1,
   DEEP_SECURITY: 1.5,
+  ACTIVE_SECURITY_TEST: 1.5,
 };
 
 export function computeScores(issues: DetectedIssue[]): ScoreBreakdown {

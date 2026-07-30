@@ -7,6 +7,7 @@ import {
   BACKUP_PATHS,
   DIR_LISTING_PATHS,
   SECRET_PATHS,
+  SERVER_TECH_FINGERPRINTS,
   VULNERABLE_JS_LIBS,
 } from "./paths.js";
 import {
@@ -68,6 +69,7 @@ export class DeepSecurityAnalyzer implements SiteAnalyzer {
       this.checkSecurityTxt(origin, add),
       this.checkAdvancedHeaders(pages[0]!, add),
       this.checkCors(origin, add),
+      this.checkServerTech(pages[0]!, add),
     ]);
 
     // Checagens de DOM — roda na primeira página (representativa; evita
@@ -295,7 +297,7 @@ export class DeepSecurityAnalyzer implements SiteAnalyzer {
     add: (t: string, d: string, s: Severity, k: string, r?: string | null) => void,
   ): Promise<void> {
     const result = await ctx.page
-      .evaluate(() => {
+      .evaluate((libs) => {
         const passwordNoAutocompleteOff = [
           ...document.querySelectorAll('input[type="password"]'),
         ].some((el) => el.getAttribute("autocomplete") !== "off" && el.getAttribute("autocomplete") !== "new-password");
@@ -320,9 +322,26 @@ export class DeepSecurityAnalyzer implements SiteAnalyzer {
           ...document.querySelectorAll('img[src^="http://"], script[src^="http://"], link[href^="http://"]'),
         ].length;
 
-        // Fingerprint mínimo de libs JS vulneráveis (só lê versão exposta pela lib, não executa nada extra).
-        const jq = (window as unknown as { jQuery?: { fn?: { jquery?: string } } }).jQuery;
-        const jqueryVersion = jq?.fn?.jquery ?? null;
+        // Fingerprint de libs JS vulneráveis — só lê a versão que a própria
+        // lib expõe em `window`, não baixa nem executa nada além disso.
+        const readGlobalVersion = (globalName: string, propPath: string): string | null => {
+          const root = (window as unknown as Record<string, unknown>)[globalName];
+          if (root == null) return null;
+          let cur: unknown = root;
+          for (const part of propPath.split(".")) {
+            if (cur == null || typeof cur !== "object") return null;
+            cur = (cur as Record<string, unknown>)[part];
+          }
+          return typeof cur === "string" ? cur : null;
+        };
+
+        const detectedLibs = libs
+          .map((lib) => ({ name: lib.name, cve: lib.cve, belowVersion: lib.belowVersion, version: readGlobalVersion(lib.globalCheck, lib.versionProp) }))
+          .filter((l): l is { name: string; cve: string; belowVersion: string; version: string } => !!l.version);
+
+        const generator = document
+          .querySelector('meta[name="generator"]')
+          ?.getAttribute("content") ?? null;
 
         return {
           passwordNoAutocompleteOff,
@@ -330,9 +349,10 @@ export class DeepSecurityAnalyzer implements SiteAnalyzer {
           emailCount: emailMatches ? emailMatches.length : 0,
           mailtoCount,
           mixedContent,
-          jqueryVersion,
+          generator,
+          detectedLibs,
         };
-      })
+      }, VULNERABLE_JS_LIBS)
       .catch(() => null);
 
     if (!result) return;
@@ -373,16 +393,49 @@ export class DeepSecurityAnalyzer implements SiteAnalyzer {
       );
     }
 
-    if (result.jqueryVersion) {
-      const lib = VULNERABLE_JS_LIBS[0]!;
-      if (compareVersions(result.jqueryVersion, lib.belowVersion) < 0) {
+    for (const lib of result.detectedLibs) {
+      if (compareVersions(lib.version, lib.belowVersion) < 0) {
         add(
           "Dependências — Biblioteca JS desatualizada com CVE conhecida",
-          `jQuery ${result.jqueryVersion} detectado (vulnerável abaixo de ${lib.belowVersion}). ${lib.cve}. Atualize para a versão mais recente.`,
+          `${lib.name} ${lib.version} detectado (vulnerável abaixo de ${lib.belowVersion}). ${lib.cve}. Atualize para a versão mais recente.`,
           Severity.MEDIUM,
-          "outdated-jquery",
+          `outdated-lib:${lib.name}`,
         );
       }
+    }
+
+    if (result.generator) {
+      for (const fp of SERVER_TECH_FINGERPRINTS) {
+        const match = result.generator.match(
+          new RegExp(`${fp.name}\\s+([0-9]+(?:\\.[0-9]+)*)`, "i"),
+        );
+        if (match && compareVersions(match[1]!, fp.belowVersion) < 0) {
+          add(
+            "Dependências — Tecnologia de servidor desatualizada",
+            `${fp.name} ${match[1]} detectado via meta tag "generator" (referência mínima considerada: ${fp.belowVersion}). ${fp.note}`,
+            Severity.MEDIUM,
+            `outdated-tech:${fp.name}`,
+          );
+        }
+      }
+    }
+  }
+
+  private async checkServerTech(
+    firstPage: PageContext,
+    add: (t: string, d: string, s: Severity, k: string, r?: string | null) => void,
+  ): Promise<void> {
+    const poweredBy = firstPage.responseHeaders["x-powered-by"];
+    if (!poweredBy) return;
+    const phpMatch = poweredBy.match(/PHP\/([0-9]+(?:\.[0-9]+)*)/i);
+    const phpFingerprint = SERVER_TECH_FINGERPRINTS.find((f) => f.name === "PHP");
+    if (phpMatch && phpFingerprint && compareVersions(phpMatch[1]!, phpFingerprint.belowVersion) < 0) {
+      add(
+        "Dependências — PHP desatualizado/fora de suporte",
+        `Header "X-Powered-By" expõe PHP ${phpMatch[1]} (referência mínima considerada: ${phpFingerprint.belowVersion}). ${phpFingerprint.note} Considere também remover esse header (não expor a versão publicamente).`,
+        Severity.MEDIUM,
+        "outdated-tech:PHP",
+      );
     }
   }
 }

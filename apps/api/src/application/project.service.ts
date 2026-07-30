@@ -118,6 +118,42 @@ export const projectService = {
     });
     return toDto(updated);
   },
+
+  /**
+   * Registra (ou revoga) o consentimento de Teste Ativo Autorizado —
+   * fica gravado com quem e quando confirmou, mesmo espírito de auditoria
+   * das outras confirmações explícitas do produto (ex.: exclusão de conta).
+   * Este é o único lugar que grava `activeTestingConsent = true`; o gate
+   * de verdade que impede a categoria de rodar sem isso fica em
+   * analysis.service.ts (ConsentRequiredError).
+   */
+  async updateActiveTestingConsent(
+    organizationId: string,
+    id: string,
+    userId: string,
+    consent: boolean,
+  ): Promise<Project> {
+    const project = await prisma.project.findFirst({
+      where: { id, organizationId },
+      select: { id: true },
+    });
+    if (!project) throw new NotFoundError("Projeto não encontrado");
+    const updated = await prisma.project.update({
+      where: { id },
+      data: consent
+        ? {
+            activeTestingConsent: true,
+            activeTestingConsentAt: new Date(),
+            activeTestingConsentByUserId: userId,
+          }
+        : {
+            activeTestingConsent: false,
+            activeTestingConsentAt: null,
+            activeTestingConsentByUserId: null,
+          },
+    });
+    return toDto(updated);
+  },
 };
 
 function toDto(p: {
@@ -129,6 +165,8 @@ function toDto(p: {
   autonomyLevel: string;
   createdAt: Date;
   updatedAt: Date;
+  activeTestingConsent: boolean;
+  activeTestingConsentAt: Date | null;
 }): Project {
   return {
     id: p.id,
@@ -139,5 +177,7 @@ function toDto(p: {
     autonomyLevel: p.autonomyLevel as Project["autonomyLevel"],
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
+    activeTestingConsent: p.activeTestingConsent,
+    activeTestingConsentAt: p.activeTestingConsentAt?.toISOString() ?? null,
   };
 }

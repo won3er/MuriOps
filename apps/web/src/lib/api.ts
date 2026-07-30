@@ -165,6 +165,12 @@ export const api = {
       body: JSON.stringify({ autonomyLevel }),
     }),
 
+  updateActiveTestingConsent: (id: string, consent: boolean) =>
+    request<Project>(`/projects/${id}/active-testing-consent`, {
+      method: "PATCH",
+      body: JSON.stringify({ consent }),
+    }),
+
   // ---- adapter MCP (Fase 1) ----
   getMcpConnection: (projectId: string) =>
     request<(AdapterConnection & { mcpUrl: string }) | { configured: false }>(

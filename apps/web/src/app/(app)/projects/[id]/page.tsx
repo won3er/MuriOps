@@ -12,6 +12,7 @@ import {
   Loader2,
   Settings2,
   ShieldAlert,
+  ShieldCheck,
   Trash2,
   Wrench,
 } from "lucide-react";
@@ -56,6 +57,9 @@ export default function ProjectDetailPage() {
   const [loadError, setLoadError] = useState<unknown>(null);
   const [analysesError, setAnalysesError] = useState<unknown>(null);
   const [actionError, setActionError] = useState<unknown>(null);
+  const [consentFormOpen, setConsentFormOpen] = useState(false);
+  const [savingConsent, setSavingConsent] = useState(false);
+  const [consentError, setConsentError] = useState<unknown>(null);
   const {
     data: remediationPlans = [],
     isError: remediationError,
@@ -123,6 +127,35 @@ export default function ProjectDetailPage() {
     } catch (error) {
       setActionError(error);
       setDeletingProject(false);
+    }
+  }
+
+  async function grantActiveTestingConsent() {
+    setSavingConsent(true);
+    setConsentError(null);
+    try {
+      const updated = await api.updateActiveTestingConsent(id, true);
+      setProject((current) => (current ? { ...current, ...updated } : current));
+      setConsentFormOpen(false);
+    } catch (error) {
+      setConsentError(error);
+    } finally {
+      setSavingConsent(false);
+    }
+  }
+
+  async function revokeActiveTestingConsent() {
+    if (!confirm("Revogar o consentimento de Teste Ativo Autorizado para este projeto?"))
+      return;
+    setSavingConsent(true);
+    setConsentError(null);
+    try {
+      const updated = await api.updateActiveTestingConsent(id, false);
+      setProject((current) => (current ? { ...current, ...updated } : current));
+    } catch (error) {
+      setConsentError(error);
+    } finally {
+      setSavingConsent(false);
     }
   }
 
@@ -525,6 +558,95 @@ export default function ProjectDetailPage() {
                 </div>
               </CardContent>
             </Card>
+          </section>
+
+          <section className="rounded-lg border p-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              <p className="text-sm font-medium">Teste Ativo Autorizado</p>
+            </div>
+            <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
+              Modo opt-in da Análise de Segurança: testa rate-limit de login,
+              indícios de enumeração de usuário e payloads de detecção
+              limitados contra os formulários do próprio site. Sem isso
+              marcado, essa categoria nunca roda.
+            </p>
+
+            {project?.activeTestingConsent ? (
+              <div className="mt-3 space-y-2">
+                <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-300">
+                  Autorizado
+                </Badge>
+                {project.activeTestingConsentAt && (
+                  <p className="text-xs text-muted-foreground">
+                    Confirmado em{" "}
+                    {new Intl.DateTimeFormat("pt-BR", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    }).format(new Date(project.activeTestingConsentAt))}
+                  </p>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="px-0 text-muted-foreground hover:text-foreground"
+                  disabled={savingConsent}
+                  onClick={revokeActiveTestingConsent}
+                >
+                  {savingConsent ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : null}
+                  Revogar autorização
+                </Button>
+              </div>
+            ) : consentFormOpen ? (
+              <div className="mt-3 space-y-3 rounded-md border border-primary/30 bg-primary/[0.04] p-3">
+                <p className="text-xs leading-5">
+                  Confirmo que sou o proprietário deste site (
+                  <span className="font-medium">{project?.url}</span>) ou
+                  tenho autorização por escrito do proprietário para realizar
+                  testes de segurança ativos, incluindo tentativas de força
+                  bruta em login e envio de payloads de detecção contra
+                  formulários. Entendo que essa ação fica registrada com meu
+                  usuário e o horário da confirmação.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    disabled={savingConsent}
+                    onClick={grantActiveTestingConsent}
+                  >
+                    {savingConsent ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : null}
+                    Confirmar e autorizar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={savingConsent}
+                    onClick={() => setConsentFormOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() => setConsentFormOpen(true)}
+              >
+                Habilitar
+              </Button>
+            )}
+
+            {consentError && (
+              <p className="mt-2 text-xs text-destructive">
+                Não foi possível salvar. Tente novamente.
+              </p>
+            )}
           </section>
 
           <section className="rounded-lg border border-destructive/25 p-4">

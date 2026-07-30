@@ -1,6 +1,7 @@
 import type { AnalysisCategory } from "@qa-ai/shared";
 import type { PageAnalyzer, SiteAnalyzer } from "../types.js";
 import { AccessibilityAnalyzer } from "./accessibility.analyzer.js";
+import { ActiveSecurityTestAnalyzer } from "./active-security-test/active-security-test.analyzer.js";
 import { ConsoleAnalyzer } from "./console.analyzer.js";
 import { DeepSecurityAnalyzer } from "./deep-security/deep-security.analyzer.js";
 import { NetworkAnalyzer } from "./network.analyzer.js";
@@ -22,14 +23,23 @@ export const PAGE_ANALYZERS: Record<AnalysisCategory, PageAnalyzer[]> = {
   CONSOLE: [new ConsoleAnalyzer()],
   NETWORK: [new NetworkAnalyzer()],
   DEEP_SECURITY: [],
+  ACTIVE_SECURITY_TEST: [],
 };
 
-/** Módulos de nível site (rodam sobre o conjunto de páginas). */
+/**
+ * Módulos de nível site (rodam sobre o conjunto de páginas).
+ *
+ * ACTIVE_SECURITY_TEST é opt-in — o gate de verdade (bloqueia a categoria se
+ * o projeto não tiver `activeTestingConsent`) fica em analysis.service.ts,
+ * antes mesmo de a análise ser enfileirada. Aqui ela só é registrada como
+ * qualquer outra categoria; nunca roda sozinha sem ter sido pedida E aprovada.
+ */
 export const SITE_ANALYZERS: Record<string, SiteAnalyzer[]> = {
   UX: [new UxAnalyzer()],
   SEO: [new SiteSeoAnalyzer()],
   SECURITY: [new SecurityAnalyzer()],
   DEEP_SECURITY: [new DeepSecurityAnalyzer()],
+  ACTIVE_SECURITY_TEST: [new ActiveSecurityTestAnalyzer()],
 };
 
 /** Seleciona os analyzers por-página para as categorias solicitadas. */

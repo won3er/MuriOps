@@ -25,6 +25,16 @@ export class AnalysisConflictError extends Error {
   readonly statusCode = 409;
 }
 
+/**
+ * ACTIVE_SECURITY_TEST pedida sem `project.activeTestingConsent = true`.
+ * Este é o ponto de verdade do gate — mesmo que alguém monte a requisição
+ * manualmente pedindo a categoria, ela nunca roda sem o consentimento
+ * gravado no projeto (ver projectService.updateActiveTestingConsent).
+ */
+export class ConsentRequiredError extends Error {
+  readonly statusCode = 403;
+}
+
 export const analysisService = {
   /**
    * Hub "Análise": todas as análises da organização, de qualquer projeto,
@@ -66,6 +76,17 @@ export const analysisService = {
     );
 
     const categories = normalizeCategories(input.categories);
+
+    // Gate de verdade do Teste Ativo Autorizado: mesmo que a categoria seja
+    // pedida explicitamente no request, ela só roda se o projeto tiver o
+    // consentimento gravado (ver projectService.updateActiveTestingConsent).
+    // Isso não pode ser decidido só no frontend — qualquer chamada direta à
+    // API precisa passar por aqui.
+    if (categories.includes("ACTIVE_SECURITY_TEST") && !project.activeTestingConsent) {
+      throw new ConsentRequiredError(
+        "O Teste Ativo Autorizado exige consentimento explícito para este projeto. Confirme em Projeto → Segurança que você tem autorização para testar este site ativamente antes de incluir essa categoria na análise.",
+      );
+    }
 
     // Ponto de verdade contra SSRF: StartAnalysisRequest.url deixa
     // sobrescrever a URL do projeto por request, então validar só no
@@ -278,9 +299,12 @@ export const analysisService = {
   },
 };
 
-// A análise completa "padrão" não inclui DEEP_SECURITY por padrão — é uma
-// auditoria mais pesada (DNS, TLS, varredura de caminhos) e opt-in.
-const DEFAULT_CATEGORIES = ALL_CATEGORIES.filter((c) => c !== "DEEP_SECURITY");
+// A análise completa "padrão" não inclui DEEP_SECURITY (auditoria mais
+// pesada, opt-in) nem ACTIVE_SECURITY_TEST (teste ativo, exige consentimento
+// explícito por projeto — ver ConsentRequiredError abaixo).
+const DEFAULT_CATEGORIES = ALL_CATEGORIES.filter(
+  (c) => c !== "DEEP_SECURITY" && c !== "ACTIVE_SECURITY_TEST",
+);
 
 function normalizeCategories(input?: string[]): AnalysisCategory[] {
   if (!input || input.length === 0) return [...DEFAULT_CATEGORIES];

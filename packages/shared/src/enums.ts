@@ -13,6 +13,13 @@ export const AnalysisCategory = {
   NETWORK: "NETWORK",
   /** Auditoria prática de segurança: TLS, DNS, segredos expostos, headers avançados, etc. */
   DEEP_SECURITY: "DEEP_SECURITY",
+  /**
+   * Teste Ativo Autorizado — opt-in, só roda se o projeto tiver
+   * `activeTestingConsent = true` (checado em analysis.service.ts).
+   * Rate-limit/brute-force, enumeração de usuário e payloads limitados
+   * contra formulários do próprio site. Nunca roda por padrão.
+   */
+  ACTIVE_SECURITY_TEST: "ACTIVE_SECURITY_TEST",
 } as const;
 export type AnalysisCategory =
   (typeof AnalysisCategory)[keyof typeof AnalysisCategory];

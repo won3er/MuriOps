@@ -45,6 +45,31 @@ aplicar de verdade na plataforma real do cliente ou automatizar o ciclo inteiro.
 2. **Análise** (`/analyses`) — hub próprio (não fica mais dentro de Projetos): roda e
    lista "Análise QA padrão" e "Análise de Segurança" de qualquer projeto, com botão
    "Enviar para Aplicação" quando concluída.
+   **Teste Ativo Autorizado (30/07/2026, implementado neste agente, ainda não
+   testado ao vivo):** terceira categoria opt-in, `ACTIVE_SECURITY_TEST`
+   (`apps/api/src/modules/analysis/analyzers/active-security-test/`). Diferente de
+   tudo mais no produto, envia requisições ativas contra o site do projeto: repete
+   tentativas de login pra medir rate-limit, compara respostas de duas credenciais
+   inválidas pra indício de enumeração de usuário, e manda um punhado curado de
+   payloads de detecção (SQLi/XSS/path traversal/template injection — não
+   exploração de verdade) contra os formulários que o crawl encontrou, com um
+   circuit breaker que aborta se o alvo começar a devolver 5xx em sequência e um
+   User-Agent próprio (`MuriOps-SecurityScan/1.0`) identificando o scan nos logs
+   do alvo. **Gate de consentimento é o ponto central do design:** a categoria só
+   roda se `Project.activeTestingConsent = true`, e o único lugar que grava isso é
+   `projectService.updateActiveTestingConsent` (`PATCH
+   /projects/:id/active-testing-consent`), acionado pela seção "Teste Ativo
+   Autorizado" na página do projeto, que exige o usuário ler e confirmar uma
+   declaração de autorização (fica registrado quem e quando). O gate de verdade —
+   que não pode ser burlado só editando o request — fica em
+   `analysis.service.ts.start()`: se `categories` incluir `ACTIVE_SECURITY_TEST`
+   sem o projeto ter consentimento, lança `ConsentRequiredError` (403) antes de
+   sequer enfileirar a análise. `DEFAULT_CATEGORIES` exclui essa categoria (e
+   `DEEP_SECURITY`) da análise "padrão" — nunca roda sem ser pedida explicitamente
+   E consentida. **Pendente de validação:** rodar de verdade contra um site real
+   com consentimento marcado pra confirmar que o `discoverForms`/payload probing
+   funciona como esperado — só foi revisado por leitura de código, sandbox sem
+   `tsc` funcional pra validar tipos (ver nota de sandbox na seção Stack).
 3. **Projetar** (`/blueprints`) — descreve um projeto, IA gera arquitetura, stack,
    estratégia de teste, riscos, quality gates, roadmap. Botão "Enviar para Aplicação".
 4. **Aplicação** (`/aplicacao`) — o executor final de tudo que Análise/Projetar/

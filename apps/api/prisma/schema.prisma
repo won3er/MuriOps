@@ -96,6 +96,14 @@ model Project {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
+  // Consentimento pra "Teste Ativo Autorizado" (Análise de Segurança, modo
+  // opt-in) — rate-limit/enumeração/payloads limitados contra o próprio
+  // site do projeto. Sem isso marcado, a categoria ACTIVE_SECURITY_TEST
+  // nunca roda, mesmo se pedida na análise (checado em analysis.service.ts).
+  activeTestingConsent         Boolean   @default(false)
+  activeTestingConsentAt       DateTime?
+  activeTestingConsentByUserId String?
+
   organization       Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   analyses            Analysis[]
   orchestrationRuns    OrchestrationRun[]

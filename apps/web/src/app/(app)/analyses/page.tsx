@@ -6,6 +6,7 @@ import {
   Loader2,
   Play,
   ShieldAlert,
+  Swords,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -22,6 +23,10 @@ import { cn, formatDuration, scoreColor, timeAgo } from "@/lib/utils";
 
 function isSecurityAudit(categories: string[]): boolean {
   return categories.length === 1 && categories[0] === "DEEP_SECURITY";
+}
+
+function isActiveTest(categories: string[]): boolean {
+  return categories.length === 1 && categories[0] === "ACTIVE_SECURITY_TEST";
 }
 
 export default function AnalysesHubPage() {
@@ -57,22 +62,30 @@ function AnalysesHub() {
     refetch,
   } = useAnalysesList();
   const [projectId, setProjectId] = useState("");
-  const [startingType, setStartingType] = useState<"qa" | "security" | null>(
-    null,
-  );
+  const [startingType, setStartingType] = useState<
+    "qa" | "security" | "active" | null
+  >(null);
 
   useEffect(() => {
     const requestedProject = searchParams.get("projectId");
     if (requestedProject) setProjectId(requestedProject);
   }, [searchParams]);
 
-  async function start(type: "qa" | "security") {
+  const selectedProject = projects.find((p) => p.id === projectId);
+
+  async function start(type: "qa" | "security" | "active") {
     if (!projectId) return;
     setStartingType(type);
     try {
+      const categories =
+        type === "security"
+          ? ["DEEP_SECURITY"]
+          : type === "active"
+            ? ["ACTIVE_SECURITY_TEST"]
+            : undefined;
       const analysis = await api.startAnalysis(
         projectId,
-        type === "security" ? { categories: ["DEEP_SECURITY"] } : {},
+        categories ? { categories } : {},
       );
       router.push(`/analyses/${analysis.id}`);
     } catch (error) {
@@ -145,7 +158,7 @@ function AnalysesHub() {
               )
             )}
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <button
               type="button"
               onClick={() => start("qa")}
@@ -183,6 +196,37 @@ function AnalysesHub() {
                 </strong>
                 <span className="mt-1 block text-xs leading-5 text-muted-foreground">
                   TLS, DNS, headers, políticas e exposições indevidas.
+                </span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => start("active")}
+              disabled={
+                !projectId ||
+                startingType !== null ||
+                !selectedProject?.activeTestingConsent
+              }
+              title={
+                projectId && !selectedProject?.activeTestingConsent
+                  ? "Habilite o consentimento na página do projeto primeiro"
+                  : undefined
+              }
+              className="group flex gap-3 rounded-md border p-4 text-left hover:border-primary/50 hover:bg-accent/30 disabled:pointer-events-none disabled:opacity-50"
+            >
+              {startingType === "active" ? (
+                <Loader2 className="h-5 w-5 animate-spin text-rose-400" />
+              ) : (
+                <Swords className="h-5 w-5 text-rose-400" />
+              )}
+              <span>
+                <strong className="block text-sm font-medium">
+                  Teste Ativo Autorizado
+                </strong>
+                <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                  {projectId && !selectedProject?.activeTestingConsent
+                    ? "Requer consentimento — habilite na página do projeto."
+                    : "Rate-limit, enumeração de usuário e payloads de detecção."}
                 </span>
               </span>
             </button>
@@ -226,6 +270,7 @@ function AnalysesHub() {
             <div className="divide-y">
               {analyses.map((analysis) => {
                 const security = isSecurityAudit(analysis.categories);
+                const active = isActiveTest(analysis.categories);
                 return (
                   <Link
                     key={analysis.id}
@@ -244,6 +289,11 @@ function AnalysesHub() {
                         {security && (
                           <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-300">
                             Segurança
+                          </Badge>
+                        )}
+                        {active && (
+                          <Badge className="border-rose-500/30 bg-rose-500/10 text-rose-300">
+                            Teste ativo
                           </Badge>
                         )}
                       </div>

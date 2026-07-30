@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   AnalysisConflictError,
   analysisService,
+  ConsentRequiredError,
   NotFoundError,
 } from "../../application/analysis.service.js";
 import { prisma } from "../../infrastructure/database/prisma.js";
@@ -41,6 +42,10 @@ export async function analysisRoutes(app: FastifyInstance): Promise<void> {
         return reply
           .status(409)
           .send({ statusCode: 409, error: "Conflict", message: err.message });
+      if (err instanceof ConsentRequiredError)
+        return reply
+          .status(403)
+          .send({ statusCode: 403, error: "ConsentRequired", message: err.message });
       throw err;
     }
   };

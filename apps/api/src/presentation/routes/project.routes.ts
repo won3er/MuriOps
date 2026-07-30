@@ -23,6 +23,10 @@ const updateAutonomySchema = z.object({
   autonomyLevel: z.enum(["MANUAL", "SUPERVISED", "AUTONOMOUS"]),
 });
 
+const updateActiveTestingConsentSchema = z.object({
+  consent: z.boolean(),
+});
+
 const githubConnectionSchema = z.object({
   owner: z.string().min(1),
   repo: z.string().min(1),
@@ -31,7 +35,7 @@ const githubConnectionSchema = z.object({
 
 const createGateSchema = z.object({
   category: z
-    .enum(["UI", "UX", "PERFORMANCE", "SEO", "ACCESSIBILITY", "SECURITY", "CONSOLE", "NETWORK", "DEEP_SECURITY"])
+    .enum(["UI", "UX", "PERFORMANCE", "SEO", "ACCESSIBILITY", "SECURITY", "CONSOLE", "NETWORK", "DEEP_SECURITY", "ACTIVE_SECURITY_TEST"])
     .nullable()
     .optional(),
   minScore: z.number().int().min(0).max(100),
@@ -259,6 +263,28 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
         req.user.organizationId,
         id,
         autonomyLevel,
+      );
+    } catch (err) {
+      if (err instanceof NotFoundError)
+        return reply
+          .status(404)
+          .send({ statusCode: 404, error: "NotFound", message: err.message });
+      throw err;
+    }
+  });
+
+  // Consentimento de Teste Ativo Autorizado (Análise de Segurança, opt-in) —
+  // sem isso marcado, a categoria ACTIVE_SECURITY_TEST nunca roda pra este
+  // projeto (gate de verdade em analysis.service.ts).
+  app.patch("/projects/:id/active-testing-consent", async (req, reply) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const { consent } = updateActiveTestingConsentSchema.parse(req.body);
+    try {
+      return await projectService.updateActiveTestingConsent(
+        req.user.organizationId,
+        id,
+        req.user.sub,
+        consent,
       );
     } catch (err) {
       if (err instanceof NotFoundError)
