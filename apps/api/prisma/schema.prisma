@@ -175,6 +175,7 @@ enum AnalysisCategory {
   CONSOLE
   NETWORK
   DEEP_SECURITY
+  ACTIVE_SECURITY_TEST
 }
 
 enum Severity {

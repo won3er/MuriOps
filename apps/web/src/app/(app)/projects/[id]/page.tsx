@@ -642,11 +642,11 @@ export default function ProjectDetailPage() {
               </Button>
             )}
 
-            {consentError && (
+            {consentError ? (
               <p className="mt-2 text-xs text-destructive">
                 Não foi possível salvar. Tente novamente.
               </p>
-            )}
+            ) : null}
           </section>
 
           <section className="rounded-lg border border-destructive/25 p-4">
