@@ -35,10 +35,13 @@ Foi criado um workspace novo por login Google e um novo projeto `MuriOps E2E Lab
 | Projetar → Aplicação | Aprovado | Blueprint gerado e convertido em plano com briefing para desenvolvimento. Sem chave de IA, a interface identifica corretamente o modo-base `noop` e não inventa recomendações específicas. |
 | Atualizar → Aplicação | Aprovado | Manifesto Node.js com `next`, `react` e `typescript` reconhecido; plano de atualização e checklist de Aplicação criados. Sem chave de IA, a interface preserva a necessidade de verificação manual. |
 | Orquestração Manual | Aprovado | Usou a análise existente, avaliou o conjunto vazio de quality gates e persistiu o estado final “Passou nos quality gates”. |
+| Atualizações via GitHub | Aprovado | A investigação leu `won3er/muriops-e2e-lab`, encontrou 1 manifesto e gerou o plano consolidado sem acessar ou alterar código fora do repositório autorizado. |
+| Orquestração com GitHub | Aprovado | Um gate controlado de 100 com score 99 gerou plano e abriu uma pull request de checklist. A execução Manual ficou aguardando aprovação e foi cancelada; o gate temporário foi removido. |
+| Webhook GitHub | Aprovado | Webhook assinado, com SSL e somente o evento `pull_request`, foi configurado no repositório de laboratório; o GitHub confirmou o ping de criação. |
 
 ### Pendência externa desse workspace
 
-- A conexão GitHub é deliberadamente isolada por organização. Para testar investigação de repositório e abertura de pull request neste novo workspace, é necessário cadastrar aqui um PAT fine-grained com acesso ao repositório de laboratório. O token anterior do workspace de demonstração não é herdado nem exibido.
+- A conexão GitHub é deliberadamente isolada por organização. O token do workspace de demonstração não é herdado nem exibido; o novo workspace foi conectado por um PAT fine-grained restrito ao repositório de laboratório, com expiração curta e permissões mínimas de `Contents` e `Pull requests`.
 
 ## Limites confirmados
 
