@@ -13,6 +13,34 @@ const saveSchema = z.object({
   apiKey: z.string().min(10),
 });
 
+type AiProvider = (typeof AI_PROVIDER_NAMES)[number];
+
+/**
+ * Evita a falha mais comum de configuração: salvar uma chave de um provedor
+ * em outro. Não tenta "adivinhar" nem trocar o provedor automaticamente,
+ * porque a escolha explícita continua sendo da organização.
+ *
+ * A validação é deliberadamente conservadora: só rejeita formatos que são
+ * inequivocamente de outro provedor. Outros formatos seguem para a API
+ * correspondente, que continua sendo a autoridade final de autenticação.
+ */
+function providerKeyMismatch(
+  provider: AiProvider,
+  apiKey: string,
+): string | null {
+  const key = apiKey.trim();
+  if (key.startsWith("AIza") && provider !== "gemini") {
+    return "Esta chave parece ser do Gemini. Selecione Gemini (Google) antes de salvar.";
+  }
+  if (key.startsWith("sk-ant-") && provider !== "claude") {
+    return "Esta chave parece ser do Claude. Selecione Claude (Anthropic) antes de salvar.";
+  }
+  if (key.startsWith("sk-") && provider === "gemini") {
+    return "Esta chave parece ser do Claude ou da OpenAI. Uma chave Gemini normalmente começa com AIza.";
+  }
+  return null;
+}
+
 /**
  * Configuração de IA por organização: cada conta usa a própria chave
  * (Claude, OpenAI ou Gemini) — não existe chave padrão compartilhada do
@@ -44,6 +72,14 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
 
   app.put("/settings/ai", async (req, reply) => {
     const body = saveSchema.parse(req.body);
+    const mismatch = providerKeyMismatch(body.provider, body.apiKey);
+    if (mismatch) {
+      return reply.status(400).send({
+        statusCode: 400,
+        error: "ProviderKeyMismatch",
+        message: mismatch,
+      });
+    }
     await prisma.organization.update({
       where: { id: req.user.organizationId },
       data: {
