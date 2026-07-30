@@ -200,56 +200,6 @@ export const api = {
       { method: "POST", body: JSON.stringify(body) },
     ),
 
-  // ---- adapters de plataforma (Fase 4 — apply real) ----
-  getWordpressConnection: (projectId: string) =>
-    request<
-      | (AdapterConnection & { maskedCredential: string | null })
-      | { configured: false }
-    >(`/projects/${projectId}/wordpress-connection`),
-  connectWordpress: (
-    projectId: string,
-    body: { siteUrl: string; username: string; appPassword: string },
-  ) =>
-    request<AdapterConnection>(`/projects/${projectId}/wordpress-connection`, {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
-
-  getShopifyConnection: (projectId: string) =>
-    request<
-      | (AdapterConnection & { maskedCredential: string | null })
-      | { configured: false }
-    >(`/projects/${projectId}/shopify-connection`),
-  connectShopify: (
-    projectId: string,
-    body: { shopDomain: string; accessToken: string },
-  ) =>
-    request<AdapterConnection>(`/projects/${projectId}/shopify-connection`, {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
-
-  getFtpConnection: (projectId: string) =>
-    request<
-      | (AdapterConnection & { maskedCredential: string | null })
-      | { configured: false }
-    >(`/projects/${projectId}/ftp-connection`),
-  connectFtp: (
-    projectId: string,
-    body: {
-      host: string;
-      port?: number;
-      user: string;
-      password: string;
-      secure?: boolean;
-      remotePath?: string;
-    },
-  ) =>
-    request<AdapterConnection>(`/projects/${projectId}/ftp-connection`, {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
-
   // ---- conexões do projeto (seletor de adapter na Orquestração) ----
   listAdapterConnections: (projectId: string) =>
     request<AdapterConnection[]>(`/projects/${projectId}/adapter-connections`),

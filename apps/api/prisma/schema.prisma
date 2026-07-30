@@ -371,7 +371,7 @@ model UpgradePlan {
 // ---------- Orquestrador + Adapters (núcleo QA-only) ----------
 // O orquestrador analisa um projeto, gera um plano, aplica por um adapter
 // adequado e reanalisa até bater os quality gates. Toda regra de QA e decisão
-// de negócio mora aqui — os adapters (MCP, GitHub, WordPress...) são só
+// de negócio mora aqui — os adapters ativos (MCP e GitHub) são só
 // mecanismos de integração (analyze/apply/observe), nunca donos de lógica.
 
 enum OrchestrationRunStatus {
@@ -470,9 +470,10 @@ enum AdapterKind {
   MCP
   GITHUB
   // Adapters push que aplicam de verdade na plataforma do site (Fase 4).
+  // Valores legados, mantidos no schema porque enums PostgreSQL não permitem
+  // remoção simples. A migration de remoção apaga todas as conexões desses tipos.
   WORDPRESS
   SHOPIFY
-  // Hostinger/Hostgator (e qualquer host com acesso a arquivo) via FTP/FTPS.
   FTP
 }
 

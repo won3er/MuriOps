@@ -1,5 +1,4 @@
 import { randomBytes } from "node:crypto";
-import type { Prisma } from "@prisma/client";
 import type { AdapterConnection } from "@qa-ai/shared";
 import { decryptSecret, encryptSecret, maskSecret } from "../infrastructure/crypto/secret-box.js";
 import { prisma } from "../infrastructure/database/prisma.js";
@@ -167,119 +166,7 @@ export const adapterConnectionService = {
     return { ...toDto(row), maskedToken };
   },
 
-  /** Conexão WordPress (Fase 4 — adapter push por REST API + Application Password). */
-  async upsertWordpressConnection(
-    organizationId: string,
-    projectId: string,
-    userId: string,
-    input: { siteUrl: string; username: string; appPassword: string },
-  ): Promise<AdapterConnection> {
-    return upsertPlatformConnection(organizationId, projectId, userId, {
-      kind: "WORDPRESS",
-      config: { siteUrl: input.siteUrl, username: input.username },
-      secret: input.appPassword,
-    });
-  },
-
-  /** Conexão Shopify (Fase 4 — adapter push via Admin API access token). */
-  async upsertShopifyConnection(
-    organizationId: string,
-    projectId: string,
-    userId: string,
-    input: { shopDomain: string; accessToken: string },
-  ): Promise<AdapterConnection> {
-    return upsertPlatformConnection(organizationId, projectId, userId, {
-      kind: "SHOPIFY",
-      config: { shopDomain: input.shopDomain },
-      secret: input.accessToken,
-    });
-  },
-
-  /** Conexão FTP (Fase 4 — Hostinger/Hostgator e qualquer host com acesso a arquivo). */
-  async upsertFtpConnection(
-    organizationId: string,
-    projectId: string,
-    userId: string,
-    input: {
-      host: string;
-      port?: number;
-      user: string;
-      password: string;
-      secure?: boolean;
-      remotePath?: string;
-    },
-  ): Promise<AdapterConnection> {
-    return upsertPlatformConnection(organizationId, projectId, userId, {
-      kind: "FTP",
-      config: {
-        host: input.host,
-        port: input.port ?? 21,
-        user: input.user,
-        secure: input.secure ?? false,
-        remotePath: input.remotePath ?? "",
-      },
-      secret: input.password,
-    });
-  },
-
-  /** Conexão de plataforma (WordPress/Shopify/Nuvemshop/FTP) com a credencial mascarada. */
-  async getPlatformConnectionMasked(
-    organizationId: string,
-    projectId: string,
-    kind: "WORDPRESS" | "SHOPIFY" | "FTP",
-  ): Promise<(AdapterConnection & { maskedCredential: string | null }) | null> {
-    const row = await prisma.adapterConnection.findFirst({
-      where: { projectId, organizationId, kind },
-    });
-    if (!row) return null;
-    let maskedCredential: string | null = null;
-    try {
-      maskedCredential = row.credentialEncrypted ? maskSecret(decryptSecret(row.credentialEncrypted)) : null;
-    } catch {
-      maskedCredential = "••••";
-    }
-    return { ...toDto(row), maskedCredential };
-  },
 };
-
-/** Upsert genérico pros adapters de plataforma (Fase 4) — mesma mecânica do GitHub, sem webhook. */
-async function upsertPlatformConnection(
-  organizationId: string,
-  projectId: string,
-  userId: string,
-  input: {
-    kind: "WORDPRESS" | "SHOPIFY" | "FTP";
-    config: Prisma.InputJsonObject;
-    secret: string;
-  },
-): Promise<AdapterConnection> {
-  const project = await prisma.project.findFirst({
-    where: { id: projectId, organizationId },
-    select: { id: true },
-  });
-  if (!project) throw new NotFoundError("Projeto não encontrado");
-
-  const existing = await prisma.adapterConnection.findUnique({
-    where: { projectId_kind: { projectId, kind: input.kind } },
-  });
-
-  const data = {
-    projectId,
-    organizationId,
-    kind: input.kind,
-    capabilities: ["ANALYZE", "APPLY"] as ("ANALYZE" | "APPLY" | "OBSERVE")[],
-    mode: "push",
-    config: input.config,
-    credentialEncrypted: encryptSecret(input.secret),
-    createdById: userId,
-  };
-
-  const row = existing
-    ? await prisma.adapterConnection.update({ where: { id: existing.id }, data })
-    : await prisma.adapterConnection.create({ data });
-
-  return toDto(row);
-}
 
 /**
  * Confere o acesso antes de persistir a credencial. A API do GitHub devolve

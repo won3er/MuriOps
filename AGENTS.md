@@ -33,16 +33,17 @@ aplicar de verdade na plataforma real do cliente ou automatizar o ciclo inteiro.
 /apply/:token/items/:itemId` — qualquer IA de dev como Codex/Cursor/
      Windsurf lê e marca itens via `curl`, tela atualiza em tempo real por polling),
      ou MCP (servidor MCP por projeto, mesmas ações via protocolo).
-   - **Conexões e integrações** (movidas de Projetos pra cá): MCP, GitHub, e os
-     adapters de plataforma que aplicam de verdade fora do repo — WordPress, Shopify
-     (via API oficial de cada um) e FTP (Hostinger/Hostgator/qualquer host com acesso
-     a arquivo). Ver `apps/api/src/infrastructure/adapters/`. Nuvemshop foi removido
-     em 28/07/2026 (ver pendência abaixo).
+   - **Conexões e integrações** (movidas de Projetos pra cá): GitHub e MCP. GitHub
+     registra checklists em pull requests; MCP permite que uma ferramenta de
+     desenvolvimento consulte e sincronize o plano. Adaptadores WordPress, Shopify,
+     FTP e Nuvemshop foram removidos.
 5. **Orquestração** (`/orquestracao`, seção própria no menu — não é mais aba dentro
    de Aplicação) — automatiza o ciclo analisar → avaliar quality gates → gerar plano
    → aplicar → reanalisar. Depende de Análise (pra analisar/reanalisar) e de
    Aplicação (usa as conexões de lá pra aplicar) — não tem lógica própria de apply.
-   Autonomia MANUAL é a única implementada (Supervisionado/Autônomo ainda faltam).
+   Os níveis Manual, Supervisionado e Autônomo usam a mesma regra de segurança:
+   sem uma conexão push, a execução espera aplicação externa e só retoma quando os
+   itens forem marcados como feitos.
    Ao criar uma execução dá pra escolher qual conexão usar: com adapter _push_
    (GitHub/WordPress/Shopify/Nuvemshop/FTP) ela aplica sozinha a cada iteração; sem
    conexão ou com MCP, quem aplica é a IA de dev do próprio usuário (ex.: Codex Pro
@@ -93,37 +94,30 @@ anterior incompleta:
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —
-   conectar um projeto real no WordPress/Shopify/FTP e confirmar que a
-   aplicação automática funciona; rodar um ciclo completo de Orquestração (incl.
-   via MCP/ponte com retomada automática); validar o fluxo "Atualizar → Enviar
+   rodar um ciclo completo de Orquestração com GitHub (incl. retorno por MCP/ponte
+   com retomada automática); validar o fluxo "Atualizar → Enviar
    para Aplicação"; testar o login com Google de ponta a ponta assim que o
    usuário configurar o Client ID. **Próximo item a atacar.**
 2. **[Fase 2] Configurar Google OAuth em produção** — usuário precisa criar o
    Client ID no Google Cloud Console e colar em `GOOGLE_CLIENT_ID` (Render) e
    `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (Vercel). Sem isso o botão "Entrar com Google"
    fica invisível (degrada bem, não quebra nada).
-3. **[Fase 2] Confirmar migrations em produção** — o Render precisa rodar
-   `prisma migrate deploy` a cada deploy pra aplicar as migrations novas
-   (UPGRADE em RemediationSourceType, googleId/senha opcional em User). Confirmar
-   se isso já está automatizado no build command do Render.
-4. **[Fase 3/4, adiado a pedido do usuário] Wix, Squarespace, Webnode** — ficaram
-   de fora dos adapters de plataforma (sem API pra aplicar mudança de verdade).
-   Só retomar quando o usuário pedir explicitamente ("me lembre depois").
+3. **[Confirmado em 30/07/2026] Migrations em produção** — o `CMD` do Dockerfile
+   executa `prisma migrate deploy` antes de iniciar a API; novas migrations são
+   aplicadas a cada deploy do Render.
+4. **[Fora de escopo] Plataformas de publicação direta** — WordPress, Shopify, FTP,
+   Nuvemshop, Wix, Squarespace e Webnode não fazem parte da integração atual.
+   Só retomar se o usuário pedir explicitamente.
 5. **Sandbox sem `git push`** — em ambientes de agente sem credencial de push, use
    o upload manual pela interface web do GitHub (arquivo por arquivo/pasta) em
    `github.com/won3er/Elevate-QA/upload/main/<caminho>`.
-6. **[Removido em 28/07/2026] Adapter Nuvemshop** — a loja de teste real
-   (`qateste.lojavirtualnuvem.com.br`) estourava consistentemente os 512MB do
-   Render free tier no crawl, mesmo após 3 rodadas de otimização de memória
-   (flags do Chromium, fechamento progressivo de páginas, bloqueio de
-   trackers/mídia/fontes). Suporte a Nuvemshop foi removido do produto —
-   `NuvemshopAdapter` (arquivo esvaziado, sandbox não permitiu apagar
-   fisicamente — rode `git rm -r apps/api/src/infrastructure/adapters/nuvemshop`
-   no seu terminal), rotas, hooks, painel de conexão, enum `AdapterKind` e
-   menções em docs. O valor `NUVEMSHOP` continua existindo no enum do Postgres
-   (não dá pra remover valor de enum sem recriar o tipo) mas não é mais
-   referenciado em nenhum lugar do código — inofensivo. WordPress/Shopify/FTP
-   continuam disponíveis normalmente.
+6. **[Removidos em 30/07/2026] Adapters de plataforma** — WordPress, Shopify e FTP
+   foram removidos por decisão de produto; a migration
+   `20260730010000_remove_platform_adapters` apaga conexões e credenciais
+   existentes. Valores históricos permanecem no enum PostgreSQL por compatibilidade.
+   Nuvemshop também havia sido removido. Valores legados de enum permanecem no
+   PostgreSQL por compatibilidade, mas nenhum adapter, rota ou componente desses
+   serviços continua ativo.
 
 ## Convenções
 

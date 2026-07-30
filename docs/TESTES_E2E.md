@@ -18,7 +18,7 @@ Atualizado em 29/07/2026.
 | Projetar → Aplicação | Aprovado | Um blueprint técnico do laboratório foi gerado e convertido em checklist de 9 itens, com briefing para desenvolvimento sem publicação ou merge automático. |
 | Conexão GitHub | Aprovado | Token fine-grained restrito ao laboratório, com `Contents` e `Pull requests` em leitura/escrita; conexão validada e salva no MuriOps. |
 | Orquestração com GitHub | Aprovado | A primeira tentativa parou corretamente sem análise no projeto. Depois da análise QA v1 (99/100), o gate controlado de 100 gerou plano e abriu três pull requests de checklist no repositório de laboratório, sem merge automático. A execução ficou em “Aguardando aprovação”, como previsto para modo Manual, e foi cancelada ao fim do teste. |
-| MCP | Parcialmente aprovado | Conexão criada e endpoint HTTP validado com `initialize` e `tools/list` (ambos 200). A marcação de item por ferramenta externa ainda precisa ser validada num cliente MCP real. |
+| MCP | Aprovado | Conexão criada e endpoint HTTP validado com `initialize`, `tools/list`, `list_remediation_items` e `mark_item_done`. Um item do plano do laboratório foi marcado como concluído e restaurado para pendente via protocolo MCP. |
 | Atualizações via GitHub | Aprovado | Leitura do repositório encontrou 1 `package.json`, reconheceu Node.js e gerou um plano de baixo risco. O envio “Atualizar → Aplicação” também criou o checklist de dependência corretamente. |
 | Integridade do resumo de IA | Corrigido e verificado localmente | Quando não houver achados válidos, o sistema agora usa uma conclusão determinística; a IA não pode apresentar notas ou riscos que não existam na coleta. |
 
@@ -28,9 +28,11 @@ Atualizado em 29/07/2026.
 - O teste usa somente o repositório e o site públicos de laboratório.
 - Cabeçalhos HTTP que o GitHub Pages não permite configurar nativamente permanecem apontamentos de infraestrutura, não correções aplicáveis diretamente pelo repositório.
 - O gate temporário `Teste controlado de integração` (100) foi removido ao final do teste; o projeto de laboratório voltou a não ter gates configurados.
+- WordPress, Shopify e FTP foram removidos do produto. A migration correspondente elimina conexões e credenciais antigas desses adaptadores; GitHub e MCP permanecem como as únicas integrações de aplicação.
 
 ## Verificação local
 
 - `pnpm -r typecheck`: aprovado.
 - `pnpm -r build`: aprovado para API, web e tipos compartilhados.
 - `pnpm -r lint`: não executou por falta de `eslint` nas dependências de desenvolvimento da API. Isso é uma pendência de infraestrutura de qualidade, não um erro de compilação.
+- Login Google: bloqueado por configuração externa. O botão não é exibido em produção enquanto `GOOGLE_CLIENT_ID` (Render) e `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (Vercel) não receberem o Client ID OAuth real.

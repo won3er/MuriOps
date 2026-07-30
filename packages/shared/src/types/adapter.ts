@@ -1,6 +1,6 @@
 /**
  * Porta do Adapter — o único jeito do núcleo orquestrador falar com um
- * sistema externo (MCP, GitHub, WordPress, Hostinger...). Um adapter é um
+ * sistema externo (MCP ou GitHub). Um adapter é um
  * mecanismo de integração puro: traduz um RemediationItem pros termos do
  * sistema alvo e nunca carrega regra de negócio/QA (isso mora só no núcleo).
  *

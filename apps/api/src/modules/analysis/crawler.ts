@@ -76,7 +76,7 @@ export async function crawl(options: CrawlOptions): Promise<CrawlResult> {
   // — puro overhead de memória/rede que não muda o que os analyzers avaliam
   // (mantém imagens e scripts do próprio site, necessários pra screenshot,
   // detecção de imagem quebrada e renderização real da página). Reduz bastante
-  // o consumo de memória em e-commerces (Nuvemshop/Shopify) que carregam
+  // o consumo de memória em lojas que carregam
   // dezenas de pixels de rastreamento por página.
   await context.route("**/*", async (route) => {
     const req = route.request();
@@ -283,7 +283,7 @@ async function launchWithRetry(
     try {
       // Flags de baixo consumo de memória — necessário no Render free tier
       // (512MB RAM total pro processo Node + Chromium). Sem elas, sites
-      // pesados (muito JS/trackers, como lojas Nuvemshop/Shopify) estouram a
+      // pesados (muito JavaScript e rastreadores) estouram a
       // memória e o Render mata o container inteiro no meio da análise.
       const browser = await chromium.launch({
         headless: true,
@@ -404,7 +404,7 @@ async function extractLinks(
 
 /**
  * Domínios de tracker/analytics/ads/chat conhecidos, comuns em lojas
- * (Nuvemshop/Shopify/etc.) e que só consomem memória/rede sem afetar nada
+ * e que só consomem memória/rede sem afetar nada
  * que os analyzers avaliem (UI/UX/SEO/acessibilidade/performance do site em
  * si). Bloquear isso aqui é diferente de reportar "script de terceiro lento"
  * como problema de performance — para isso o NetworkAnalyzer já usa os dados

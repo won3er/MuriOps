@@ -1,17 +1,16 @@
-import type { Adapter, AdapterKind } from "@qa-ai/shared";
+import type { Adapter } from "@qa-ai/shared";
 import { decryptSecret } from "../crypto/secret-box.js";
-import { FtpAdapter } from "./ftp/ftp-adapter.js";
 import { GithubAdapter } from "./github/github-adapter.js";
 import { ManualBridgeAdapter } from "./manual-bridge.adapter.js";
-import { ShopifyAdapter } from "./shopify/shopify-adapter.js";
-import { WordpressAdapter } from "./wordpress/wordpress-adapter.js";
 
 /**
  * Linha crua de `AdapterConnection` (inclui campos sensíveis que nunca vão
  * pro DTO compartilhado com o frontend) — a factory roda só no servidor.
  */
 export interface AdapterConnectionRow {
-  kind: AdapterKind;
+  // O banco preserva valores históricos de adapters removidos. A factory só
+  // reconhece os tipos ativos e rejeita qualquer outro de forma segura.
+  kind: string;
   config: unknown;
   bridgeToken: string | null;
   credentialEncrypted: string | null;
@@ -44,36 +43,6 @@ export function createAdapterFor(connection: AdapterConnectionRow): Adapter {
         decryptSecret(connection.credentialEncrypted),
         config.owner,
         config.repo,
-      );
-    }
-    case "WORDPRESS": {
-      const config = connection.config as { siteUrl?: string; username?: string } | null;
-      if (!connection.credentialEncrypted || !config?.siteUrl || !config?.username) {
-        throw new Error("Conexão WORDPRESS incompleta (senha de aplicativo, site ou usuário ausente).");
-      }
-      return new WordpressAdapter(config.siteUrl, config.username, decryptSecret(connection.credentialEncrypted));
-    }
-    case "SHOPIFY": {
-      const config = connection.config as { shopDomain?: string } | null;
-      if (!connection.credentialEncrypted || !config?.shopDomain) {
-        throw new Error("Conexão SHOPIFY incompleta (access token ou domínio da loja ausente).");
-      }
-      return new ShopifyAdapter(config.shopDomain, decryptSecret(connection.credentialEncrypted));
-    }
-    case "FTP": {
-      const config = connection.config as
-        | { host?: string; port?: number; user?: string; secure?: boolean; remotePath?: string }
-        | null;
-      if (!connection.credentialEncrypted || !config?.host || !config?.user) {
-        throw new Error("Conexão FTP incompleta (senha, host ou usuário ausente).");
-      }
-      return new FtpAdapter(
-        config.host,
-        config.port ?? 21,
-        config.user,
-        decryptSecret(connection.credentialEncrypted),
-        config.secure ?? false,
-        config.remotePath ?? "",
       );
     }
     default:

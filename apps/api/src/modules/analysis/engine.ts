@@ -104,7 +104,7 @@ export async function runEngine(input: EngineInput): Promise<EngineResult> {
   // em seguida (exceto a primeira). Isso mantém o pico de memória do
   // Chromium em ~2 abas simultâneas em vez de uma por página descoberta,
   // que era a causa do estouro de memória (>512MB) no Render free tier em
-  // sites com bastante JS/trackers (ex.: lojas Nuvemshop/Shopify).
+  // sites com bastante JavaScript e rastreadores.
   const crawlResult = await crawl({
     siteUrl,
     maxDepth,

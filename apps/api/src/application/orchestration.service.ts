@@ -40,9 +40,8 @@ export const orchestrationService = {
     // `adapterConnectionId` vem cru do request (z.string().optional() na
     // rota). Sem esta validação, dava pra criar um run no PRÓPRIO projeto
     // passando o id de uma conexão de OUTRA organização — e o
-    // `applyViaAdapter()` usaria as credenciais dela (token do GitHub, senha
-    // de aplicativo do WordPress, access token da Shopify, senha de FTP) pra
-    // escrever de verdade no sistema de produção da vítima. Amarra a conexão
+    // `applyViaAdapter()` usaria o token do GitHub de outra organização pra
+    // escrever no repositório da vítima. Amarra a conexão
     // ao mesmo projeto e organização do run.
     let adapterConnectionId: string | null = null;
     if (input.adapterConnectionId) {
