@@ -11,6 +11,7 @@ declare global {
           initialize: (config: {
             client_id: string;
             callback: (resp: { credential: string }) => void;
+            use_fedcm_for_button?: boolean;
           }) => void;
           renderButton: (
             parent: HTMLElement,
