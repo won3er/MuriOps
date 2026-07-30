@@ -62,9 +62,10 @@ function AnalysesHub() {
     refetch,
   } = useAnalysesList();
   const [projectId, setProjectId] = useState("");
-  const [startingType, setStartingType] = useState<
+  const [selectedType, setSelectedType] = useState<
     "qa" | "security" | "active" | null
   >(null);
+  const [starting, setStarting] = useState(false);
 
   useEffect(() => {
     const requestedProject = searchParams.get("projectId");
@@ -73,14 +74,21 @@ function AnalysesHub() {
 
   const selectedProject = projects.find((p) => p.id === projectId);
 
-  async function start(type: "qa" | "security" | "active") {
-    if (!projectId) return;
-    setStartingType(type);
+  // Trocar de projeto pode invalidar o tipo escolhido (ex.: Teste Ativo
+  // exige consentimento por projeto) — mais seguro pedir pra escolher de novo.
+  function changeProject(newProjectId: string) {
+    setProjectId(newProjectId);
+    setSelectedType(null);
+  }
+
+  async function startSelected() {
+    if (!projectId || !selectedType) return;
+    setStarting(true);
     try {
       const categories =
-        type === "security"
+        selectedType === "security"
           ? ["DEEP_SECURITY"]
-          : type === "active"
+          : selectedType === "active"
             ? ["ACTIVE_SECURITY_TEST"]
             : undefined;
       const analysis = await api.startAnalysis(
@@ -94,7 +102,7 @@ function AnalysesHub() {
           ? error.message
           : "Não foi possível iniciar a análise.",
       );
-      setStartingType(null);
+      setStarting(false);
     }
   }
 
@@ -128,7 +136,7 @@ function AnalysesHub() {
             <select
               id="analysis-project"
               value={projectId}
-              onChange={(event) => setProjectId(event.target.value)}
+              onChange={(event) => changeProject(event.target.value)}
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             >
               <option value="">Selecione um projeto…</option>
@@ -158,78 +166,97 @@ function AnalysesHub() {
               )
             )}
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <button
-              type="button"
-              onClick={() => start("qa")}
-              disabled={!projectId || startingType !== null}
-              className="group flex gap-3 rounded-md border p-4 text-left hover:border-primary/50 hover:bg-accent/30 disabled:pointer-events-none disabled:opacity-50"
-            >
-              {startingType === "qa" ? (
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              ) : (
+          <div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => setSelectedType("qa")}
+                disabled={!projectId}
+                aria-pressed={selectedType === "qa"}
+                className={cn(
+                  "group flex gap-3 rounded-md border p-4 text-left hover:border-primary/50 hover:bg-accent/30 disabled:pointer-events-none disabled:opacity-50",
+                  selectedType === "qa" && "border-primary bg-primary/[0.06]",
+                )}
+              >
                 <Play className="h-5 w-5 text-primary" />
-              )}
-              <span>
-                <strong className="block text-sm font-medium">
-                  Análise QA padrão
-                </strong>
-                <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                  UI/UX, performance, SEO, acessibilidade, console e rede.
+                <span>
+                  <strong className="block text-sm font-medium">
+                    Análise QA padrão
+                  </strong>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                    UI/UX, performance, SEO, acessibilidade, console e rede.
+                  </span>
                 </span>
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => start("security")}
-              disabled={!projectId || startingType !== null}
-              className="group flex gap-3 rounded-md border p-4 text-left hover:border-primary/50 hover:bg-accent/30 disabled:pointer-events-none disabled:opacity-50"
-            >
-              {startingType === "security" ? (
-                <Loader2 className="h-5 w-5 animate-spin text-amber-400" />
-              ) : (
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedType("security")}
+                disabled={!projectId}
+                aria-pressed={selectedType === "security"}
+                className={cn(
+                  "group flex gap-3 rounded-md border p-4 text-left hover:border-primary/50 hover:bg-accent/30 disabled:pointer-events-none disabled:opacity-50",
+                  selectedType === "security" &&
+                    "border-amber-400 bg-amber-500/[0.06]",
+                )}
+              >
                 <ShieldAlert className="h-5 w-5 text-amber-400" />
-              )}
-              <span>
-                <strong className="block text-sm font-medium">
-                  Análise de Segurança
-                </strong>
-                <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                  TLS, DNS, headers, políticas e exposições indevidas.
+                <span>
+                  <strong className="block text-sm font-medium">
+                    Análise de Segurança
+                  </strong>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                    TLS, DNS, headers, políticas e exposições indevidas.
+                  </span>
                 </span>
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => start("active")}
-              disabled={
-                !projectId ||
-                startingType !== null ||
-                !selectedProject?.activeTestingConsent
-              }
-              title={
-                projectId && !selectedProject?.activeTestingConsent
-                  ? "Habilite o consentimento na página do projeto primeiro"
-                  : undefined
-              }
-              className="group flex gap-3 rounded-md border p-4 text-left hover:border-primary/50 hover:bg-accent/30 disabled:pointer-events-none disabled:opacity-50"
-            >
-              {startingType === "active" ? (
-                <Loader2 className="h-5 w-5 animate-spin text-rose-400" />
-              ) : (
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedType("active")}
+                disabled={!projectId || !selectedProject?.activeTestingConsent}
+                aria-pressed={selectedType === "active"}
+                title={
+                  projectId && !selectedProject?.activeTestingConsent
+                    ? "Habilite o consentimento na página do projeto primeiro"
+                    : undefined
+                }
+                className={cn(
+                  "group flex gap-3 rounded-md border p-4 text-left hover:border-primary/50 hover:bg-accent/30 disabled:pointer-events-none disabled:opacity-50",
+                  selectedType === "active" &&
+                    "border-rose-400 bg-rose-500/[0.06]",
+                )}
+              >
                 <Swords className="h-5 w-5 text-rose-400" />
-              )}
-              <span>
-                <strong className="block text-sm font-medium">
-                  Teste Ativo Autorizado
-                </strong>
-                <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                  {projectId && !selectedProject?.activeTestingConsent
-                    ? "Requer consentimento — habilite na página do projeto."
-                    : "Rate-limit, enumeração de usuário e payloads de detecção."}
+                <span>
+                  <strong className="block text-sm font-medium">
+                    Teste Ativo Autorizado
+                  </strong>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                    {projectId && !selectedProject?.activeTestingConsent
+                      ? "Requer consentimento — habilite na página do projeto."
+                      : "Rate-limit, enumeração de usuário e payloads de detecção."}
+                  </span>
                 </span>
-              </span>
-            </button>
+              </button>
+            </div>
+
+            <div className="mt-4 flex items-center gap-3">
+              <Button
+                onClick={() => void startSelected()}
+                disabled={!projectId || !selectedType || starting}
+              >
+                {starting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )}
+                Iniciar análise
+              </Button>
+              {!selectedType && projectId && (
+                <p className="text-xs text-muted-foreground">
+                  Escolha um tipo de análise acima.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </section>
