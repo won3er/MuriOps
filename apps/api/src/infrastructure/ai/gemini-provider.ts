@@ -56,7 +56,9 @@ async function resolveModel(apiKey: string): Promise<string> {
   if (cached) return cached;
 
   try {
-    const res = await fetch(`${API_BASE}/models?key=${apiKey}`);
+    const res = await fetch(`${API_BASE}/models`, {
+      headers: { "x-goog-api-key": apiKey },
+    });
     if (res.ok) {
       const json = (await res.json()) as {
         models?: { name?: string; supportedGenerationMethods?: string[] }[];
@@ -109,10 +111,13 @@ export class GeminiProvider implements AiProvider {
     // chave (404 NOT_FOUND), esquece o cache e escolhe de novo.
     while (true) {
       attempt += 1;
-      const url = `${API_BASE}/models/${model}:generateContent?key=${this.apiKey}`;
+      const url = `${API_BASE}/models/${model}:generateContent`;
       const res = await fetch(url, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          "x-goog-api-key": this.apiKey,
+        },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: systemPrompt }] },
           contents: [{ role: "user", parts: [{ text: userPrompt }] }],

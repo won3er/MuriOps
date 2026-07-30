@@ -42,6 +42,46 @@ function providerKeyMismatch(
 }
 
 /**
+ * Confere credenciais sem gerar texto nem consumir tokens. O formato da chave
+ * é apenas uma pista: chaves recentes do Gemini podem não usar o prefixo
+ * histórico `AIza`, por isso Gemini e OpenAI também são validados contra a
+ * API do provedor selecionado antes de serem persistidos.
+ */
+async function validateProviderCredential(
+  provider: AiProvider,
+  apiKey: string,
+): Promise<string | null> {
+  if (provider === "claude") {
+    // A Anthropic não oferece uma consulta de credencial sem geração para
+    // chaves comuns. Mantemos a proteção por formato e a API confirma a
+    // credencial na primeira operação, sem fallback silencioso.
+    return null;
+  }
+
+  const request =
+    provider === "gemini"
+      ? fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=1", {
+          headers: { "x-goog-api-key": apiKey },
+          signal: AbortSignal.timeout(10_000),
+        })
+      : fetch("https://api.openai.com/v1/models", {
+          headers: { Authorization: `Bearer ${apiKey}` },
+          signal: AbortSignal.timeout(10_000),
+        });
+
+  try {
+    const response = await request;
+    if (response.ok) return null;
+    if (response.status === 401 || response.status === 403) {
+      return `A chave não foi aceita pela API ${provider === "gemini" ? "Gemini" : "OpenAI"}. Selecione o provedor correto ou confira a chave.`;
+    }
+    return `Não foi possível validar a chave na API ${provider === "gemini" ? "Gemini" : "OpenAI"} agora. Nenhuma alteração foi salva; tente novamente.`;
+  } catch {
+    return `Não foi possível validar a chave na API ${provider === "gemini" ? "Gemini" : "OpenAI"} agora. Nenhuma alteração foi salva; tente novamente.`;
+  }
+}
+
+/**
  * Configuração de IA por organização: cada conta usa a própria chave
  * (Claude, OpenAI ou Gemini) — não existe chave padrão compartilhada do
  * servidor. Sem chave própria, os providers de IA degradam pro noop
@@ -78,6 +118,17 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
         statusCode: 400,
         error: "ProviderKeyMismatch",
         message: mismatch,
+      });
+    }
+    const credentialError = await validateProviderCredential(
+      body.provider,
+      body.apiKey,
+    );
+    if (credentialError) {
+      return reply.status(422).send({
+        statusCode: 422,
+        error: "ProviderCredentialInvalid",
+        message: credentialError,
       });
     }
     await prisma.organization.update({
