@@ -178,8 +178,8 @@ export function OrchestrationPanel({
             {AUTONOMY_OPTIONS.find((o) => o.value === autonomyLevel)?.hint}
           </p>
           <p className="text-xs text-muted-foreground">
-            Seguir sozinho exige uma conexão que aplique de verdade (GitHub,
-            GitHub). Com MCP/ponte, ou sem conexão, quem
+            Seguir sozinho exige uma conexão que aplique de verdade, como o
+            GitHub. Com MCP/ponte, ou sem conexão, quem
             aplica é sua ferramenta de desenvolvimento — a execução retoma
             automaticamente quando os itens forem marcados como feitos.
           </p>
