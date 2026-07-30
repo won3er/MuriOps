@@ -15,6 +15,7 @@ declare global {
           initialize: (config: {
             client_id: string;
             callback: (resp: { credential: string }) => void;
+            use_fedcm_for_button?: boolean;
           }) => void;
           renderButton: (
             parent: HTMLElement,
@@ -58,6 +59,10 @@ export function GoogleSignInButton({ enabled = true }: { enabled?: boolean }) {
     window.google.accounts.id.initialize({
       client_id: CLIENT_ID,
       callback: handleCredential,
+      // Em navegadores Chromium atuais, o FedCM é mediado pelo próprio
+      // navegador e evita a janela `gsi/transform` em branco. Em navegadores
+      // sem suporte, o Google mantém o fluxo de popup como fallback.
+      use_fedcm_for_button: true,
     });
     window.google.accounts.id.renderButton(containerRef.current, {
       theme: "outline",
