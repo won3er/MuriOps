@@ -13,7 +13,7 @@ import { useConnectGithub, useGithubConnection } from "@/lib/queries";
 
 /**
  * Painel "Conectar GitHub" — primeiro adapter *push* (Fase 2). Diferente do
- * MCP/ponte manual (pull), aqui o Atlas age direto: abre PR com o checklist
+ * MCP/ponte manual (pull), aqui o MuriOps age direto: abre PR com o checklist
  * de remediação, nunca faz merge sozinho (a PR é o checkpoint de aprovação).
  */
 export function GithubConnectionPanel({ projectId }: { projectId: string }) {
@@ -82,7 +82,7 @@ export function GithubConnectionPanel({ projectId }: { projectId: string }) {
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          O Atlas abre uma PR com o checklist de cada item de remediação — nunca
+          O MuriOps abre uma PR para cada item de remediação — nunca
           aplica código nem faz merge sozinho. A revisão e o merge são sempre
           seus.
         </p>

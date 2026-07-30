@@ -21,7 +21,7 @@ interface GithubPr {
 
 /**
  * Primeiro adapter *push*: em vez de esperar uma ferramenta externa puxar o
- * plano (como MCP/ponte manual), o próprio Atlas age no GitHub. Mas
+ * plano (como MCP/ponte manual), o próprio MuriOps age no GitHub. Mas
  * `RemediationItem` só carrega instrução (`howTo`), não um diff de código —
  * então "aplicar" aqui é abrir uma branch com um checklist rastreável
  * (`.muriops/remediation/<item>.md`) e uma PR referenciando o item, nunca
@@ -63,7 +63,7 @@ export class GithubAdapter implements Adapter {
     return {
       reference: pr.html_url,
       requiresApproval: true,
-      message: `PR aberta em ${pr.html_url} — aguardando revisão e merge manual. O Atlas nunca faz merge sozinho.`,
+      message: `PR aberta em ${pr.html_url} — aguardando revisão e merge manual. O MuriOps nunca faz merge sozinho.`,
     };
   }
 

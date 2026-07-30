@@ -79,7 +79,7 @@ export function WordpressConnectionPanel({ projectId }: { projectId: string }) {
         </div>
         <p className="text-sm text-muted-foreground">
           Usa Senha de aplicativo (Usuário → Perfil → Senhas de aplicativo,
-          nativo do WP). O Atlas cria uma página em rascunho com o checklist de
+          nativo do WP). O MuriOps cria uma página em rascunho com o checklist de
           cada item — nunca publica nem mexe em tema/plugin sozinho.
         </p>
 
@@ -178,7 +178,7 @@ export function ShopifyConnectionPanel({ projectId }: { projectId: string }) {
         </div>
         <p className="text-sm text-muted-foreground">
           Usa um Admin API access token (Configurações → Apps e canais de vendas
-          → Desenvolver apps). O Atlas cria/atualiza uma Page despublicada com o
+          → Desenvolver apps). O MuriOps cria/atualiza uma Page despublicada com o
           checklist — mudanças de tema continuam manuais.
         </p>
 
@@ -280,9 +280,9 @@ export function FtpConnectionPanel({ projectId }: { projectId: string }) {
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          Mesmas credenciais do FTP do seu painel de hospedagem. O Atlas grava
+          Mesmas credenciais do FTP do seu painel de hospedagem. O MuriOps grava
           um arquivo de checklist real dentro do site (pasta{" "}
-          <code>/atlas-qa</code>) — editar o código-fonte continua manual.
+          <code>/.muriops/remediation</code>) — editar o código-fonte continua manual.
         </p>
 
         {isLoading ? (

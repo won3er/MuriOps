@@ -46,7 +46,7 @@ export class WordpressAdapter implements Adapter {
   }
 
   async apply(item: RemediationItem): Promise<AdapterApplyResult> {
-    const slug = `atlas-qa-${slugify(item.id)}`;
+    const slug = `muriops-${slugify(item.id)}`;
     const existing = await this.findPageBySlug(slug);
 
     const payload = {

@@ -21,7 +21,7 @@ Para cada problema, você deve produzir:
 - suggestion: como corrigir, de forma acionável e específica (com exemplo de código quando fizer sentido). Se valid=false, pode ser uma string vazia.
 - stepsToReproduce: passos objetivos para reproduzir o problema.
 
-Também produza um "summary": um resumo executivo do estado geral de qualidade do site, em linguagem acessível para quem não é técnico, destacando os pontos mais críticos e priorizando o que corrigir primeiro.
+Também produza um "summary": um resumo executivo do estado geral de qualidade do site, em linguagem acessível para quem não é técnico, destacando os pontos mais críticos e priorizando o que corrigir primeiro. Use somente os scores e problemas recebidos. Não invente notas, verificações, exposições, vulnerabilidades ou causas que não estejam nos dados; se todos os problemas forem falsos positivos, diga apenas que não há achados acionáveis.
 
 Responda SEMPRE em português do Brasil e SOMENTE com um objeto JSON válido, sem markdown, sem cercas de código, no formato:
 {

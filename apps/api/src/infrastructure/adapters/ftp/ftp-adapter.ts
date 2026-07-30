@@ -17,7 +17,7 @@ import type {
  *
  * Como não há "diff" estruturado (RemediationItem só carrega instrução),
  * aplicar aqui grava um arquivo de checklist real dentro do próprio site
- * (`<remotePath>/atlas-qa/<item>.md`) — visível por quem tem acesso ao
+ * (`<remotePath>/.muriops/remediation/<item>.md`) — visível por quem tem acesso ao
  * servidor, e author itativo o suficiente pra fixar em WordPress/HTML
  * estático hospedados nesses provedores. Edição de código-fonte em si
  * continua manual.
@@ -67,7 +67,7 @@ export class FtpAdapter implements Adapter {
         secure: this.secure,
       });
 
-      const dir = joinPath(this.remotePath, "atlas-qa");
+      const dir = joinPath(this.remotePath, ".muriops/remediation");
       await client.ensureDir(dir);
       // ensureDir muda o cwd remoto pro diretório criado/existente — volta à raiz configurada.
       await client.cd("/").catch(() => {});

@@ -42,7 +42,7 @@ export class ShopifyAdapter implements Adapter {
   }
 
   async apply(item: RemediationItem): Promise<AdapterApplyResult> {
-    const handle = `atlas-qa-${slugify(item.id)}`;
+    const handle = `muriops-${slugify(item.id)}`;
     const existing = await this.findPageByHandle(handle);
 
     const body = {

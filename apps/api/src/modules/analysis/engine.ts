@@ -206,6 +206,14 @@ export async function runEngine(input: EngineInput): Promise<EngineResult> {
     const validIssues = issues.filter((i) => i.status !== IssueStatus.IGNORED);
     const score = computeScores(validIssues);
 
+    // Um resumo gerado pela IA não pode contradizer a coleta. Quando não há
+    // achados válidos, uma conclusão determinística é mais honesta do que uma
+    // narrativa que invente notas, alertas ou riscos que já foram descartados.
+    const verifiedAiSummary =
+      validIssues.length === 0
+        ? "Nenhum achado acionável foi confirmado nesta análise. As verificações executadas não identificaram problemas que exijam correção neste momento."
+        : aiSummary;
+
     return {
       pages: pages.map((p) => ({
         url: p.url,
@@ -217,7 +225,7 @@ export async function runEngine(input: EngineInput): Promise<EngineResult> {
       issues,
       evidence,
       score,
-      aiSummary,
+      aiSummary: verifiedAiSummary,
       durationMs: Date.now() - startedAt,
     };
   } finally {
