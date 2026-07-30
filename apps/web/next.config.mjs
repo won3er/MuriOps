@@ -44,7 +44,14 @@ const nextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
-          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+          // O login Google usa uma janela temporária para devolver o ID token.
+          // `same-origin` isola essa janela e bloqueia o retorno ao MuriOps;
+          // esta variante mantém a proteção para os demais contextos, mas
+          // permite a comunicação controlada do popup de autenticação.
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin-allow-popups",
+          },
           { key: "Cross-Origin-Resource-Policy", value: "same-site" },
           {
             key: "Strict-Transport-Security",
