@@ -35,4 +35,4 @@ Atualizado em 29/07/2026.
 - `pnpm -r typecheck`: aprovado.
 - `pnpm -r build`: aprovado para API, web e tipos compartilhados.
 - `pnpm -r lint`: não executou por falta de `eslint` nas dependências de desenvolvimento da API. Isso é uma pendência de infraestrutura de qualidade, não um erro de compilação.
-- Login Google: bloqueado por configuração externa. O botão não é exibido em produção enquanto `GOOGLE_CLIENT_ID` (Render) e `NEXT_PUBLIC_GOOGLE_CLIENT_ID` (Vercel) não receberem o Client ID OAuth real.
+- Login Google: Client ID configurado na Vercel e no Render; origens `https://muriops.com.br` e `https://www.muriops.com.br` autorizadas no Google Cloud. Em 30/07/2026, corrigida a política `Cross-Origin-Opener-Policy` para `same-origin-allow-popups`, necessária para o popup devolver o ID token ao site. O teste final requer que a própria pessoa aceite os termos e conclua a seleção da conta.
