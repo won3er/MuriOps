@@ -1,6 +1,6 @@
 # Registro de testes de produção — MuriOps
 
-Atualizado em 29/07/2026.
+Atualizado em 30/07/2026.
 
 ## Ambiente controlado
 
@@ -21,6 +21,24 @@ Atualizado em 29/07/2026.
 | MCP | Aprovado | Conexão criada e endpoint HTTP validado com `initialize`, `tools/list`, `list_remediation_items` e `mark_item_done`. Um item do plano do laboratório foi marcado como concluído e restaurado para pendente via protocolo MCP. |
 | Atualizações via GitHub | Aprovado | Leitura do repositório encontrou 1 `package.json`, reconheceu Node.js e gerou um plano de baixo risco. O envio “Atualizar → Aplicação” também criou o checklist de dependência corretamente. |
 | Integridade do resumo de IA | Corrigido e verificado localmente | Quando não houver achados válidos, o sistema agora usa uma conclusão determinística; a IA não pode apresentar notas ou riscos que não existam na coleta. |
+
+## Validação em workspace criado por Google Login (30/07/2026)
+
+Foi criado um workspace novo por login Google e um novo projeto `MuriOps E2E Lab`, apontando para o mesmo laboratório público. Esse recorte confirma que os fluxos não dependem dos dados nem das conexões do workspace de demonstração.
+
+| Fluxo | Situação | Evidência |
+| --- | --- | --- |
+| Login Google | Aprovado | O usuário concluiu a autenticação e recebeu um workspace isolado. |
+| Análise QA padrão | Aprovado | 1 página, score 99 e 7 achados técnicos coerentes; plano enviado para Aplicação. |
+| Análise de Segurança | Aprovado | 1 página, score 99 e 6 achados de infraestrutura coerentes; plano enviado para Aplicação. |
+| Conexão MCP | Aprovado | Conexão criada por projeto, com URL própria e controles de cópia, rotação e revogação. |
+| Projetar → Aplicação | Aprovado | Blueprint gerado e convertido em plano com briefing para desenvolvimento. Sem chave de IA, a interface identifica corretamente o modo-base `noop` e não inventa recomendações específicas. |
+| Atualizar → Aplicação | Aprovado | Manifesto Node.js com `next`, `react` e `typescript` reconhecido; plano de atualização e checklist de Aplicação criados. Sem chave de IA, a interface preserva a necessidade de verificação manual. |
+| Orquestração Manual | Aprovado | Usou a análise existente, avaliou o conjunto vazio de quality gates e persistiu o estado final “Passou nos quality gates”. |
+
+### Pendência externa desse workspace
+
+- A conexão GitHub é deliberadamente isolada por organização. Para testar investigação de repositório e abertura de pull request neste novo workspace, é necessário cadastrar aqui um PAT fine-grained com acesso ao repositório de laboratório. O token anterior do workspace de demonstração não é herdado nem exibido.
 
 ## Limites confirmados
 
