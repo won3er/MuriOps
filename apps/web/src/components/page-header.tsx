@@ -26,14 +26,10 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "app-panel relative isolate overflow-hidden rounded-xl px-5 py-5 sm:px-6 sm:py-6",
+        "border-b border-border/80 pb-5 sm:pb-6",
         className,
       )}
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-24 -top-32 -z-10 h-72 w-72 rounded-full bg-primary/10 blur-3xl"
-      />
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav aria-label="Navegação estrutural">
           <ol className="flex min-w-0 flex-wrap items-center gap-1 text-xs text-muted-foreground">

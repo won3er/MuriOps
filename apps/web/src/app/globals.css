@@ -66,19 +66,8 @@ h3 {
 
 .app-canvas {
   background:
-    radial-gradient(
-      circle at 78% -12%,
-      hsl(var(--primary) / 0.1),
-      transparent 28rem
-    ),
-    linear-gradient(hsl(var(--border) / 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, hsl(var(--border) / 0.055) 1px, transparent 1px),
+    linear-gradient(180deg, hsl(var(--card) / 0.22), transparent 11rem),
     hsl(var(--background));
-  background-size:
-    auto,
-    48px 48px,
-    48px 48px,
-    auto;
 }
 
 .app-panel {
