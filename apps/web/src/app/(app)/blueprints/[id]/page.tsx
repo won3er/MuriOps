@@ -236,7 +236,7 @@ export default function BlueprintDetailPage() {
 
       {r && bp.status === "READY" && (
         <>
-          {/* Resumo */}
+          {/* Resumo — a primeira coisa que qualquer pessoa deve ler. */}
           {r.summary && (
             <Card>
               <CardContent className="pt-5">
@@ -245,25 +245,7 @@ export default function BlueprintDetailPage() {
             </Card>
           )}
 
-          {/* Radar + Pirâmide lado a lado */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <Section icon={ShieldCheck} title="Maturidade de QA">
-              <QaRadar data={r.qaMaturityRadar} />
-            </Section>
-            <Section icon={Workflow} title="Pirâmide de testes">
-              <TestPyramid pyramid={r.testStrategy.pyramid} />
-              <div className="mt-4 space-y-2 text-xs">
-                <ChipRow label="Abordagens" items={r.testStrategy.approaches} />
-                <ChipRow label="Ferramentas" items={r.testStrategy.tooling} />
-                <ChipRow
-                  label="Ambientes"
-                  items={r.testStrategy.environments}
-                />
-              </div>
-            </Section>
-          </div>
-
-          {/* Objetivos */}
+          {/* Objetivos — o que o projeto precisa entregar, em linguagem simples. */}
           <Section icon={Target} title="Objetivos">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Meta" value={r.objectives.goal} />
@@ -290,17 +272,46 @@ export default function BlueprintDetailPage() {
             )}
           </Section>
 
-          {/* Diagramas */}
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Section icon={GitBranch} title="Arquitetura">
-              <MermaidDiagram code={r.architectureMermaid} />
+          {/* Cronograma — quando cada parte fica pronta (Gantt + lista, uma coisa só). */}
+          {r.milestones.length > 0 && (
+            <Section title="Cronograma">
+              <GanttChart milestones={r.milestones} />
+              <div className="mt-5 space-y-3">
+                {r.milestones.map((m, i) => (
+                  <div key={i} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
+                        {i + 1}
+                      </div>
+                      {i < r.milestones.length - 1 && (
+                        <div className="w-px flex-1 bg-border" />
+                      )}
+                    </div>
+                    <div className="pb-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="min-w-0 break-words font-medium">
+                          {m.name}
+                        </p>
+                        <span className="text-xs text-muted-foreground">
+                          ~{m.durationWeeks} sem
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {m.deliverables.join(" · ")}
+                      </p>
+                      {m.qaFocus && (
+                        <p className="mt-1 text-xs text-emerald-400/90">
+                          QA: {m.qaFocus}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </Section>
-            <Section icon={Workflow} title="Fluxo do usuário">
-              <MermaidDiagram code={r.userFlowMermaid} />
-            </Section>
-          </div>
+          )}
 
-          {/* Stack */}
+          {/* Stack — as tecnologias escolhidas e por quê. */}
           {r.techStack.length > 0 && (
             <Section title="Stack recomendada">
               <div className="grid gap-3 sm:grid-cols-2">
@@ -326,7 +337,17 @@ export default function BlueprintDetailPage() {
             </Section>
           )}
 
-          {/* Risco */}
+          {/* Diagramas */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Section icon={GitBranch} title="Arquitetura">
+              <MermaidDiagram code={r.architectureMermaid} />
+            </Section>
+            <Section icon={Workflow} title="Fluxo do usuário">
+              <MermaidDiagram code={r.userFlowMermaid} />
+            </Section>
+          </div>
+
+          {/* Risco — o que pode dar errado e o que fazer a respeito. */}
           {r.riskMatrix.length > 0 && (
             <Section icon={AlertTriangle} title="Matriz de risco">
               <div className="grid gap-6 md:grid-cols-[260px_1fr]">
@@ -354,6 +375,33 @@ export default function BlueprintDetailPage() {
               </div>
             </Section>
           )}
+
+          {/* A partir daqui, o conteúdo é voltado a quem vai construir/testar
+              de verdade — mais técnico de propósito. */}
+          <div className="flex items-center gap-3 pt-2">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Detalhes técnicos de QA
+            </span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          {/* Radar + Pirâmide lado a lado */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Section icon={ShieldCheck} title="Maturidade de QA">
+              <QaRadar data={r.qaMaturityRadar} />
+            </Section>
+            <Section icon={Workflow} title="Pirâmide de testes">
+              <TestPyramid pyramid={r.testStrategy.pyramid} />
+              <div className="mt-4 space-y-2 text-xs">
+                <ChipRow label="Abordagens" items={r.testStrategy.approaches} />
+                <ChipRow label="Ferramentas" items={r.testStrategy.tooling} />
+                <ChipRow
+                  label="Ambientes"
+                  items={r.testStrategy.environments}
+                />
+              </div>
+            </Section>
+          </div>
 
           {/* Casos de teste */}
           {r.testCases.length > 0 && (
@@ -393,49 +441,6 @@ export default function BlueprintDetailPage() {
                       <p>
                         <b className="text-primary">Então</b> {tc.then}
                       </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Section>
-          )}
-
-          {/* Roadmap / marcos */}
-          {r.milestones.length > 0 && (
-            <Section title="Cronograma">
-              <GanttChart milestones={r.milestones} />
-            </Section>
-          )}
-          {r.milestones.length > 0 && (
-            <Section title="Marcos & roadmap">
-              <div className="space-y-3">
-                {r.milestones.map((m, i) => (
-                  <div key={i} className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
-                        {i + 1}
-                      </div>
-                      {i < r.milestones.length - 1 && (
-                        <div className="w-px flex-1 bg-border" />
-                      )}
-                    </div>
-                    <div className="pb-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="min-w-0 break-words font-medium">
-                          {m.name}
-                        </p>
-                        <span className="text-xs text-muted-foreground">
-                          ~{m.durationWeeks} sem
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {m.deliverables.join(" · ")}
-                      </p>
-                      {m.qaFocus && (
-                        <p className="mt-1 text-xs text-emerald-400/90">
-                          QA: {m.qaFocus}
-                        </p>
-                      )}
                     </div>
                   </div>
                 ))}

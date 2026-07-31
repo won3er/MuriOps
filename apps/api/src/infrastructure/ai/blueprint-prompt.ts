@@ -25,7 +25,9 @@ export interface BlueprintDesignInput {
  */
 export const BLUEPRINT_SYSTEM_PROMPT = `Você é um Arquiteto de Qualidade (QA) e Engenheiro de Software SÊNIOR de nível mundial. Recebe a descrição de um projeto a construir (ainda não existe código) e produz um PLANO DE DESENVOLVIMENTO COM QUALIDADE EMBUTIDA, como um tech lead / QA lead faria antes do time começar.
 
-Pense como um sênior: escolha tecnologias com justificativa e alternativas, desenhe a arquitetura, defina a estratégia de teste (pirâmide), levante riscos com probabilidade e impacto, quebre em marcos com foco de QA em cada um, e defina quality gates objetivos (métrica + limiar). Seja concreto e acionável, não genérico.
+Pense como um sênior: escolha tecnologias com justificativa e alternativas, desenhe a arquitetura, defina a estratégia de teste (pirâmide), levante riscos com probabilidade e impacto, quebre em marcos com foco de QA em cada um, e defina quality gates objetivos (métrica + limiar). Seja concreto e acionável, não genérico — cada blueprint deve ser claramente diferente de outro, refletindo a descrição específica recebida.
+
+LINGUAGEM — quem lê isso nem sempre é técnico: "summary", "objectives" (goal/scope/outOfScope/successCriteria) e "deliverables"/"qaFocus" de cada marco precisam ser compreensíveis por um dono de produto ou stakeholder leigo, sem jargão de engenharia desnecessário (evite termos como "idempotência", "particionamento", "observabilidade" nesses campos específicos — se o conceito for essencial, explique em uma frase simples). Já "techStack.rationale", "riskMatrix", "testCases", "nfrs" e "qualityGates" são campos técnicos de propósito e podem usar terminologia normal de engenharia — mas mesmo aí, prefira frases curtas e diretas em vez de parágrafos densos.
 
 DIAGRAMAS MERMAID: gere sintaxe Mermaid VÁLIDA e simples.
 - architectureMermaid: um "flowchart TD" (ou "graph TD") com componentes (frontend, backend, banco, filas, integrações externas) e as ligações. Use ids alfanuméricos e rótulos entre colchetes. Ex.: A[Frontend] --> B[API]; B --> C[(Postgres)].

@@ -18,6 +18,19 @@ import { decryptSecret } from "../infrastructure/crypto/secret-box.js";
 import { prisma } from "../infrastructure/database/prisma.js";
 import { NotFoundError } from "./analysis.service.js";
 
+/**
+ * Blueprint pedido sem a organização ter uma chave de IA própria configurada.
+ * Diferente de Análise/Atualizar (que sempre têm dado real coletado — crawl
+ * ou manifesto — mesmo sem IA), o Blueprint sem IA não tem NENHUM dado real
+ * de entrada pra trabalhar: o `NoopProvider` devolvia um template fixo
+ * idêntico pra qualquer projeto (mesmo stack, mesmo marco único, mesmo caso
+ * de teste), o que confundia mais do que ajudava. Bloquear aqui é melhor do
+ * que gerar algo enganosamente "pronto".
+ */
+export class AiKeyRequiredError extends Error {
+  readonly statusCode = 400;
+}
+
 export const blueprintService = {
   /**
    * Cria o blueprint em `PENDING` e dispara a geração em background — a resposta
@@ -30,6 +43,17 @@ export const blueprintService = {
     input: CreateBlueprintRequest,
   ): Promise<Blueprint> {
     const mode = input.input.mode;
+
+    const org = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { aiProvider: true, aiApiKeyEncrypted: true },
+    });
+    if (!org?.aiProvider || !org.aiApiKeyEncrypted) {
+      throw new AiKeyRequiredError(
+        "O Blueprint precisa de um provider de IA conectado (Claude, OpenAI ou Gemini) para gerar um plano específico para este projeto. Configure uma chave em Configurações antes de continuar.",
+      );
+    }
+
     const provider = await resolveProviderName(organizationId, input.provider);
 
     // `projectId` vem cru do request (z.string().optional() na rota) — sem
@@ -78,6 +102,16 @@ export const blueprintService = {
       where: { id, organizationId },
     });
     if (!existing) throw new NotFoundError("Blueprint não encontrado");
+
+    const org = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { aiProvider: true, aiApiKeyEncrypted: true },
+    });
+    if (!org?.aiProvider || !org.aiApiKeyEncrypted) {
+      throw new AiKeyRequiredError(
+        "O Blueprint precisa de um provider de IA conectado (Claude, OpenAI ou Gemini) para regenerar o plano. Configure uma chave em Configurações antes de continuar.",
+      );
+    }
 
     const providerName = await resolveProviderName(organizationId, provider);
 

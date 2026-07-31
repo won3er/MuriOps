@@ -1,7 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { NotFoundError } from "../../application/analysis.service.js";
-import { blueprintService } from "../../application/blueprint.service.js";
+import {
+  AiKeyRequiredError,
+  blueprintService,
+} from "../../application/blueprint.service.js";
 import { generateBlueprintReportPdf } from "../../infrastructure/pdf/blueprint-report.js";
 
 const providerSchema = z.enum(["claude", "openai", "gemini"]);
@@ -67,13 +70,21 @@ export async function blueprintRoutes(app: FastifyInstance): Promise<void> {
 
   app.post("/blueprints", async (req, reply) => {
     const body = createSchema.parse(req.body);
-    const blueprint = await blueprintService.create(
-      req.user.organizationId,
-      req.user.sub,
-      body,
-    );
-    // 202: aceito e sendo gerado em background; o cliente acompanha por polling.
-    return reply.status(202).send(blueprint);
+    try {
+      const blueprint = await blueprintService.create(
+        req.user.organizationId,
+        req.user.sub,
+        body,
+      );
+      // 202: aceito e sendo gerado em background; o cliente acompanha por polling.
+      return reply.status(202).send(blueprint);
+    } catch (err) {
+      if (err instanceof AiKeyRequiredError)
+        return reply
+          .status(400)
+          .send({ statusCode: 400, error: "AiKeyRequired", message: err.message });
+      throw err;
+    }
   });
 
   app.get("/blueprints/:id", async (req, reply) => {
@@ -131,6 +142,10 @@ export async function blueprintRoutes(app: FastifyInstance): Promise<void> {
         return reply
           .status(404)
           .send({ statusCode: 404, error: "NotFound", message: err.message });
+      if (err instanceof AiKeyRequiredError)
+        return reply
+          .status(400)
+          .send({ statusCode: 400, error: "AiKeyRequired", message: err.message });
       throw err;
     }
   });

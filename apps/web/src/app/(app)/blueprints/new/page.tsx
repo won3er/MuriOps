@@ -5,10 +5,11 @@ import type {
   BlueprintProviderName,
   CreateBlueprintRequest,
 } from "@qa-ai/shared";
-import { FileText, Loader2, Network, Sparkles, X } from "lucide-react";
+import { AlertTriangle, FileText, Loader2, Network, Sparkles, X } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
   CanvasEditor,
   type CanvasValue,
@@ -16,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { api } from "@/lib/api";
 import { useCreateBlueprint } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
@@ -47,7 +49,18 @@ export default function NewBlueprintPage() {
     "auto",
   );
   const [error, setError] = useState<string | null>(null);
+  const [aiConfigured, setAiConfigured] = useState<boolean | null>(null);
   const create = useCreateBlueprint();
+
+  // O Blueprint precisa de IA de verdade pra produzir um plano específico
+  // deste projeto — sem chave conectada, o back recusa a criação (ver
+  // AiKeyRequiredError). Checa aqui pra já orientar o usuário antes de tentar.
+  useEffect(() => {
+    api
+      .getAiSettings()
+      .then((s) => setAiConfigured(s.configured))
+      .catch(() => setAiConfigured(null));
+  }, []);
 
   // form
   const [form, setForm] = useState<BlueprintFormInput>({
@@ -117,6 +130,26 @@ export default function NewBlueprintPage() {
         title="Novo blueprint"
         description="Escolha a forma de entrada e forneça contexto suficiente para gerar um plano útil."
       />
+
+      {aiConfigured === false && (
+        <Card className="border-amber-500/30 bg-amber-500/[0.06]">
+          <CardContent className="flex items-start gap-3 pt-5">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+            <div className="space-y-1 text-sm">
+              <p className="font-medium">Conecte uma IA antes de gerar</p>
+              <p className="text-muted-foreground">
+                O Blueprint usa IA para desenhar um plano específico para o seu
+                projeto — sem uma chave conectada, não é possível gerar um
+                plano confiável.{" "}
+                <Link href="/settings" className="text-primary hover:underline">
+                  Conectar em Configurações
+                </Link>
+                .
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="space-y-5 pt-5">
@@ -224,7 +257,7 @@ export default function NewBlueprintPage() {
             <Button
               type="button"
               onClick={generate}
-              disabled={create.isPending}
+              disabled={create.isPending || aiConfigured === false}
               size="lg"
               className="w-full sm:w-auto"
             >

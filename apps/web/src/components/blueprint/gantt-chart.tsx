@@ -44,8 +44,8 @@ export function GanttChart({
   return (
     <MermaidDiagram
       code={code}
-      initialZoom={1.35}
-      viewportHeight={440}
+      initialZoom={1}
+      viewportHeight={520}
     />
   );
 }

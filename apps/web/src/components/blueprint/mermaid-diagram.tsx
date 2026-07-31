@@ -61,7 +61,7 @@ export function MermaidDiagram({
 
   function onWheel(e: React.WheelEvent) {
     e.preventDefault();
-    setZoom((z) => Math.min(4, Math.max(0.4, z - e.deltaY * 0.001)));
+    setZoom((z) => Math.min(8, Math.max(0.4, z - e.deltaY * 0.001)));
   }
 
   function onPointerDown(e: React.PointerEvent) {
@@ -149,18 +149,25 @@ export function MermaidDiagram({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-end gap-1">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] text-muted-foreground">
+          Role o mouse para dar zoom, arraste para mover
+        </p>
+        <div className="flex items-center gap-1">
         <button
           type="button"
-          onClick={() => setZoom((z) => Math.max(0.4, z - 0.2))}
+          onClick={() => setZoom((z) => Math.max(0.4, z - 0.3))}
           className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
           aria-label="Diminuir zoom"
         >
           <ZoomOut className="h-3.5 w-3.5" />
         </button>
+        <span className="min-w-[3ch] text-center text-[11px] tabular-nums text-muted-foreground">
+          {Math.round(zoom * 100)}%
+        </span>
         <button
           type="button"
-          onClick={() => setZoom((z) => Math.min(4, z + 0.2))}
+          onClick={() => setZoom((z) => Math.min(8, z + 0.3))}
           className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
           aria-label="Aumentar zoom"
         >
@@ -181,6 +188,7 @@ export function MermaidDiagram({
         >
           <Download className="h-3.5 w-3.5" />
         </button>
+        </div>
       </div>
 
       <div
