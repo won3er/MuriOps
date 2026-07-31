@@ -35,6 +35,17 @@ export class ConsentRequiredError extends Error {
   readonly statusCode = 403;
 }
 
+/**
+ * SOURCE_SECURITY_SCAN pedida sem o projeto ter uma conexão GITHUB ativa —
+ * não há repositório nenhum pra ler. Diferente do ConsentRequiredError
+ * (Teste Ativo), aqui não existe uma "declaração de autorização" separada:
+ * o próprio ato de conectar o repositório em Aplicação já é o consentimento
+ * (é o token do próprio usuário, contra o próprio repositório dele).
+ */
+export class GithubConnectionRequiredError extends Error {
+  readonly statusCode = 400;
+}
+
 export const analysisService = {
   /**
    * Hub "Análise": todas as análises da organização, de qualquer projeto,
@@ -86,6 +97,20 @@ export const analysisService = {
       throw new ConsentRequiredError(
         "O Teste Ativo Autorizado exige consentimento explícito para este projeto. Confirme em Projeto → Segurança que você tem autorização para testar este site ativamente antes de incluir essa categoria na análise.",
       );
+    }
+
+    // Gate de verdade da Análise de Segurança via GitHub: sem uma conexão
+    // GITHUB salva pra este projeto não há repositório nenhum pra ler.
+    if (categories.includes("SOURCE_SECURITY_SCAN")) {
+      const githubConnection = await prisma.adapterConnection.findFirst({
+        where: { projectId, organizationId, kind: "GITHUB" },
+        select: { id: true },
+      });
+      if (!githubConnection) {
+        throw new GithubConnectionRequiredError(
+          "A Análise de Segurança via GitHub exige uma conexão GITHUB ativa para este projeto. Conecte o repositório em Aplicação → Conexões e integrações antes de incluir essa categoria na análise.",
+        );
+      }
     }
 
     // Ponto de verdade contra SSRF: StartAnalysisRequest.url deixa
@@ -300,10 +325,14 @@ export const analysisService = {
 };
 
 // A análise completa "padrão" não inclui DEEP_SECURITY (auditoria mais
-// pesada, opt-in) nem ACTIVE_SECURITY_TEST (teste ativo, exige consentimento
-// explícito por projeto — ver ConsentRequiredError abaixo).
+// pesada, opt-in), ACTIVE_SECURITY_TEST (teste ativo, exige consentimento
+// explícito por projeto — ver ConsentRequiredError acima) nem
+// SOURCE_SECURITY_SCAN (exige conexão GITHUB — ver GithubConnectionRequiredError).
 const DEFAULT_CATEGORIES = ALL_CATEGORIES.filter(
-  (c) => c !== "DEEP_SECURITY" && c !== "ACTIVE_SECURITY_TEST",
+  (c) =>
+    c !== "DEEP_SECURITY" &&
+    c !== "ACTIVE_SECURITY_TEST" &&
+    c !== "SOURCE_SECURITY_SCAN",
 );
 
 function normalizeCategories(input?: string[]): AnalysisCategory[] {

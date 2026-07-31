@@ -24,6 +24,7 @@ export const PAGE_ANALYZERS: Record<AnalysisCategory, PageAnalyzer[]> = {
   NETWORK: [new NetworkAnalyzer()],
   DEEP_SECURITY: [],
   ACTIVE_SECURITY_TEST: [],
+  SOURCE_SECURITY_SCAN: [],
 };
 
 /**

@@ -35,7 +35,7 @@ const githubConnectionSchema = z.object({
 
 const createGateSchema = z.object({
   category: z
-    .enum(["UI", "UX", "PERFORMANCE", "SEO", "ACCESSIBILITY", "SECURITY", "CONSOLE", "NETWORK", "DEEP_SECURITY", "ACTIVE_SECURITY_TEST"])
+    .enum(["UI", "UX", "PERFORMANCE", "SEO", "ACCESSIBILITY", "SECURITY", "CONSOLE", "NETWORK", "DEEP_SECURITY", "ACTIVE_SECURITY_TEST", "SOURCE_SECURITY_SCAN"])
     .nullable()
     .optional(),
   minScore: z.number().int().min(0).max(100),

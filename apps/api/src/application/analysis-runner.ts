@@ -46,6 +46,8 @@ export async function runAnalysis(analysisId: string): Promise<void> {
       maxDepth: config.maxDepth,
       maxPages: config.maxPages,
       aiOverride,
+      organizationId: analysis.project.organizationId,
+      projectId: analysis.projectId,
       onStatus: async (status) => {
         await prisma.analysis.update({
           where: { id: analysisId },

@@ -14,6 +14,7 @@ import {
   type AiOverride,
 } from "../../infrastructure/ai/index.js";
 import { selectPageAnalyzers, selectSiteAnalyzers } from "./analyzers/index.js";
+import { runSourceSecurityScan } from "./analyzers/source-security-scan/source-security-scan.js";
 import { crawl } from "./crawler.js";
 import { computeScores } from "./scoring.js";
 import type { PageContext } from "./types.js";
@@ -30,6 +31,14 @@ export interface EngineInput {
    * NÃO existe chave padrão do servidor como fallback.
    */
   aiOverride?: AiOverride | null;
+  /**
+   * Necessários só pela categoria SOURCE_SECURITY_SCAN, que lê o repositório
+   * GitHub conectado ao projeto em vez de dados coletados no crawl — nenhum
+   * outro analyzer (Page/Site) precisa disso. Opcionais porque o engine
+   * também é chamado em contextos sem projeto persistido.
+   */
+  organizationId?: string;
+  projectId?: string;
   onStatus?: (status: AnalysisStatus, meta?: Record<string, unknown>) => Promise<void>;
 }
 
@@ -79,6 +88,8 @@ export async function runEngine(input: EngineInput): Promise<EngineResult> {
     maxDepth,
     maxPages,
     aiOverride,
+    organizationId,
+    projectId,
     onStatus,
   } = input;
 
@@ -184,6 +195,25 @@ export async function runEngine(input: EngineInput): Promise<EngineResult> {
           pages.find((p) => p.url === issue.pageUrl) ?? pages[0]!;
         if (matchingPage.screenshotPath) {
           issue.evidencePaths.push(matchingPage.screenshotPath);
+        }
+      }
+    }
+
+    // SOURCE_SECURITY_SCAN não é um SiteAnalyzer comum: lê o repositório
+    // GitHub conectado ao projeto (não dados do crawl), então precisa de
+    // organizationId/projectId — chamado direto aqui em vez de entrar na
+    // lista de SITE_ANALYZERS.
+    if (categories.includes("SOURCE_SECURITY_SCAN") && organizationId && projectId) {
+      const sourceIssues = await runSourceSecurityScan(organizationId, projectId).catch((err) => {
+        console.error("⚠️  SOURCE_SECURITY_SCAN falhou:", err instanceof Error ? err.message : err);
+        return [];
+      });
+      for (const d of sourceIssues) {
+        merge(d);
+        const fallback = pages[0]!;
+        const issueRow = byFingerprint.get(d.fingerprint)!;
+        if (issueRow.evidencePaths.length === 0 && fallback.screenshotPath) {
+          issueRow.evidencePaths.push(fallback.screenshotPath);
         }
       }
     }

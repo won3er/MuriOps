@@ -176,6 +176,7 @@ enum AnalysisCategory {
   NETWORK
   DEEP_SECURITY
   ACTIVE_SECURITY_TEST
+  SOURCE_SECURITY_SCAN
 }
 
 enum Severity {

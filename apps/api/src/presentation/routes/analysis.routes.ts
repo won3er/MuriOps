@@ -4,6 +4,7 @@ import {
   AnalysisConflictError,
   analysisService,
   ConsentRequiredError,
+  GithubConnectionRequiredError,
   NotFoundError,
 } from "../../application/analysis.service.js";
 import { prisma } from "../../infrastructure/database/prisma.js";
@@ -46,6 +47,10 @@ export async function analysisRoutes(app: FastifyInstance): Promise<void> {
         return reply
           .status(403)
           .send({ statusCode: 403, error: "ConsentRequired", message: err.message });
+      if (err instanceof GithubConnectionRequiredError)
+        return reply
+          .status(400)
+          .send({ statusCode: 400, error: "GithubConnectionRequired", message: err.message });
       throw err;
     }
   };

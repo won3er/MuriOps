@@ -3,6 +3,7 @@
 import {
   ArrowRight,
   FileSearch,
+  Github,
   Loader2,
   Play,
   ShieldAlert,
@@ -27,6 +28,10 @@ function isSecurityAudit(categories: string[]): boolean {
 
 function isActiveTest(categories: string[]): boolean {
   return categories.length === 1 && categories[0] === "ACTIVE_SECURITY_TEST";
+}
+
+function isSourceScan(categories: string[]): boolean {
+  return categories.length === 1 && categories[0] === "SOURCE_SECURITY_SCAN";
 }
 
 export default function AnalysesHubPage() {
@@ -63,7 +68,7 @@ function AnalysesHub() {
   } = useAnalysesList();
   const [projectId, setProjectId] = useState("");
   const [selectedType, setSelectedType] = useState<
-    "qa" | "security" | "active" | null
+    "qa" | "security" | "active" | "source" | null
   >(null);
   const [starting, setStarting] = useState(false);
 
@@ -90,7 +95,9 @@ function AnalysesHub() {
           ? ["DEEP_SECURITY"]
           : selectedType === "active"
             ? ["ACTIVE_SECURITY_TEST"]
-            : undefined;
+            : selectedType === "source"
+              ? ["SOURCE_SECURITY_SCAN"]
+              : undefined;
       const analysis = await api.startAnalysis(
         projectId,
         categories ? { categories } : {},
@@ -167,7 +174,7 @@ function AnalysesHub() {
             )}
           </div>
           <div>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <button
                 type="button"
                 onClick={() => setSelectedType("qa")}
@@ -237,6 +244,28 @@ function AnalysesHub() {
                   </span>
                 </span>
               </button>
+              <button
+                type="button"
+                onClick={() => setSelectedType("source")}
+                disabled={!projectId}
+                aria-pressed={selectedType === "source"}
+                className={cn(
+                  "group flex gap-3 rounded-md border p-4 text-left hover:border-primary/50 hover:bg-accent/30 disabled:pointer-events-none disabled:opacity-50",
+                  selectedType === "source" &&
+                    "border-sky-400 bg-sky-500/[0.06]",
+                )}
+              >
+                <Github className="h-5 w-5 text-sky-400" />
+                <span>
+                  <strong className="block text-sm font-medium">
+                    Segurança via GitHub
+                  </strong>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                    Segredos commitados, dependências com CVE e código
+                    inseguro. Exige conexão GitHub em Aplicação.
+                  </span>
+                </span>
+              </button>
             </div>
 
             <div className="mt-4 flex items-center gap-3">
@@ -298,6 +327,7 @@ function AnalysesHub() {
               {analyses.map((analysis) => {
                 const security = isSecurityAudit(analysis.categories);
                 const active = isActiveTest(analysis.categories);
+                const sourceScan = isSourceScan(analysis.categories);
                 return (
                   <Link
                     key={analysis.id}
@@ -321,6 +351,11 @@ function AnalysesHub() {
                         {active && (
                           <Badge className="border-rose-500/30 bg-rose-500/10 text-rose-300">
                             Teste ativo
+                          </Badge>
+                        )}
+                        {sourceScan && (
+                          <Badge className="border-sky-500/30 bg-sky-500/10 text-sky-300">
+                            GitHub
                           </Badge>
                         )}
                       </div>

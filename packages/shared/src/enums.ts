@@ -20,6 +20,14 @@ export const AnalysisCategory = {
    * contra formulários do próprio site. Nunca roda por padrão.
    */
   ACTIVE_SECURITY_TEST: "ACTIVE_SECURITY_TEST",
+  /**
+   * Análise de Segurança via GitHub — opt-in, só roda se o projeto tiver uma
+   * conexão GITHUB ativa (checado em analysis.service.ts). Lê o código-fonte
+   * do repositório (segredos commitados, dependências com CVE real via
+   * manifesto, padrões de código inseguro). Só leitura — nunca escreve no
+   * repositório. Nunca roda por padrão.
+   */
+  SOURCE_SECURITY_SCAN: "SOURCE_SECURITY_SCAN",
 } as const;
 export type AnalysisCategory =
   (typeof AnalysisCategory)[keyof typeof AnalysisCategory];
