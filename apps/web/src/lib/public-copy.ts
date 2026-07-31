@@ -283,11 +283,19 @@ export const FEATURE_COPY = {
     workspace: "Main workspace",
     recommended: "Recommended next decision",
     review: "Review details →",
-    sideNav: ["Overview", "Projects", "Analyses", "Applications"],
+    sideNav: [
+      "Overview",
+      "Projects",
+      "Analyses",
+      "Plan",
+      "Applications",
+      "Orchestrations",
+      "Updates",
+    ],
     features: [
       {
         key: "analisar",
-        label: "Analyze",
+        label: "Analyses",
         eyebrow: "Diagnosis",
         heading: "Find problems with evidence, not assumptions",
         description:
@@ -301,7 +309,7 @@ export const FEATURE_COPY = {
       },
       {
         key: "projetar",
-        label: "Design",
+        label: "Plan",
         eyebrow: "Planning",
         heading: "Build quality into the project before implementation",
         description:
@@ -311,7 +319,7 @@ export const FEATURE_COPY = {
       },
       {
         key: "aplicar",
-        label: "Apply",
+        label: "Applications",
         eyebrow: "Execution",
         heading: "Turn recommendations into traceable work",
         description:
@@ -325,7 +333,7 @@ export const FEATURE_COPY = {
       },
       {
         key: "automatizar",
-        label: "Automate",
+        label: "Orchestrations",
         eyebrow: "Orchestration",
         heading: "Repeat the cycle with checkpoints and clear criteria",
         description:
@@ -339,7 +347,7 @@ export const FEATURE_COPY = {
       },
       {
         key: "acompanhar",
-        label: "Track",
+        label: "Overview",
         eyebrow: "Management",
         heading: "See where to act without losing project context",
         description:
@@ -360,11 +368,19 @@ export const FEATURE_COPY = {
     workspace: "Workspace principal",
     recommended: "Próxima decisão recomendada",
     review: "Revisar detalhes →",
-    sideNav: ["Visão geral", "Projetos", "Análises", "Aplicações"],
+    sideNav: [
+      "Visão geral",
+      "Projetos",
+      "Análises",
+      "Projetar",
+      "Aplicações",
+      "Orquestrações",
+      "Atualizações",
+    ],
     features: [
       {
         key: "analisar",
-        label: "Analisar",
+        label: "Análises",
         eyebrow: "Diagnóstico",
         heading: "Encontre problemas com evidências, não com suposições",
         description:
@@ -392,7 +408,7 @@ export const FEATURE_COPY = {
       },
       {
         key: "aplicar",
-        label: "Aplicar",
+        label: "Aplicações",
         eyebrow: "Execução",
         heading: "Converta recomendações em trabalho rastreável",
         description:
@@ -406,7 +422,7 @@ export const FEATURE_COPY = {
       },
       {
         key: "automatizar",
-        label: "Automatizar",
+        label: "Orquestrações",
         eyebrow: "Orquestração",
         heading: "Repita o ciclo com checkpoints e critérios claros",
         description:
@@ -420,7 +436,7 @@ export const FEATURE_COPY = {
       },
       {
         key: "acompanhar",
-        label: "Acompanhar",
+        label: "Visão geral",
         eyebrow: "Gestão",
         heading: "Veja onde agir sem perder o contexto dos projetos",
         description:
@@ -441,11 +457,19 @@ export const FEATURE_COPY = {
     workspace: "Workspace principal",
     recommended: "Próxima decisión recomendada",
     review: "Revisar detalles →",
-    sideNav: ["Vista general", "Proyectos", "Análisis", "Aplicaciones"],
+    sideNav: [
+      "Vista general",
+      "Proyectos",
+      "Análisis",
+      "Planificar",
+      "Aplicaciones",
+      "Orquestaciones",
+      "Actualizaciones",
+    ],
     features: [
       {
         key: "analisar",
-        label: "Analizar",
+        label: "Análisis",
         eyebrow: "Diagnóstico",
         heading: "Encuentra problemas con evidencia, no con suposiciones",
         description:
@@ -473,7 +497,7 @@ export const FEATURE_COPY = {
       },
       {
         key: "aplicar",
-        label: "Aplicar",
+        label: "Aplicaciones",
         eyebrow: "Ejecución",
         heading: "Convierte recomendaciones en trabajo rastreable",
         description:
@@ -487,7 +511,7 @@ export const FEATURE_COPY = {
       },
       {
         key: "automatizar",
-        label: "Automatizar",
+        label: "Orquestaciones",
         eyebrow: "Orquestación",
         heading: "Repite el ciclo con checkpoints y criterios claros",
         description:
@@ -501,7 +525,7 @@ export const FEATURE_COPY = {
       },
       {
         key: "acompanhar",
-        label: "Acompañar",
+        label: "Vista general",
         eyebrow: "Gestión",
         heading: "Descubre dónde actuar sin perder el contexto",
         description:

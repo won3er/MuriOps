@@ -70,6 +70,14 @@ const FEATURE_VISUALS = [
 
 type FeatureKey = (typeof FEATURE_VISUALS)[number]["key"];
 
+const ACTIVE_NAV_ITEM: Record<FeatureKey, number> = {
+  analisar: 2,
+  projetar: 3,
+  aplicar: 4,
+  automatizar: 5,
+  acompanhar: 0,
+};
+
 function ProductPreview({ feature }: { feature: FeatureKey }) {
   const { locale } = useLocale();
   const featureCopy = FEATURE_COPY[locale];
@@ -88,7 +96,7 @@ function ProductPreview({ feature }: { feature: FeatureKey }) {
               key={item}
               className={cn(
                 "rounded-md px-2.5 py-2 text-[11px]",
-                index === 2
+                index === ACTIVE_NAV_ITEM[feature]
                   ? "border border-[#6366f1]/20 bg-[#6366f1]/10 text-white"
                   : "text-[#8b949e]",
               )}
