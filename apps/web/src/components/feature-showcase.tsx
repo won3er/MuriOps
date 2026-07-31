@@ -20,9 +20,6 @@ const FEATURE_VISUALS = [
     key: "analisar",
     number: "01",
     icon: ScanSearch,
-    image: "/screens/analisar_crop.jpg",
-    width: 1568,
-    height: 545,
     accent: "from-[#6e40c9]/55 via-[#6366f1]/22 to-[#2f81f7]/30",
     glow: "bg-[#8250df]/25",
   },
@@ -30,9 +27,6 @@ const FEATURE_VISUALS = [
     key: "projetar",
     number: "02",
     icon: DraftingCompass,
-    image: "/screens/projetar_crop.jpg",
-    width: 1568,
-    height: 545,
     accent: "from-[#1f6feb]/45 via-[#6366f1]/20 to-[#2ea043]/24",
     glow: "bg-[#2f81f7]/20",
   },
@@ -40,9 +34,6 @@ const FEATURE_VISUALS = [
     key: "aplicar",
     number: "03",
     icon: Wrench,
-    image: "/screens/aplicar_crop.jpg",
-    width: 1568,
-    height: 545,
     accent: "from-[#238636]/36 via-[#6366f1]/20 to-[#2f81f7]/26",
     glow: "bg-[#3fb950]/16",
   },
@@ -50,9 +41,6 @@ const FEATURE_VISUALS = [
     key: "automatizar",
     number: "04",
     icon: RefreshCw,
-    image: "/screens/automatizar_crop.jpg",
-    width: 1568,
-    height: 330,
     accent: "from-[#bf8700]/28 via-[#6366f1]/20 to-[#2f81f7]/28",
     glow: "bg-[#d29922]/14",
   },
@@ -60,9 +48,6 @@ const FEATURE_VISUALS = [
     key: "acompanhar",
     number: "05",
     icon: LayoutDashboard,
-    image: "/screens/acompanhar_crop.jpg",
-    width: 1568,
-    height: 340,
     accent: "from-[#2f81f7]/38 via-[#6366f1]/20 to-[#8250df]/32",
     glow: "bg-[#6366f1]/20",
   },
@@ -78,10 +63,155 @@ const ACTIVE_NAV_ITEM: Record<FeatureKey, number> = {
   acompanhar: 0,
 };
 
+type PreviewData = {
+  title: string;
+  badge: string;
+  metric: string;
+  metricLabel: string;
+  rows: readonly (readonly string[])[];
+};
+
+const PREVIEW_UI_COPY = {
+  en: {
+    channels: "GitHub · MCP · PDF",
+    orchestrationHint: "Run with checkpoints and controlled resume.",
+    activeProjects: "active projects",
+    needAttention: "need attention",
+  },
+  pt: {
+    channels: "GitHub · MCP · PDF",
+    orchestrationHint: "Execução com checkpoints e retomada controlada.",
+    activeProjects: "projetos ativos",
+    needAttention: "pedem atenção",
+  },
+  es: {
+    channels: "GitHub · MCP · PDF",
+    orchestrationHint: "Ejecución con puntos de control y reanudación controlada.",
+    activeProjects: "proyectos activos",
+    needAttention: "requieren atención",
+  },
+} as const;
+
+function AnalysisPreview({ preview }: { preview: PreviewData }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-[130px_minmax(0,1fr)]">
+      <div className="rounded-lg border border-white/10 bg-white/[0.025] p-4">
+        <p className="font-mono text-3xl font-semibold text-white">{preview.metric}</p>
+        <p className="mt-1 text-[10px] text-[#8b949e]">{preview.metricLabel}</p>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full w-[82%] rounded-full bg-gradient-to-r from-[#6366f1] to-[#58a6ff]" />
+        </div>
+      </div>
+      <div className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.02]">
+        {preview.rows.map(([label, score, detail]) => (
+          <div key={label} className="grid gap-1 border-b border-white/[0.07] px-3.5 py-3 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_72px_110px] sm:items-center">
+            <span className="truncate text-xs font-medium text-[#e6edf3]">{label}</span>
+            <span className="font-mono text-[10px] text-[#3fb950]">{score}</span>
+            <span className="truncate text-[10px] text-[#8b949e]">{detail}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BlueprintPreview({ preview }: { preview: PreviewData }) {
+  return (
+    <div className="grid gap-3 lg:grid-cols-[0.8fr_1.2fr]">
+      <div className="rounded-lg border border-white/10 bg-white/[0.025] p-4">
+        <p className="text-[10px] uppercase tracking-[0.13em] text-[#8b949e]">Quality gates</p>
+        <p className="mt-2 font-mono text-3xl font-semibold text-white">{preview.metric}</p>
+        <p className="mt-1 text-[10px] text-[#8b949e]">{preview.metricLabel}</p>
+        <div className="mt-5 space-y-2">
+          <span className="block h-1.5 w-full rounded bg-[#6366f1]/70" />
+          <span className="block h-1.5 w-4/5 rounded bg-white/15" />
+          <span className="block h-1.5 w-3/5 rounded bg-white/10" />
+        </div>
+      </div>
+      <div className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.02]">
+        {preview.rows.map(([label, status, detail]) => (
+          <div key={label} className="grid gap-1 border-b border-white/[0.07] px-3.5 py-3 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_100px_120px] sm:items-center">
+            <span className="text-xs font-medium text-[#e6edf3]">{label}</span>
+            <span className="inline-flex items-center gap-1.5 text-[10px] text-[#3fb950]"><span className="h-1.5 w-1.5 rounded-full bg-current" />{status}</span>
+            <span className="text-[10px] text-[#8b949e]">{detail}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ApplicationPreview({ preview, channels }: { preview: PreviewData; channels: string }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
+      <div className="flex items-baseline justify-between gap-3 border-b border-white/[0.07] pb-3">
+        <span className="text-xs font-medium text-[#e6edf3]">{preview.metric} {preview.metricLabel}</span>
+        <span className="text-[10px] text-[#8b949e]">{channels}</span>
+      </div>
+      <div className="mt-3 space-y-2.5">
+        {preview.rows.map(([label, status, detail], index) => {
+          const done = index === 0;
+          return (
+            <div key={label} className="grid grid-cols-[16px_minmax(0,1fr)_64px] items-center gap-2">
+              <span className={cn("grid h-4 w-4 place-items-center rounded-full border text-[9px]", done ? "border-[#3fb950] bg-[#238636] text-white" : "border-white/20 text-transparent")} aria-hidden="true">✓</span>
+              <span className={cn("truncate text-xs", done ? "text-[#8b949e] line-through" : "text-[#e6edf3]")}>{label}</span>
+              <span className="text-right text-[10px] text-[#a5b4fc]">{status || detail}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function OrchestrationPreview({ preview, hint }: { preview: PreviewData; hint: string }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-[130px_minmax(0,1fr)]">
+      <div className="rounded-lg border border-white/10 bg-white/[0.025] p-4">
+        <p className="font-mono text-3xl font-semibold text-white">{preview.metric}</p>
+        <p className="mt-1 text-[10px] text-[#8b949e]">{preview.metricLabel}</p>
+        <p className="mt-5 text-[10px] leading-4 text-[#a5b4fc]">{hint}</p>
+      </div>
+      <ol className="relative space-y-3 rounded-lg border border-white/10 bg-white/[0.02] p-4">
+        <span aria-hidden="true" className="absolute bottom-7 left-[21px] top-7 w-px bg-white/10" />
+        {preview.rows.map(([label, status, detail], index) => (
+          <li key={label} className="relative grid grid-cols-[16px_minmax(0,1fr)_104px] items-center gap-2">
+            <span className={cn("relative z-10 h-2.5 w-2.5 rounded-full", index < 2 ? "bg-[#3fb950]" : "border border-[#d29922] bg-[#0d1117]")} />
+            <span className="truncate text-xs font-medium text-[#e6edf3]">{label}</span>
+            <span className={cn("text-right text-[10px]", index < 2 ? "text-[#3fb950]" : "text-[#d29922]")}>{status} · {detail}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function OverviewPreview({ preview, activeProjects, needAttention }: { preview: PreviewData; activeProjects: string; needAttention: string }) {
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-lg border border-white/10 bg-white/[0.025] p-3"><p className="font-mono text-xl font-semibold text-white">{preview.metric}</p><p className="mt-1 text-[9px] text-[#8b949e]">{preview.metricLabel}</p></div>
+        <div className="rounded-lg border border-white/10 bg-white/[0.025] p-3"><p className="font-mono text-xl font-semibold text-white">3</p><p className="mt-1 text-[9px] text-[#8b949e]">{activeProjects}</p></div>
+        <div className="rounded-lg border border-white/10 bg-white/[0.025] p-3"><p className="font-mono text-xl font-semibold text-white">2</p><p className="mt-1 text-[9px] text-[#8b949e]">{needAttention}</p></div>
+      </div>
+      <div className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.02]">
+        {preview.rows.map(([label, status, detail]) => (
+          <div key={label} className="grid gap-1 border-b border-white/[0.07] px-3.5 py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_84px_100px] sm:items-center">
+            <span className="truncate text-xs font-medium text-[#e6edf3]">{label}</span>
+            <span className="text-[10px] text-[#3fb950]">{status}</span>
+            <span className="text-right font-mono text-[10px] text-[#8b949e]">{detail}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ProductPreview({ feature }: { feature: FeatureKey }) {
   const { locale } = useLocale();
   const featureCopy = FEATURE_COPY[locale];
   const preview = PREVIEW_COPY[locale][feature];
+  const uiCopy = PREVIEW_UI_COPY[locale];
 
   return (
     <div className="grid min-h-64 bg-[#0d1117] lg:grid-cols-[190px_minmax(0,1fr)]">
@@ -122,46 +252,12 @@ function ProductPreview({ feature }: { feature: FeatureKey }) {
           </span>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-[130px_minmax(0,1fr)]">
-          <div className="rounded-lg border border-white/10 bg-white/[0.025] p-4">
-            <p className="font-mono text-3xl font-semibold text-white">
-              {preview.metric}
-            </p>
-            <p className="mt-1 text-[10px] text-[#8b949e]">
-              {preview.metricLabel}
-            </p>
-            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full w-[82%] rounded-full bg-gradient-to-r from-[#6366f1] to-[#58a6ff]" />
-            </div>
-          </div>
-
-          <div className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.02]">
-            {preview.rows.map(([label, status, detail], index) => (
-              <div
-                key={label}
-                className="grid gap-1 border-b border-white/[0.07] px-3.5 py-3 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_90px_110px] sm:items-center"
-              >
-                <span className="truncate text-xs font-medium text-[#e6edf3]">
-                  {label}
-                </span>
-                <span
-                  className={cn(
-                    "flex items-center gap-1.5 text-[10px]",
-                    index === 1 ? "text-[#d29922]" : "text-[#3fb950]",
-                  )}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="h-1.5 w-1.5 shrink-0 rounded-full bg-current"
-                  />
-                  {status}
-                </span>
-                <span className="truncate text-[10px] text-[#8b949e]">
-                  {detail}
-                </span>
-              </div>
-            ))}
-          </div>
+        <div className="mt-5">
+          {feature === "analisar" && <AnalysisPreview preview={preview} />}
+          {feature === "projetar" && <BlueprintPreview preview={preview} />}
+          {feature === "aplicar" && <ApplicationPreview preview={preview} channels={uiCopy.channels} />}
+          {feature === "automatizar" && <OrchestrationPreview preview={preview} hint={uiCopy.orchestrationHint} />}
+          {feature === "acompanhar" && <OverviewPreview preview={preview} activeProjects={uiCopy.activeProjects} needAttention={uiCopy.needAttention} />}
         </div>
 
         <div className="mt-4 flex items-center justify-between rounded-lg border border-white/[0.07] bg-[#161b22]/70 px-3.5 py-2.5">
