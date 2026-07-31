@@ -361,6 +361,100 @@ certo e colar no `.env` (local e Render).
 Tudo documentado em `GITHUB_ADAPTER.md` (na pasta do app de demonstração) com
 os comandos exatos pra cada passo.
 
+## Bug crítico no Teste Ativo Autorizado (achado via MCP de produção)
+
+Origem: conectei no MCP de produção (`api.muriops.com.br/mcp/<token>`) — o que
+já valida que o **adapter MCP da Fase 1 funciona em produção**. O plano de
+remediação lá tinha um item pedindo pra "validar se existem telas de login,
+senão marcar como falso positivo por escopo". Ao verificar, achei o oposto.
+
+### O que foi verificado
+
+`muriops.com.br` **tem** autenticação: `/login` e `/register` devolvem 200,
+com `<form>` real contendo `input[type=email]` + `input[type=password]`, e a
+própria home linka pra ambos. Ou seja, **o item NÃO deve ser marcado como
+falso positivo** — o scanner é que errou.
+
+### Causa raiz (dois bugs encadeados)
+
+1. **`active-security-test.analyzer.ts` só inspecionava `pages[0]`** (a home).
+   Login praticamente nunca fica na home, então o teste de rate-limit e de
+   enumeração de usuário **nunca rodava** na maioria dos sites — e reportava
+   um INFO tranquilizador de "não encontrei formulário", como se estivesse
+   tudo certo. Pior: a mensagem orientava "aumente a profundidade da análise",
+   conselho inaplicável, que foi exatamente o que a IA transformou no item do
+   plano de remediação.
+2. **Causa mais profunda:** `crawler.ts` fecha progressivamente as abas
+   (otimização de memória do episódio Nuvemshop — evita estourar os 512MB do
+   Render), mantendo viva **só `pages[0]`**. Então nem adiantaria iterar as
+   páginas no analyzer: `ctx.page.evaluate()` nas demais lança "Target page
+   has been closed", o `.catch(() => [])` engolia, e o comportamento continuava
+   idêntico. Comprovado ao vivo: das 6 páginas crawleadas, só a primeira
+   respondia `evaluate`.
+
+### Correção aplicada
+
+Segui o precedente que já existia no próprio código (`PageContext.hasNav`, com
+o comentário "capturado no crawl pra o UxAnalyzer não precisar da página ainda
+aberta depois" — alguém já tinha batido nessa mesma classe de bug):
+
+- `types.ts`: novo `DetectedFormInfo` e campo `PageContext.forms`.
+- `crawler.ts`: captura os formulários **durante o crawl**, com a aba viva,
+  ao lado do `hasNav`. Custo zero de requisições (é `evaluate` em página já
+  carregada) e de memória (só metadados).
+- `active-security-test.analyzer.ts`: `discoverForms` virou função pura que lê
+  `ctx.forms` de todas as páginas, deduplica (mesmo formulário de rodapé em 10
+  páginas conta uma vez) e ordena com o login primeiro, pra ele sempre caber no
+  teto de `MAX_FORMS_TESTED` — que agora é um teto **global**, mantendo o
+  volume de requisições contra o alvo igual ao de antes.
+- Corrigido também: form sem atributo `action` resolvia pra raiz do site; pelo
+  HTML deve resolver pra própria URL da página. Sem isso, as sondas do login
+  do MuriOps iriam parar na home em vez de `/login`.
+
+### Guarda contra falso positivo introduzido pela própria correção
+
+Com o login agora sendo encontrado, apareceu um risco novo: o form do MuriOps
+é SPA (sem `method`, envio por `fetch`), então cai como `method=get`. Sondar
+`GET /login?email=...` só devolveria a página (200 sempre, nunca 429),
+gerando um achado **HIGH falso** de "sem rate-limit" — pior que o bug
+original, porque num produto de segurança um HIGH falso destrói a confiança.
+Blindei: só roda rate-limit/enumeração em form `method="post"`; em SPA emite
+um INFO explicando que o endpoint real não é determinável pelo HTML e que a
+análise deve apontar direto pro endpoint de autenticação da API.
+(`checkPayloadReflection` não precisou de guarda — só dispara em assinaturas
+específicas de erro SQL/stack trace/reflexo exato, então falha fechado.)
+
+### Verificação
+
+Crawl real contra `muriops.com.br` (só carregamento de páginas, nenhuma sonda
+ativa disparada):
+
+```
+ANTES  (só pages[0]): 0 form(s), login=NÃO
+DEPOIS (todas):       2 form(s), login=SIM
+  login em: https://muriops.com.br/login
+  action sondado: https://muriops.com.br/login   (antes iria pra home)
+  method: get  campos: email, password
+```
+
+Auditoria da mesma classe de bug nos outros analyzers: **nenhum outro afetado**.
+`accessibility`/`seo`/`ui` são PageAnalyzer (rodam com a aba aberta, via
+`onPageReady`); `security` só usa `responseHeaders`; `site-seo` e
+`deep-security` usam `pages[0]` de propósito — são justamente os dois citados
+no comentário do crawler como motivo de manter a primeira aba viva.
+
+Typecheck de `apps/api` limpo. Scripts temporários de verificação removidos.
+
+### Pendente pro usuário
+
+- O item 4 do plano em produção continua **pendente e correto como está** —
+  não escrevi nada em produção via MCP (leitura só). Depois de subir esta
+  correção, vale rodar o Teste Ativo de novo: o resultado esperado agora é o
+  INFO de "endpoint não determinável (SPA)" em vez do falso "nenhum login
+  encontrado".
+- Os outros 3 itens do plano (SPF, DMARC, CAA) são DNS puro, fora do código —
+  o passo a passo que a IA gerou pra eles está correto e aplicável.
+
 ---
 
 STATUS: READY_FOR_BROWSER_STEPS (2026-07-26, marcado manualmente pelo Cowork após revisão do log)

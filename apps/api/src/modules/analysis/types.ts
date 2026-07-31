@@ -56,6 +56,26 @@ export interface PageContext {
   screenshotPath: string | null;
   /** Se a página tem <nav>/role="navigation" — capturado no crawl pra o UxAnalyzer não precisar da página ainda aberta depois. */
   hasNav: boolean;
+  /**
+   * Formulários da página — capturados no crawl pelo mesmo motivo do `hasNav`:
+   * só `pages[0]` continua com a aba aberta depois do crawl (ver o fechamento
+   * progressivo em `crawler.ts`), então um analyzer de nível-site que quisesse
+   * varrer formulários de todas as páginas via `page.evaluate()` só enxergaria
+   * a primeira. Quem depende disso: ActiveSecurityTestAnalyzer.
+   */
+  forms: DetectedFormInfo[];
+}
+
+/** Formulário encontrado numa página, capturado durante o crawl. */
+export interface DetectedFormInfo {
+  /** URL de submissão resolvida. Sem `action`, o HTML manda usar a própria URL da página. */
+  action: string;
+  method: string;
+  /** Tem campo `type="password"` — heurística de "isso é um login". */
+  isLoginLike: boolean;
+  fieldNames: string[];
+  /** Página onde foi encontrado. */
+  pageUrl: string;
 }
 
 /**

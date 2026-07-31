@@ -1,5 +1,5 @@
 import { AnalysisCategory, Severity, type DetectedIssue } from "@qa-ai/shared";
-import type { PageContext, SiteAnalyzer } from "../../types.js";
+import type { DetectedFormInfo, PageContext, SiteAnalyzer } from "../../types.js";
 import { issue } from "../helpers.js";
 import {
   CircuitBreaker,
@@ -12,15 +12,18 @@ import {
   STACK_TRACE_SIGNATURES,
 } from "./payloads.js";
 
+/**
+ * Teto GLOBAL de formulários sondados com payload — não por página. A
+ * descoberta varre todas as páginas do crawl (custo zero: é `evaluate` em
+ * página já carregada, sem request ao alvo), mas o número de formulários
+ * efetivamente testados continua limitado a este valor, mantendo o volume de
+ * requisições contra o site igual ao de antes.
+ */
 const MAX_FORMS_TESTED = 3;
 const RATE_LIMIT_PROBE_COUNT = 12;
 
-interface DetectedForm {
-  action: string;
-  method: string;
-  isLoginLike: boolean;
-  fieldNames: string[];
-}
+/** Capturado no crawl (ver `PageContext.forms`), não redescoberto aqui. */
+type DetectedForm = DetectedFormInfo;
 
 /**
  * Módulo — Teste Ativo Autorizado (opt-in, NUNCA roda sem consentimento).
@@ -45,7 +48,6 @@ export class ActiveSecurityTestAnalyzer implements SiteAnalyzer {
 
   async analyze(pages: PageContext[], siteUrl: string): Promise<DetectedIssue[]> {
     if (pages.length === 0) return [];
-    const origin = new URL(siteUrl).origin;
     const issues: DetectedIssue[] = [];
     const breaker = new CircuitBreaker();
 
@@ -68,18 +70,35 @@ export class ActiveSecurityTestAnalyzer implements SiteAnalyzer {
         }),
       );
 
-    const forms = await this.discoverForms(pages[0]!, origin);
+    // Varre TODAS as páginas do crawl, não só a primeira: um login quase nunca
+    // fica na home (fica em /login, /entrar, /admin...). Descobrir é gratuito —
+    // é `evaluate` em página já carregada, sem request ao alvo.
+    const forms = this.discoverForms(pages);
     const loginForm = forms.find((f) => f.isLoginLike);
 
-    if (loginForm) {
+    if (loginForm && loginForm.method === "post") {
       await this.checkRateLimit(loginForm, add, breaker);
       if (!breaker.isOpen) await this.checkUserEnumeration(loginForm, add, breaker);
+    } else if (loginForm) {
+      // Login sem method="post" é quase sempre um formulário de SPA (React,
+      // Vue...), em que o envio real acontece por `fetch` para um endpoint de
+      // API que o HTML não revela. Sondar o `action` aqui bateria na própria
+      // página — que responde 200 sempre — e produziria um falso "sem
+      // rate-limit" com severidade alta. Melhor não testar e dizer o porquê.
+      add(
+        "Teste ativo — Login encontrado, mas o endpoint real não é determinável pelo HTML",
+        `Encontramos um formulário de login em ${loginForm.pageUrl}, mas ele não declara \`method="post"\` — típico de aplicação SPA, onde o envio é feito por JavaScript para um endpoint de API que não aparece no HTML. Testar o endereço do formulário atingiria apenas a página em si e produziria um resultado enganoso, então os testes de rate-limit e de enumeração de usuário foram pulados. Para auditar o login de verdade, rode a análise apontando diretamente para o endpoint de autenticação da API.`,
+        Severity.INFO,
+        "login-form-not-probeable",
+        `Formulário: ${loginForm.method.toUpperCase()} ${loginForm.action}\nCampos: ${loginForm.fieldNames.join(", ")}`,
+      );
     } else {
       add(
         "Teste ativo — Nenhum formulário de login encontrado para testar",
-        "O crawler não encontrou um formulário com campo de senha nas páginas visitadas, então o teste de rate-limit/enumeração de login não pôde rodar. Se o login existir em uma rota não visitada, aumente a profundidade da análise.",
+        `Nenhuma das ${pages.length} página(s) visitadas tinha formulário com campo de senha, então o teste de rate-limit/enumeração de login não pôde rodar. Se o login existir numa rota que o crawler não alcançou (link só por JavaScript, rota protegida, subdomínio separado), rode a análise apontando direto pra URL de login ou aumente a profundidade/limite de páginas.`,
         Severity.INFO,
         "no-login-form",
+        `Páginas visitadas:\n${pages.map((p) => p.url).join("\n")}`,
       );
     }
 
@@ -99,23 +118,30 @@ export class ActiveSecurityTestAnalyzer implements SiteAnalyzer {
     return issues;
   }
 
-  private async discoverForms(ctx: PageContext, origin: string): Promise<DetectedForm[]> {
-    const result = await ctx.page
-      .evaluate((originArg) => {
-        return [...document.querySelectorAll("form")].map((f) => {
-          const actionAttr = f.getAttribute("action") || "";
-          const action = actionAttr ? new URL(actionAttr, originArg).toString() : originArg;
-          const method = (f.getAttribute("method") || "get").toLowerCase();
-          const inputs = [...f.querySelectorAll("input")];
-          const fieldNames = inputs
-            .map((i) => i.getAttribute("name"))
-            .filter((n): n is string => !!n);
-          const isLoginLike = inputs.some((i) => i.getAttribute("type") === "password");
-          return { action, method, isLoginLike, fieldNames };
-        });
-      }, origin)
-      .catch(() => []);
-    return result;
+  /**
+   * Descobre formulários em TODAS as páginas do crawl.
+   *
+   * Antes isto olhava só `pages[0]` (a home), o que na prática desligava em
+   * silêncio os testes de login da maioria dos sites — login raramente fica na
+   * home. O resultado é deduplicado (o mesmo formulário de newsletter no rodapé
+   * de 10 páginas conta uma vez só) e o formulário de login vem primeiro, pra
+   * caber no teto de `MAX_FORMS_TESTED` mesmo em sites com muitos formulários.
+   */
+  private discoverForms(pages: PageContext[]): DetectedForm[] {
+    const found: DetectedForm[] = [];
+    const seen = new Set<string>();
+
+    for (const ctx of pages) {
+      for (const f of ctx.forms) {
+        const key = `${f.method} ${f.action} ${[...f.fieldNames].sort().join(",")}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        found.push(f);
+      }
+    }
+
+    // Login primeiro: garante que ele entre no corte de MAX_FORMS_TESTED.
+    return found.sort((a, b) => Number(b.isLoginLike) - Number(a.isLoginLike));
   }
 
   private async checkRateLimit(

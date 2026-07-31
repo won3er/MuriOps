@@ -190,6 +190,29 @@ export async function crawl(options: CrawlOptions): Promise<CrawlResult> {
     const hasNav = await page
       .evaluate(() => !!document.querySelector("nav, [role=navigation]"))
       .catch(() => false);
+    // Formulários: capturados aqui, com a aba viva, pelo mesmo motivo do
+    // hasNav — depois do fechamento progressivo abaixo, só pages[0] sobrevive.
+    const forms = await page
+      .evaluate((pageUrl) => {
+        return [...document.querySelectorAll("form")].map((f) => {
+          const actionAttr = f.getAttribute("action") || "";
+          // Sem `action`, o HTML manda submeter pra própria URL da página —
+          // não pra raiz do site. Importa em SPA (form de /login sem action).
+          const action = actionAttr
+            ? new URL(actionAttr, pageUrl).toString()
+            : pageUrl;
+          const method = (f.getAttribute("method") || "get").toLowerCase();
+          const inputs = [...f.querySelectorAll("input")];
+          const fieldNames = inputs
+            .map((i) => i.getAttribute("name"))
+            .filter((n): n is string => !!n);
+          const isLoginLike = inputs.some(
+            (i) => i.getAttribute("type") === "password",
+          );
+          return { action, method, isLoginLike, fieldNames, pageUrl };
+        });
+      }, item.url)
+      .catch(() => []);
 
     const ctx: PageContext = {
       url: item.url,
@@ -204,6 +227,7 @@ export async function crawl(options: CrawlOptions): Promise<CrawlResult> {
       mainResponse: null,
       screenshotPath,
       hasNav,
+      forms,
     };
 
     // Descobre links internos para continuar o BFS — precisa da página ainda
