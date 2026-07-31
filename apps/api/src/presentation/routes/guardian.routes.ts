@@ -5,6 +5,7 @@ import {
   AiKeyRequiredError,
   guardianService,
   InvalidGuardianInputError,
+  MAX_GUARDIAN_DOCUMENT_CHARACTERS,
 } from "../../application/guardian.service.js";
 
 const providerSchema = z.enum(["claude", "openai", "gemini"]);
@@ -19,8 +20,8 @@ const createRunSchema = z.object({
   title: z.string().min(1).optional(),
   projectId: z.string().min(1).optional().nullable(),
   rulesetId: z.string().min(1).optional().nullable(),
-  sourceName: z.string().optional(),
-  documentText: z.string().min(1),
+  sourceName: z.string().max(250).optional(),
+  documentText: z.string().min(1).max(MAX_GUARDIAN_DOCUMENT_CHARACTERS),
   provider: providerSchema.optional(),
 });
 

@@ -34,6 +34,9 @@ const schema = z
     // comandos do pacote da ponte universal da Aplicação. Sem ela, a API tenta
     // deduzir dos headers da requisição (x-forwarded-proto/host).
     PUBLIC_API_URL: z.string().url().optional(),
+    // Origem canônica do frontend, usada nos redirects OAuth. Diferente de
+    // CORS_ORIGIN, que pode conter mais de um domínio separado por vírgula.
+    PUBLIC_WEB_URL: z.string().url().optional(),
 
     // Sem chave padrão do servidor — cada organização usa a própria chave de
     // IA (Configurações). Estas variáveis só configuram o *nome do modelo*
@@ -51,6 +54,12 @@ const schema = z
     // Isso não é uma "chave de IA" — é a identidade do próprio MuriOps
     // como aplicação OAuth, igual ao JWT_SECRET.
     GOOGLE_CLIENT_ID: z.string().optional(),
+    // Segredo do mesmo client OAuth, necessário somente ao conectar o
+    // Google Drive no Guardian. O login com Google usa apenas o Client ID.
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+    // Callback OAuth de Drive. Precisa constar nos redirect URIs autorizados
+    // no Google Cloud Console; sem ela, a API usa PUBLIC_API_URL.
+    GOOGLE_DRIVE_REDIRECT_URI: z.string().url().optional(),
   })
   // Em produção, barra segredo fraco/placeholder e CORS aberto — os mesmos
   // erros que o próprio módulo de Segurança Avançada da ferramenta aponta.

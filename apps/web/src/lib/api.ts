@@ -514,4 +514,23 @@ export const api = {
   deleteGuardianRun: (id: string) =>
     request<void>(`/guardian/runs/${id}`, { method: "DELETE" }),
   guardianDashboard: () => request<GuardianDashboardStats>("/guardian/dashboard"),
+
+  // ---- Guardian × Google Drive ----
+  guardianDriveStatus: () =>
+    request<{ configured: boolean; connected: boolean; email: string | null }>(
+      "/guardian/drive/status",
+    ),
+  guardianDriveConnectUrl: () => request<{ url: string }>("/guardian/drive/connect"),
+  guardianDriveDisconnect: () =>
+    request<void>("/guardian/drive/connection", { method: "DELETE" }),
+  guardianDriveListFiles: (opts: { folderId?: string; query?: string } = {}) => {
+    const q = new URLSearchParams(
+      Object.entries(opts).filter(([, v]) => v) as [string, string][],
+    ).toString();
+    return request<
+      Array<{ id: string; name: string; mimeType: string; modifiedTime: string; isFolder: boolean }>
+    >(`/guardian/drive/files${q ? `?${q}` : ""}`);
+  },
+  guardianDriveFileContent: (fileId: string) =>
+    request<{ name: string; content: string }>(`/guardian/drive/files/${fileId}/content`),
 };

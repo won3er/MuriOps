@@ -53,6 +53,9 @@ export const qk = {
   guardianRuns: ["guardian-runs"] as const,
   guardianRun: (id: string) => ["guardian-run", id] as const,
   guardianDashboard: ["guardian-dashboard"] as const,
+  guardianDriveStatus: ["guardian-drive-status"] as const,
+  guardianDriveFiles: (folderId?: string, query?: string) =>
+    ["guardian-drive-files", folderId ?? null, query ?? null] as const,
 };
 
 /** Estados em que o loop ainda está em andamento — mantém o polling ligado. */
@@ -715,4 +718,50 @@ export function useDeleteGuardianRun() {
 
 export function useGuardianDashboard() {
   return useQuery({ queryKey: qk.guardianDashboard, queryFn: api.guardianDashboard });
+}
+
+// ---------- Guardian × Google Drive ----------
+
+export function useGuardianDriveStatus() {
+  return useQuery({
+    queryKey: qk.guardianDriveStatus,
+    queryFn: api.guardianDriveStatus,
+  });
+}
+
+/** Abre o consentimento do Google numa aba nova; a aba original só precisa
+ * revalidar o status quando o usuário voltar (não dá pra saber exatamente
+ * quando o popup fecha, então o botão "Conectar" refaz o fetch ao focar a
+ * janela — ver GuardianPage). */
+export function useConnectGuardianDrive() {
+  return useMutation({
+    mutationFn: api.guardianDriveConnectUrl,
+    onSuccess: ({ url }) => {
+      window.open(url, "_blank", "noopener,noreferrer");
+    },
+    onError: () => toast.error("Falha ao iniciar conexão com o Google Drive"),
+  });
+}
+
+export function useDisconnectGuardianDrive() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: api.guardianDriveDisconnect,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.guardianDriveStatus });
+      toast.message("Google Drive desconectado");
+    },
+    onError: () => toast.error("Falha ao desconectar o Google Drive"),
+  });
+}
+
+export function useGuardianDriveFiles(
+  opts: { folderId?: string; query?: string },
+  enabled: boolean,
+) {
+  return useQuery({
+    queryKey: qk.guardianDriveFiles(opts.folderId, opts.query),
+    queryFn: () => api.guardianDriveListFiles(opts),
+    enabled,
+  });
 }

@@ -39,6 +39,10 @@ export class InvalidGuardianInputError extends Error {
   readonly statusCode = 400;
 }
 
+// Evita gravar documentos excessivamente grandes no banco ou enviá-los por
+// acidente ao provider de IA. O limite também cobre textos vindos do Drive.
+export const MAX_GUARDIAN_DOCUMENT_CHARACTERS = 200_000;
+
 export const guardianService = {
   // ---------- Rulesets ----------
 
@@ -121,6 +125,11 @@ export const guardianService = {
     const documentText = input.documentText?.trim();
     if (!documentText) {
       throw new InvalidGuardianInputError("Cole o texto do documento a auditar");
+    }
+    if (documentText.length > MAX_GUARDIAN_DOCUMENT_CHARACTERS) {
+      throw new InvalidGuardianInputError(
+        "O documento excede o limite de 200.000 caracteres. Envie uma parte por vez.",
+      );
     }
 
     const org = await prisma.organization.findUnique({

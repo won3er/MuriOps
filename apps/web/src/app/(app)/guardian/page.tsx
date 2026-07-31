@@ -3,6 +3,10 @@
 import {
   AlertTriangle,
   CheckCircle2,
+  File,
+  Folder,
+  HardDrive,
+  Link2Off,
   Loader2,
   Plus,
   ShieldAlert,
@@ -10,7 +14,8 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ActionError } from "@/components/action-error";
 import { PageHeader } from "@/components/page-header";
@@ -18,12 +23,17 @@ import { QueryErrorState } from "@/components/query-error-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { api } from "@/lib/api";
 import {
+  useConnectGuardianDrive,
   useCreateGuardianRuleset,
   useCreateGuardianRun,
   useDeleteGuardianRuleset,
   useDeleteGuardianRun,
+  useDisconnectGuardianDrive,
   useGuardianDashboard,
+  useGuardianDriveFiles,
+  useGuardianDriveStatus,
   useGuardianRulesets,
   useGuardianRuns,
   useProjects,
@@ -47,6 +57,8 @@ const OVERALL_LABEL: Record<string, string> = {
   red: "Crítico",
 };
 
+type DriveCrumb = { id: string | undefined; name: string };
+
 export default function GuardianPage() {
   const { data: stats } = useGuardianDashboard();
   const { data: rulesets = [], refetch: refetchRulesets } = useGuardianRulesets();
@@ -66,6 +78,59 @@ export default function GuardianPage() {
   const [projectId, setProjectId] = useState("");
   const [rulesetId, setRulesetId] = useState("");
   const [documentText, setDocumentText] = useState("");
+
+  // ---- Google Drive ----
+  const searchParams = useSearchParams();
+  const { data: driveStatus, refetch: refetchDriveStatus } = useGuardianDriveStatus();
+  const connectDrive = useConnectGuardianDrive();
+  const disconnectDrive = useDisconnectGuardianDrive();
+  const [showDrivePanel, setShowDrivePanel] = useState(false);
+  const [driveStack, setDriveStack] = useState<DriveCrumb[]>([
+    { id: undefined, name: "Meu Drive" },
+  ]);
+  const currentFolder = driveStack[driveStack.length - 1];
+  const { data: driveFiles = [], isLoading: driveFilesLoading } = useGuardianDriveFiles(
+    { folderId: currentFolder.id },
+    showDrivePanel && driveStatus?.connected === true,
+  );
+  const [loadingFileId, setLoadingFileId] = useState<string | null>(null);
+
+  // Feedback do redirect de volta do OAuth (ver guardian-drive.routes.ts callback).
+  useEffect(() => {
+    const drive = searchParams.get("drive");
+    if (drive === "connected") {
+      toast.success("Google Drive conectado");
+      void refetchDriveStatus();
+    } else if (drive === "error") {
+      toast.error(searchParams.get("reason") ?? "Falha ao conectar com o Google Drive");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // A conexão acontece numa aba nova (popup do Google) — quando o usuário
+  // volta o foco pra essa aba, revalida o status em vez de exigir recarregar.
+  useEffect(() => {
+    function onFocus() {
+      void refetchDriveStatus();
+    }
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [refetchDriveStatus]);
+
+  async function selecionarArquivoDrive(file: { id: string; name: string }) {
+    setLoadingFileId(file.id);
+    try {
+      const { name, content } = await api.guardianDriveFileContent(file.id);
+      setDocumentText(content);
+      setSourceName(name);
+      setShowDrivePanel(false);
+      toast.success(`"${name}" carregado — revise e clique em Auditar`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao ler o arquivo do Drive");
+    } finally {
+      setLoadingFileId(null);
+    }
+  }
 
   function criarRuleset() {
     const rules = rulesetRules.split("\n").map((r) => r.trim()).filter(Boolean);
@@ -213,6 +278,121 @@ export default function GuardianPage() {
                   </button>
                 </span>
               ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-4 py-6">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="grid h-9 w-9 place-items-center rounded-lg border bg-background/60 text-primary">
+                <HardDrive className="h-4 w-4" />
+              </span>
+              <div>
+                <h2 className="text-sm font-semibold">Google Drive</h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {driveStatus?.connected
+                    ? `Conectado${driveStatus.email ? ` como ${driveStatus.email}` : ""} — escolha um documento de uma pasta.`
+                    : "Conecte pra escolher um documento direto de uma pasta, sem colar texto."}
+                </p>
+              </div>
+            </div>
+            {driveStatus?.connected ? (
+              <div className="flex shrink-0 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDrivePanel((s) => !s)}
+                >
+                  {showDrivePanel ? "Fechar" : "Escolher arquivo"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-destructive"
+                  aria-label="Desconectar Google Drive"
+                  onClick={() => disconnectDrive.mutate()}
+                >
+                  <Link2Off className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => connectDrive.mutate()}
+                disabled={connectDrive.isPending || driveStatus?.configured === false}
+              >
+                {connectDrive.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <HardDrive className="h-3.5 w-3.5" />
+                )}
+                Conectar Google Drive
+              </Button>
+            )}
+          </div>
+
+          {driveStatus?.configured === false && (
+            <p className="text-xs text-muted-foreground">
+              A conexão com Google Drive ainda não foi configurada neste ambiente.
+            </p>
+          )}
+
+          {showDrivePanel && driveStatus?.connected && (
+            <div className="space-y-2 rounded-md border bg-background/40 p-3">
+              <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+                {driveStack.map((crumb, i) => (
+                  <span key={crumb.id ?? "root"} className="flex items-center gap-1">
+                    {i > 0 && <span>/</span>}
+                    <button
+                      type="button"
+                      className="hover:text-foreground hover:underline"
+                      onClick={() => setDriveStack(driveStack.slice(0, i + 1))}
+                    >
+                      {crumb.name}
+                    </button>
+                  </span>
+                ))}
+              </div>
+
+              {driveFilesLoading ? (
+                <div className="flex items-center gap-2 py-4 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando…
+                </div>
+              ) : driveFiles.length === 0 ? (
+                <p className="py-4 text-center text-xs text-muted-foreground">
+                  Pasta vazia.
+                </p>
+              ) : (
+                <div className="max-h-72 space-y-0.5 overflow-y-auto">
+                  {driveFiles.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      disabled={loadingFileId === f.id}
+                      onClick={() =>
+                        f.isFolder
+                          ? setDriveStack([...driveStack, { id: f.id, name: f.name }])
+                          : selecionarArquivoDrive(f)
+                      }
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent disabled:opacity-50"
+                    >
+                      {f.isFolder ? (
+                        <Folder className="h-3.5 w-3.5 shrink-0 text-primary" />
+                      ) : (
+                        <File className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      )}
+                      <span className="truncate">{f.name}</span>
+                      {loadingFileId === f.id && (
+                        <Loader2 className="ml-auto h-3.5 w-3.5 shrink-0 animate-spin" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </CardContent>

@@ -28,10 +28,19 @@ model Organization {
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
-  // Chave de IA própria da organização (opcional). Se ausente, usa a chave
-  // padrão do servidor configurada em .env. Armazenada criptografada (AES-256-GCM).
+  // Chave de IA própria da organização (opcional), armazenada criptografada
+  // (AES-256-GCM). Não há chave compartilhada do servidor como fallback.
   aiProvider          String?
   aiApiKeyEncrypted   String?
+
+  // Conexão OAuth com Google Drive (opcional, por organização) — usada pelo
+  // Guardian para listar e ler documentos de uma pasta do Drive, sem exigir
+  // que o texto seja colado manualmente. Os tokens são criptografados com o
+  // mesmo secret-box.ts usado para as chaves de IA.
+  googleDriveRefreshTokenEncrypted String?
+  googleDriveAccessTokenEncrypted  String?
+  googleDriveTokenExpiresAt        DateTime?
+  googleDriveConnectedEmail        String?
 
   users             User[]
   projects          Project[]
