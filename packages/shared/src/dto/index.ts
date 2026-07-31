@@ -18,6 +18,14 @@ export interface RegisterRequest {
   password: string;
   acceptTerms: true;
   organizationName?: string;
+  /** Resposta ao código de 6 dígitos exibido na tela de cadastro (verificação anti-bot). */
+  humanCheckAnswer: string;
+}
+
+/** Resposta de GET /auth/human-check — código atual e quando ele troca. */
+export interface HumanCheckResponse {
+  code: string;
+  secondsRemaining: number;
 }
 
 export interface LoginRequest {

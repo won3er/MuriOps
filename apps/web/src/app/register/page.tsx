@@ -1,17 +1,58 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { AuthShell } from "@/components/auth-shell";
 import { GoogleSignInButton } from "@/components/google-signin-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useLocale } from "@/lib/locale-context";
 import { AUTH_COPY } from "@/lib/public-copy";
 import { TermsAcceptance } from "@/components/terms-acceptance";
+
+/**
+ * Verificação anti-bot simples pro cadastro: código de 6 dígitos que o
+ * backend troca a cada minuto (stateless, ver human-check.ts), exibido aqui
+ * pra pessoa digitar de volta. Não substitui um reCAPTCHA de verdade, mas
+ * cria fricção deliberada contra os bots mais simples sem depender de
+ * serviço de terceiro.
+ */
+function useHumanCheck() {
+  const [code, setCode] = useState<string | null>(null);
+  const [secondsRemaining, setSecondsRemaining] = useState(0);
+  const [loadError, setLoadError] = useState(false);
+
+  async function fetchCode() {
+    try {
+      const res = await api.getHumanCheck();
+      setCode(res.code);
+      setSecondsRemaining(res.secondsRemaining);
+      setLoadError(false);
+    } catch {
+      setLoadError(true);
+    }
+  }
+
+  useEffect(() => {
+    void fetchCode();
+    const tick = setInterval(() => {
+      setSecondsRemaining((s) => {
+        if (s <= 1) {
+          void fetchCode();
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(tick);
+  }, []);
+
+  return { code, secondsRemaining, loadError, refresh: fetchCode };
+}
 
 function RegisterForm() {
   const { register } = useAuth();
@@ -22,9 +63,11 @@ function RegisterForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [humanCheckAnswer, setHumanCheckAnswer] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const humanCheck = useHumanCheck();
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -32,9 +75,16 @@ function RegisterForm() {
     setBusy(true);
     setError(null);
     try {
-      await register(name.trim(), email.trim(), password, true);
+      await register(
+        name.trim(),
+        email.trim(),
+        password,
+        true,
+        humanCheckAnswer.trim(),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : copy.error);
+      setHumanCheckAnswer("");
       setBusy(false);
     }
   }
@@ -146,6 +196,84 @@ function RegisterForm() {
               {copy.passwordHelp}
             </p>
           </div>
+          <div className="space-y-2.5 rounded-md border border-border bg-muted/30 p-3">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              {copy.humanCheckLabel}
+              {!humanCheck.loadError && (
+                <span className="font-normal">
+                  ({copy.humanCheckRefresh} {humanCheck.secondsRemaining}s)
+                </span>
+              )}
+            </div>
+
+            {humanCheck.loadError ? (
+              <div className="flex items-center gap-2 text-xs text-red-300">
+                <span>{copy.humanCheckError}</span>
+                <button
+                  type="button"
+                  onClick={() => void humanCheck.refresh()}
+                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex gap-1.5"
+                  aria-live="polite"
+                  aria-label={copy.humanCheckLabel}
+                >
+                  {(humanCheck.code ?? "······").split("").map((digit, i) => (
+                    <div
+                      key={i}
+                      className="grid h-11 w-9 select-none place-items-center rounded-md border border-border bg-background font-mono text-xl font-semibold tabular-nums text-amber-400"
+                    >
+                      {digit}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-col items-center gap-1 text-xs text-muted-foreground">
+                  <span className="tabular-nums">
+                    {humanCheck.secondsRemaining}s
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void humanCheck.refresh()}
+                    aria-label={copy.humanCheckRefresh}
+                    className="grid h-6 w-6 place-items-center rounded-md hover:bg-accent hover:text-foreground"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label
+                htmlFor="human-check-answer"
+                className="mb-1.5 block text-sm font-medium"
+              >
+                {copy.humanCheckInputLabel}
+              </label>
+              <Input
+                id="human-check-answer"
+                name="humanCheckAnswer"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                placeholder={copy.humanCheckPlaceholder}
+                value={humanCheckAnswer}
+                onChange={(event) => {
+                  setHumanCheckAnswer(event.target.value.replace(/\D/g, ""));
+                  if (error) setError(null);
+                }}
+                disabled={busy}
+                required
+              />
+            </div>
+          </div>
           {error && (
             <div
               id="register-error"
@@ -158,7 +286,7 @@ function RegisterForm() {
           <Button
             type="submit"
             className="w-full"
-            disabled={busy || !acceptedTerms}
+            disabled={busy || !acceptedTerms || humanCheckAnswer.length !== 6}
           >
             {busy ? (
               <>

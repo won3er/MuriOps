@@ -17,6 +17,7 @@ import type {
   LoginRequest,
   OrchestrationEvent,
   OrchestrationRun,
+  HumanCheckResponse,
   Project,
   ProjectQualityGate,
   ProjectWithStats,
@@ -94,6 +95,8 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  getHumanCheck: () =>
+    request<HumanCheckResponse>("/auth/human-check"),
   login: (body: LoginRequest) =>
     request<AuthSession>("/auth/login", {
       method: "POST",
