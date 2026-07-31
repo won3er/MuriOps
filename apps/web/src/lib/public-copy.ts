@@ -281,8 +281,6 @@ export const FEATURE_COPY = {
     understandFlow: "Understand the workflow",
     tabsAria: "MuriOps workflows",
     workspace: "Main workspace",
-    recommended: "Recommended next decision",
-    review: "Review details →",
     sideNav: [
       "Overview",
       "Projects",
@@ -366,8 +364,6 @@ export const FEATURE_COPY = {
     understandFlow: "Entender o fluxo",
     tabsAria: "Frentes do MuriOps",
     workspace: "Workspace principal",
-    recommended: "Próxima decisão recomendada",
-    review: "Revisar detalhes →",
     sideNav: [
       "Visão geral",
       "Projetos",
@@ -455,8 +451,6 @@ export const FEATURE_COPY = {
     understandFlow: "Entender el flujo",
     tabsAria: "Frentes de MuriOps",
     workspace: "Workspace principal",
-    recommended: "Próxima decisión recomendada",
-    review: "Revisar detalles →",
     sideNav: [
       "Vista general",
       "Proyectos",

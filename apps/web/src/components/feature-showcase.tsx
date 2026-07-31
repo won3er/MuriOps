@@ -260,14 +260,6 @@ function ProductPreview({ feature }: { feature: FeatureKey }) {
           {feature === "acompanhar" && <OverviewPreview preview={preview} activeProjects={uiCopy.activeProjects} needAttention={uiCopy.needAttention} />}
         </div>
 
-        <div className="mt-4 flex items-center justify-between rounded-lg border border-white/[0.07] bg-[#161b22]/70 px-3.5 py-2.5">
-          <span className="text-[10px] text-[#8b949e]">
-            {featureCopy.recommended}
-          </span>
-          <span className="text-[10px] font-medium text-[#a5b4fc]">
-            {featureCopy.review}
-          </span>
-        </div>
       </div>
     </div>
   );
