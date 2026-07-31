@@ -10,22 +10,19 @@ import {
   ShieldAlert,
   Wrench,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { GithubConnectionPanel } from "@/components/github-connection-panel";
 import { McpConnectionPanel } from "@/components/mcp-connection-panel";
 import { PageHeader } from "@/components/page-header";
 import { QueryErrorState } from "@/components/query-error-state";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   useCreateRemediationPlan,
   useProjects,
-  useRemediationPlans,
 } from "@/lib/queries";
-import { cn, timeAgo } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 const SCOPES: {
   value: RemediationScope;
@@ -53,21 +50,6 @@ const SCOPES: {
   },
 ];
 
-const STATUS_LABEL: Record<string, string> = {
-  PENDING: "Gerando…",
-  READY: "Pronta",
-  FAILED: "Falhou",
-};
-const STATUS_CLASS: Record<string, string> = {
-  PENDING: "border-amber-500/40 bg-amber-500/15 text-amber-300",
-  READY: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
-  FAILED: "border-red-500/40 bg-red-500/15 text-red-300",
-};
-const SCOPE_LABEL: Record<string, string> = {
-  qa: "Análise QA padrão",
-  security: "Análise de Segurança",
-  full: "Projeto completo",
-};
 
 /**
  * Aplicação é o executor final das mudanças vindas de Análise, Projetar e
@@ -102,12 +84,6 @@ function AplicacaoPageInner() {
     isError: projectsError,
     refetch: refetchProjects,
   } = useProjects();
-  const {
-    data: plans = [],
-    isLoading,
-    isError,
-    refetch,
-  } = useRemediationPlans();
   const createPlan = useCreateRemediationPlan();
 
   const [projectId, setProjectId] = useState("");
@@ -266,67 +242,6 @@ function AplicacaoPageInner() {
               </div>
             )}
           </>
-        )}
-      </div>
-
-      {/* Histórico de aplicações */}
-      <div>
-        <div className="mb-3">
-          <h2 className="text-base font-semibold">Histórico de aplicações</h2>
-          <p className="text-xs text-muted-foreground">
-            Planos criados por Análise, Projetar e Atualizar
-          </p>
-        </div>
-        {isLoading ? (
-          <div className="grid place-items-center py-10 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
-          </div>
-        ) : isError ? (
-          <QueryErrorState
-            title="Não foi possível carregar as aplicações"
-            onRetry={() => void refetch()}
-          />
-        ) : plans.length === 0 ? (
-          <Card>
-            <CardContent className="py-10 text-center text-muted-foreground">
-              Nenhuma Aplicação ainda. Selecione um projeto acima e exporte uma
-              análise para começar.
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {plans.map((plan) => (
-              <Link
-                key={plan.id}
-                href={`/aplicacao/${plan.id}`}
-                className="block"
-              >
-                <Card className="transition-colors hover:border-primary/50">
-                  <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">
-                      <span className="truncate font-medium">{plan.title}</span>
-                      <Badge className={STATUS_CLASS[plan.status]}>
-                        {STATUS_LABEL[plan.status] ?? plan.status}
-                      </Badge>
-                      {plan.scope && (
-                        <Badge className="border-border text-muted-foreground">
-                          {SCOPE_LABEL[plan.scope]}
-                        </Badge>
-                      )}
-                      {plan.status === "READY" && plan.itemCount > 0 && (
-                        <span className="tabular text-xs text-muted-foreground">
-                          {plan.doneCount}/{plan.itemCount} aplicado(s)
-                        </span>
-                      )}
-                    </div>
-                    <span className="tabular text-xs text-muted-foreground">
-                      {timeAgo(plan.createdAt)}
-                    </span>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
         )}
       </div>
     </div>

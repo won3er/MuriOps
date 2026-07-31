@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowRight,
   FileSearch,
   Github,
   Loader2,
@@ -15,24 +14,10 @@ import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { QueryErrorState } from "@/components/query-error-state";
-import { AnalysisStatusBadge } from "@/components/status-badge";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
-import { useAnalysesList, useProjects } from "@/lib/queries";
-import { cn, formatDuration, scoreColor, timeAgo } from "@/lib/utils";
-
-function isSecurityAudit(categories: string[]): boolean {
-  return categories.length === 1 && categories[0] === "DEEP_SECURITY";
-}
-
-function isActiveTest(categories: string[]): boolean {
-  return categories.length === 1 && categories[0] === "ACTIVE_SECURITY_TEST";
-}
-
-function isSourceScan(categories: string[]): boolean {
-  return categories.length === 1 && categories[0] === "SOURCE_SECURITY_SCAN";
-}
+import { useProjects } from "@/lib/queries";
+import { cn } from "@/lib/utils";
 
 export default function AnalysesHubPage() {
   return (
@@ -60,12 +45,6 @@ function AnalysesHub() {
     isError: projectsError,
     refetch: refetchProjects,
   } = useProjects();
-  const {
-    data: analyses = [],
-    isLoading,
-    isError,
-    refetch,
-  } = useAnalysesList();
   const [projectId, setProjectId] = useState("");
   const [selectedType, setSelectedType] = useState<
     "qa" | "security" | "active" | "source" | null
@@ -112,10 +91,6 @@ function AnalysesHub() {
       setStarting(false);
     }
   }
-
-  const activeCount = analyses.filter((analysis) =>
-    ["QUEUED", "CRAWLING", "ANALYZING", "AI_REVIEW"].includes(analysis.status),
-  ).length;
 
   return (
     <div className="mx-auto max-w-7xl space-y-7">
@@ -287,108 +262,6 @@ function AnalysesHub() {
               )}
             </div>
           </div>
-        </div>
-      </section>
-
-      <section>
-        <div className="mb-3 flex items-end justify-between">
-          <div>
-            <h2 className="text-base font-semibold">Histórico</h2>
-            <p className="text-xs text-muted-foreground">
-              {activeCount > 0
-                ? `${activeCount} análise(s) em andamento`
-                : `${analyses.length} análise(s) registrada(s)`}
-            </p>
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-lg border bg-card">
-          {isLoading ? (
-            <div className="grid place-items-center py-12 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-            </div>
-          ) : isError ? (
-            <QueryErrorState
-              title="Não foi possível carregar o histórico"
-              onRetry={() => void refetch()}
-            />
-          ) : analyses.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <FileSearch className="mx-auto h-6 w-6 text-muted-foreground" />
-              <p className="mt-3 text-sm font-medium">
-                Nenhuma análise executada
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Selecione um projeto acima para iniciar.
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y">
-              {analyses.map((analysis) => {
-                const security = isSecurityAudit(analysis.categories);
-                const active = isActiveTest(analysis.categories);
-                const sourceScan = isSourceScan(analysis.categories);
-                return (
-                  <Link
-                    key={analysis.id}
-                    href={`/analyses/${analysis.id}`}
-                    className="group grid gap-3 px-4 py-3.5 hover:bg-accent/40 sm:grid-cols-[minmax(0,1fr)_180px_80px_20px] sm:items-center"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="truncate text-sm font-medium">
-                          {analysis.projectName}
-                        </span>
-                        <span className="tabular text-xs text-muted-foreground">
-                          v{analysis.version}
-                        </span>
-                        <AnalysisStatusBadge status={analysis.status} />
-                        {security && (
-                          <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-300">
-                            Segurança
-                          </Badge>
-                        )}
-                        {active && (
-                          <Badge className="border-rose-500/30 bg-rose-500/10 text-rose-300">
-                            Teste ativo
-                          </Badge>
-                        )}
-                        {sourceScan && (
-                          <Badge className="border-sky-500/30 bg-sky-500/10 text-sky-300">
-                            GitHub
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="mt-1 truncate text-xs text-muted-foreground">
-                        {analysis.projectUrl}
-                      </p>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      <p>
-                        {analysis.issueCount} problema(s) ·{" "}
-                        {analysis.pagesDiscovered} página(s)
-                      </p>
-                      <p>
-                        {formatDuration(analysis.durationMs)} ·{" "}
-                        {timeAgo(analysis.createdAt)}
-                      </p>
-                    </div>
-                    <span
-                      className={cn(
-                        "tabular text-right text-lg font-semibold",
-                        analysis.score
-                          ? scoreColor(analysis.score.overall)
-                          : "text-muted-foreground",
-                      )}
-                    >
-                      {analysis.score?.overall ?? "—"}
-                    </span>
-                    <ArrowRight className="hidden h-3.5 w-3.5 text-muted-foreground sm:block" />
-                  </Link>
-                );
-              })}
-            </div>
-          )}
         </div>
       </section>
     </div>

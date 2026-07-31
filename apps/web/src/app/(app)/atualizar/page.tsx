@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowRight,
   ArrowUpCircle,
   FileCode2,
   Github,
@@ -16,39 +15,13 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { ActionError } from "@/components/action-error";
 import { QueryErrorState } from "@/components/query-error-state";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   useCreateUpgradePlan,
   useCreateUpgradePlanFromGithub,
   useProjects,
-  useUpgradePlans,
 } from "@/lib/queries";
-import { timeAgo } from "@/lib/utils";
-
-const STATUS_LABEL: Record<string, string> = {
-  PENDING: "Gerando…",
-  READY: "Pronta",
-  FAILED: "Falhou",
-};
-const STATUS_CLASS: Record<string, string> = {
-  PENDING: "border-amber-500/40 bg-amber-500/15 text-amber-300",
-  READY: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
-  FAILED: "border-red-500/40 bg-red-500/15 text-red-300",
-};
-const RISK_LABEL: Record<string, string> = {
-  low: "Risco baixo",
-  medium: "Risco médio",
-  high: "Risco alto",
-  critical: "Risco crítico",
-};
-const RISK_CLASS: Record<string, string> = {
-  low: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
-  medium: "border-amber-500/40 bg-amber-500/15 text-amber-300",
-  high: "border-orange-500/40 bg-orange-500/15 text-orange-300",
-  critical: "border-red-500/40 bg-red-500/15 text-red-300",
-};
 
 export default function AtualizarPage() {
   const router = useRouter();
@@ -57,7 +30,6 @@ export default function AtualizarPage() {
     isError: projectsError,
     refetch: refetchProjects,
   } = useProjects();
-  const { data: plans = [], isLoading, isError, refetch } = useUpgradePlans();
   const createPlan = useCreateUpgradePlan();
   const createFromGithub = useCreateUpgradePlanFromGithub();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -272,62 +244,6 @@ export default function AtualizarPage() {
           </CardContent>
         </Card>
       </div>
-
-      <section>
-        <div className="mb-3">
-          <h2 className="text-base font-semibold">Histórico de atualizações</h2>
-          <p className="text-xs text-muted-foreground">
-            {plans.length} plano(s) registrado(s)
-          </p>
-        </div>
-        {isLoading ? (
-          <div className="grid place-items-center py-10 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
-          </div>
-        ) : isError ? (
-          <QueryErrorState
-            title="Não foi possível carregar as atualizações"
-            onRetry={() => void refetch()}
-          />
-        ) : plans.length === 0 ? (
-          <Card>
-            <CardContent className="py-10 text-center text-muted-foreground">
-              Nenhuma atualização ainda. Envie um manifesto ou investigue um
-              repositório conectado ao GitHub.
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="divide-y overflow-hidden rounded-xl border bg-card/85">
-            {plans.map((plan) => (
-              <Link key={plan.id} href={`/atualizar/${plan.id}`}>
-                <div className="group flex flex-col gap-3 px-4 py-3.5 hover:bg-accent/40 sm:flex-row sm:items-center sm:justify-between">
-                  <FileCode2 className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:block" />
-                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">
-                    <span className="truncate font-medium">{plan.title}</span>
-                    <Badge className={STATUS_CLASS[plan.status]}>
-                      {STATUS_LABEL[plan.status] ?? plan.status}
-                    </Badge>
-                    {plan.overallRisk && (
-                      <Badge className={RISK_CLASS[plan.overallRisk]}>
-                        {RISK_LABEL[plan.overallRisk] ?? plan.overallRisk}
-                      </Badge>
-                    )}
-                    {plan.status === "READY" && plan.itemCount > 0 && (
-                      <span className="tabular text-xs text-muted-foreground">
-                        {plan.doneCount}/{plan.itemCount} atualizado(s)
-                      </span>
-                    )}
-                  </div>
-                  <span className="tabular text-xs text-muted-foreground">
-                    {timeAgo(plan.createdAt)}
-                  </span>
-                  <ArrowRight className="hidden h-3.5 w-3.5 text-muted-foreground sm:block" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
     </div>
   );
 }
