@@ -1,5 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { BlueprintResult, RemediationResult, UpgradeResult } from "@qa-ai/shared";
+import type {
+  BlueprintResult,
+  GuardianResult,
+  RemediationResult,
+  UpgradeResult,
+} from "@qa-ai/shared";
 import { env } from "../../config/env.js";
 import {
   BLUEPRINT_SYSTEM_PROMPT,
@@ -8,6 +13,13 @@ import {
   parseBlueprintJson,
   type BlueprintDesignInput,
 } from "./blueprint-prompt.js";
+import {
+  buildGuardianUserPrompt,
+  GUARDIAN_SYSTEM_PROMPT,
+  normalizeGuardian,
+  parseGuardianJson,
+  type GuardianCheckInput,
+} from "./guardian-prompt.js";
 import { buildUserPrompt, normalizeAiResult, parseAiJson, SYSTEM_PROMPT } from "./prompt.js";
 import type { AiAnalysisInput, AiAnalysisResult, AiProvider } from "./provider.js";
 import {
@@ -142,5 +154,34 @@ export class ClaudeProvider implements AiProvider {
       .join("\n");
 
     return normalizeUpgrade(parseUpgradeJson(text), input.ecosystem, input.manifestFile);
+  }
+
+  async runGuardianCheck(input: GuardianCheckInput): Promise<GuardianResult> {
+    const response = (await this.client.beta.messages.create({
+      model: env.CLAUDE_MODEL,
+      max_tokens: 16000,
+      stream: false,
+      betas: ["server-side-fallback-2026-06-01"],
+      fallbacks: [{ model: env.CLAUDE_FALLBACK_MODEL }],
+      output_config: { effort: "high" },
+      system: GUARDIAN_SYSTEM_PROMPT,
+      messages: [{ role: "user", content: buildGuardianUserPrompt(input) }],
+    } as Parameters<
+      typeof this.client.beta.messages.create
+    >[0])) as Anthropic.Beta.Messages.BetaMessage;
+
+    if ((response.stop_reason as string) === "refusal") {
+      throw new Error("A IA recusou a requisição (classificador de segurança).");
+    }
+
+    const text = response.content
+      .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
+      .map((b) => b.text)
+      .join("\n");
+
+    return normalizeGuardian(
+      parseGuardianJson(text),
+      new Set(input.rules.map((r) => r.id)),
+    );
   }
 }

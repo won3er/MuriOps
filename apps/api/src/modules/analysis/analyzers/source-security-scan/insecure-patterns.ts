@@ -19,7 +19,11 @@ export const INSECURE_PATTERNS: InsecurePattern[] = [
     description:
       "eval() executa string como código arbitrário — se a string incluir qualquer dado vindo do usuário, é execução remota de código. Evite eval(); use JSON.parse ou uma alternativa segura para o caso de uso.",
     severity: "HIGH",
-    regex: /\beval\s*\(/g,
+    // Exclui $eval()/$$eval() do Playwright (locator.$eval, page.$$eval) —
+    // homônimo de nome, mas roda código dentro do browser controlado pelo
+    // próprio teste, não é o eval() global perigoso do Node. O caractere
+    // imediatamente antes de "eval" nesses casos é sempre "$".
+    regex: /(?<!\$)\beval\s*\(/g,
   },
   {
     id: "dangerously-set-inner-html",

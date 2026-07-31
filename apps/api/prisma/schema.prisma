@@ -39,6 +39,8 @@ model Organization {
   blueprints        Blueprint[]
   remediationPlans  RemediationPlan[]
   upgradePlans      UpgradePlan[]
+  guardianRulesets  GuardianRuleset[]
+  guardianRuns      GuardianRun[]
 }
 
 model User {
@@ -522,4 +524,72 @@ model AdapterConnection {
   @@unique([projectId, kind])
   @@index([projectId])
   @@index([organizationId])
+}
+
+// ---------- Guardian (auditoria operacional de negócio) ----------
+// Segundo pilar do produto, separado do QA de sites: audita documentos de
+// negócio (planilha exportada como texto, contrato, formulário) contra
+// regras que o próprio cliente define ("estoque nunca pode ficar negativo",
+// "desconto acima de 20% precisa de aprovação"), classifica cada achado por
+// risco e sugere a correção — mesma filosofia achado→severidade→correção do
+// resto do produto, aplicada a operação em vez de site. v1: entrada só por
+// texto colado (sem upload/parse de PDF/planilha binária ainda).
+
+enum GuardianStatus {
+  PENDING
+  READY
+  FAILED
+}
+
+enum GuardianOverallStatus {
+  GREEN
+  YELLOW
+  RED
+}
+
+model GuardianRuleset {
+  id             String   @id @default(cuid())
+  organizationId String
+  createdById    String
+  name           String
+  description    String?
+  // GuardianRule[] — regras de negócio em linguagem natural.
+  rules          Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  runs         GuardianRun[]
+
+  @@index([organizationId])
+}
+
+model GuardianRun {
+  id             String                 @id @default(cuid())
+  organizationId String
+  // Vínculo opcional a um projeto cadastrado — a auditoria também funciona avulsa.
+  projectId      String?
+  // SetNull (não Cascade): apagar o ruleset não deve apagar o histórico de runs.
+  rulesetId      String?
+  createdById    String
+  title          String
+  // Nome/descrição do documento auditado (ex.: "estoque_julho.csv"), livre.
+  sourceName     String?
+  // Texto colado pelo usuário — guardado pra auditoria/reprocessamento.
+  documentRaw    String                 @db.Text
+  provider       String
+  status         GuardianStatus         @default(PENDING)
+  overallStatus  GuardianOverallStatus?
+  // Saída estruturada da IA (GuardianResult).
+  result         Json?
+  error          String?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ruleset      GuardianRuleset? @relation(fields: [rulesetId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([projectId])
+  @@index([rulesetId])
 }

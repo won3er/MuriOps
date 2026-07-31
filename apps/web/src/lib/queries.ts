@@ -6,9 +6,12 @@ import type {
   BlueprintProviderName,
   BlueprintSummary,
   CreateBlueprintRequest,
+  CreateGuardianRulesetRequest,
+  CreateGuardianRunRequest,
   CreateOrchestrationRunRequest,
   CreateProjectRequest,
   CreateRemediationPlanRequest,
+  GuardianFindingStatus,
   OrchestrationRun,
   Project,
   ProjectWithStats,
@@ -46,6 +49,10 @@ export const qk = {
   orchestrationRun: (id: string) => ["orchestration-run", id] as const,
   orchestrationEvents: (id: string) => ["orchestration-events", id] as const,
   qualityGates: (projectId: string) => ["quality-gates", projectId] as const,
+  guardianRulesets: ["guardian-rulesets"] as const,
+  guardianRuns: ["guardian-runs"] as const,
+  guardianRun: (id: string) => ["guardian-run", id] as const,
+  guardianDashboard: ["guardian-dashboard"] as const,
 };
 
 /** Estados em que o loop ainda está em andamento — mantém o polling ligado. */
@@ -615,4 +622,97 @@ export function useDeleteQualityGate(projectId: string) {
 
 export function useDashboard() {
   return useQuery({ queryKey: qk.dashboard, queryFn: api.dashboard });
+}
+
+// ---------- Guardian (auditoria operacional de negócio) ----------
+
+export function useGuardianRulesets() {
+  return useQuery({ queryKey: qk.guardianRulesets, queryFn: api.listGuardianRulesets });
+}
+
+export function useCreateGuardianRuleset() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateGuardianRulesetRequest) => api.createGuardianRuleset(body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.guardianRulesets });
+      toast.success("Conjunto de regras criado");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao criar regras"),
+  });
+}
+
+export function useDeleteGuardianRuleset() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteGuardianRuleset(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.guardianRulesets });
+      toast.success("Conjunto de regras apagado");
+    },
+    onError: () => toast.error("Falha ao apagar conjunto de regras"),
+  });
+}
+
+export function useGuardianRuns() {
+  return useQuery({ queryKey: qk.guardianRuns, queryFn: api.listGuardianRuns });
+}
+
+export function useGuardianRun(id: string) {
+  return useQuery({
+    queryKey: qk.guardianRun(id),
+    queryFn: () => api.getGuardianRun(id),
+    enabled: Boolean(id),
+    refetchInterval: (query) =>
+      query.state.data?.status === "PENDING" ? 2500 : false,
+  });
+}
+
+export function useCreateGuardianRun() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateGuardianRunRequest) => api.createGuardianRun(body),
+    onSuccess: (run) => {
+      qc.setQueryData(qk.guardianRun(run.id), run);
+      qc.invalidateQueries({ queryKey: qk.guardianRuns });
+      qc.invalidateQueries({ queryKey: qk.guardianDashboard });
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao iniciar auditoria"),
+  });
+}
+
+export function useUpdateGuardianFinding(runId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      findingId,
+      status,
+    }: {
+      findingId: string;
+      status: GuardianFindingStatus;
+    }) => api.updateGuardianFinding(runId, findingId, status),
+    onSuccess: (run) => {
+      qc.setQueryData(qk.guardianRun(runId), run);
+    },
+    onError: () => toast.error("Falha ao atualizar achado"),
+  });
+}
+
+export function useDeleteGuardianRun() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteGuardianRun(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.guardianRuns });
+      qc.invalidateQueries({ queryKey: qk.guardianDashboard });
+      toast.success("Auditoria apagada");
+    },
+    onError: () => toast.error("Falha ao apagar auditoria"),
+  });
+}
+
+export function useGuardianDashboard() {
+  return useQuery({ queryKey: qk.guardianDashboard, queryFn: api.guardianDashboard });
 }

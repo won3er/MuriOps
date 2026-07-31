@@ -1,11 +1,13 @@
 import type {
   AnalysisCategory,
   BlueprintResult,
+  GuardianResult,
   RemediationResult,
   Severity,
   UpgradeResult,
 } from "@qa-ai/shared";
 import type { BlueprintDesignInput } from "./blueprint-prompt.js";
+import type { GuardianCheckInput } from "./guardian-prompt.js";
 import type { RemediationDesignInput } from "./remediation-prompt.js";
 import type { UpgradeDesignInput } from "./upgrade-prompt.js";
 
@@ -69,4 +71,10 @@ export interface AiProvider {
    * (pilar Atualizar) — risco, breaking changes e passo a passo por pacote.
    */
   buildUpgradePlan(input: UpgradeDesignInput): Promise<UpgradeResult>;
+  /**
+   * Audita um documento de negócio contra regras explícitas + julgamento de
+   * auditor (pilar Guardian) — achados classificados por risco, com
+   * correção sugerida e status geral verde/amarelo/vermelho.
+   */
+  runGuardianCheck(input: GuardianCheckInput): Promise<GuardianResult>;
 }

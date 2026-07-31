@@ -1,4 +1,5 @@
 import { recoverStaleBlueprints } from "./application/blueprint.service.js";
+import { recoverStaleGuardianRuns } from "./application/guardian.service.js";
 import { recoverStaleRemediationPlans } from "./application/remediation.service.js";
 import { recoverStaleUpgradePlans } from "./application/upgrade.service.js";
 import { env } from "./config/env.js";
@@ -14,6 +15,7 @@ async function main(): Promise<void> {
   await recoverStaleBlueprints();
   await recoverStaleRemediationPlans();
   await recoverStaleUpgradePlans();
+  await recoverStaleGuardianRuns();
   await recoverStaleOrchestrationRuns();
   await app.listen({ port: env.API_PORT, host: env.API_HOST });
   app.log.info(`🚀 MuriOps API em http://${env.API_HOST}:${env.API_PORT}`);

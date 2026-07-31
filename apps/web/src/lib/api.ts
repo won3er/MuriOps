@@ -9,10 +9,18 @@ import type {
   BlueprintProviderName,
   BlueprintSummary,
   CreateBlueprintRequest,
+  CreateGuardianRulesetRequest,
+  CreateGuardianRunRequest,
   CreateOrchestrationRunRequest,
   CreateProjectRequest,
   CreateRemediationPlanRequest,
   DashboardStats,
+  GuardianDashboardStats,
+  GuardianFindingStatus,
+  GuardianRuleset,
+  GuardianRulesetSummary,
+  GuardianRun,
+  GuardianRunSummary,
   IssueFilters,
   LoginRequest,
   OrchestrationEvent,
@@ -478,4 +486,32 @@ export const api = {
       body: JSON.stringify({ provider, apiKey }),
     }),
   deleteAiSettings: () => request<void>("/settings/ai", { method: "DELETE" }),
+
+  // ---- Guardian (auditoria operacional de negócio) ----
+  listGuardianRulesets: () => request<GuardianRulesetSummary[]>("/guardian/rulesets"),
+  createGuardianRuleset: (body: CreateGuardianRulesetRequest) =>
+    request<GuardianRuleset>("/guardian/rulesets", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  getGuardianRuleset: (id: string) =>
+    request<GuardianRuleset>(`/guardian/rulesets/${id}`),
+  deleteGuardianRuleset: (id: string) =>
+    request<void>(`/guardian/rulesets/${id}`, { method: "DELETE" }),
+
+  listGuardianRuns: () => request<GuardianRunSummary[]>("/guardian/runs"),
+  createGuardianRun: (body: CreateGuardianRunRequest) =>
+    request<GuardianRun>("/guardian/runs", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  getGuardianRun: (id: string) => request<GuardianRun>(`/guardian/runs/${id}`),
+  updateGuardianFinding: (id: string, findingId: string, status: GuardianFindingStatus) =>
+    request<GuardianRun>(`/guardian/runs/${id}/findings/${findingId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+  deleteGuardianRun: (id: string) =>
+    request<void>(`/guardian/runs/${id}`, { method: "DELETE" }),
+  guardianDashboard: () => request<GuardianDashboardStats>("/guardian/dashboard"),
 };

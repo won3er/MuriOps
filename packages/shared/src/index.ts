@@ -10,4 +10,5 @@ export * from "./types/remediation.js";
 export * from "./types/upgrade.js";
 export * from "./types/orchestration.js";
 export * from "./types/adapter.js";
+export * from "./types/guardian.js";
 export * from "./dto/index.js";

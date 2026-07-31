@@ -79,11 +79,23 @@ aplicar de verdade na plataforma real do cliente ou automatizar o ciclo inteiro.
      /apply/:token/items/:itemId` — qualquer IA de dev como Claude Code/Cursor/
      Windsurf lê e marca itens via `curl`, tela atualiza em tempo real por polling),
      ou MCP (servidor MCP por projeto, mesmas ações via protocolo).
-   - **Conexões e integrações** (movidas de Projetos pra cá): MCP, GitHub, e os
-     adapters de plataforma que aplicam de verdade fora do repo — WordPress, Shopify
-     (via API oficial de cada um) e FTP (Hostinger/Hostgator/qualquer host com acesso
-     a arquivo). Ver `apps/api/src/infrastructure/adapters/`. Nuvemshop foi removido
-     em 28/07/2026 (ver pendência abaixo).
+   - **Conexões e integrações** (movidas de Projetos pra cá): hoje só existem três
+     adapters ativos — **MANUAL_BRIDGE** (checklist por link/`curl`), **MCP**
+     (servidor MCP por projeto, IA de dev do próprio usuário aplica) e **GITHUB**
+     (push direto no repo). Ver `apps/api/src/infrastructure/adapters/index.ts`
+     (`createAdapterFor`) — é o ponto de verdade de quais adapters existem.
+     **Correção de doc (30/07/2026):** este arquivo dizia por muito tempo que
+     WordPress, Shopify e FTP também estavam disponíveis — não estão mais.
+     `apps/api/src/infrastructure/adapters/` só tem `github/`,
+     `manual-bridge.adapter.ts` e `index.ts`; não há mais
+     `wordpress-adapter.ts`/`shopify-adapter.ts`/`ftp-adapter.ts` no código.
+     Não está registrado neste arquivo quando/por quem foram removidos
+     (provavelmente numa sessão do GPT/Codex que trabalhou em paralelo) — a
+     doc só ficou desatualizada até ser notada pelo usuário nesta sessão.
+     `AdapterKind` no schema ainda pode ter os valores antigos no enum do
+     Postgres (não dá pra remover valor de enum sem recriar o tipo), mas o
+     código não os referencia mais — mesmo caso do NUVEMSHOP (ver item 7 em
+     Pendências).
 5. **Orquestração** (`/orquestracao`, seção própria no menu — não é mais aba dentro
    de Aplicação) — automatiza o ciclo analisar → avaliar quality gates → gerar plano
    → aplicar → reanalisar. Depende de Análise (pra analisar/reanalisar) e de
@@ -100,7 +112,7 @@ aplicar de verdade na plataforma real do cliente ou automatizar o ciclo inteiro.
    `maybeAutoResumeFromPlan`. `applyViaAdapter` devolve `{mode, applied,
    failed}` pra alimentar essa decisão.
    Ao criar uma execução dá pra escolher qual conexão usar: com adapter *push*
-   (GitHub/WordPress/Shopify/FTP) ela aplica sozinha a cada iteração; sem
+   (hoje só GITHUB) ela aplica sozinha a cada iteração; sem
    conexão ou com MCP, quem aplica é a IA de dev do próprio usuário (ex.: Claude Pro
    via Claude Code conectado por MCP — sem precisar de API key nenhuma do Elevate
    QA), e a execução retoma sozinha quando todos os itens do plano forem marcados
@@ -184,6 +196,220 @@ anterior incompleta:
 4. **Design geral** — só no final, com tudo funcionando e estável, revisar/polir a
    aparência do site e do app como um todo.
 
+## Sessão autônoma 30-31/07/2026 (madrugada) — Leads + Métricas (DESCARTADO)
+
+**Atualização da manhã de 31/07/2026: o usuário decidiu não seguir com Leads
+nem Métricas** ("não é útil pro projeto" — priorizou a ideia de um "Business
+Guardian"/QA operacional em vez disso, ver seção mais recente abaixo se
+existir). Todo o registro do produto foi revertido: `layout.tsx` sem os itens
+de menu, `app.ts` sem as rotas, `settings.routes.ts`/`settings/page.tsx` sem
+os campos de Google Maps/WhatsApp, `api.ts`/`queries.ts` sem os hooks,
+`schema.prisma` sem os modelos `LeadList`/`Lead`/`MetricSource`/
+`MetricSnapshot` e sem os campos novos em `Organization`.
+
+**Arquivos que sobraram órfãos (sem `rm` neste sandbox pra apagar de
+verdade)** — todos substituídos por um stub `export {}` ou `return null`
+explicando que estão mortos, mas ainda existem no disco e precisam ser
+apagados manualmente (nunca chegaram a ser commitados, então é seguro
+apagar sem afetar histórico):
+- `packages/shared/src/types/leads.ts`
+- `packages/shared/src/types/metrics.ts`
+- `apps/api/src/application/leads.service.ts`
+- `apps/api/src/presentation/routes/leads.routes.ts`
+- `apps/api/src/application/metrics.service.ts`
+- `apps/api/src/presentation/routes/metrics.routes.ts`
+- `apps/web/src/app/(app)/leads/` (pasta inteira, incluindo `[id]/`)
+- `apps/web/src/app/(app)/metricas/` (pasta inteira)
+- `apps/web/src/app/(app)/settings/growth-integrations-card.tsx`
+
+O texto original abaixo é o registro histórico de como a feature foi
+implementada, mantido só como referência caso o usuário mude de ideia no
+futuro — **não reflete mais o estado atual do produto.**
+
+---
+
+**IMPORTANTE — nada disto foi buildado, tipado ou commitado.** O sandbox do
+Cowork ficou com o workspace Linux indisponível a noite inteira ("Not enough
+disk space to set up the workspace") — sem `bash`, não deu pra rodar
+`pnpm typecheck`/`build`, `prisma generate`/`db push`, nem `git add`/`commit`.
+Todo o código abaixo foi escrito direto nos arquivos (Read/Write/Edit) seguindo
+os padrões exatos dos módulos já existentes (Atualizar/upgrade.service.ts como
+principal referência), revisado por leitura, mas **sem validação de compilador
+nenhuma**. Trate como um PR grande esperando `pnpm install && pnpm typecheck &&
+pnpm build` antes de mexer em qualquer coisa em cima.
+
+1. **Corrigido: falso positivo `eval()` no SOURCE_SECURITY_SCAN.** Testado ao
+   vivo contra `won3er/Elevate-QA` (ver item 1 de Pendências abaixo — teste
+   confirmou o bug antes da correção): `insecure-patterns.ts` disparava em
+   `page.$eval()`/`page.$$eval()` do Playwright, que é homônimo mas não tem
+   nada a ver com o `eval()` global perigoso. Regex trocado pra
+   `/(?<!\$)\beval\s*\(/g` — lookbehind negativo excluindo o `$` imediatamente
+   antes. Não commitado (ver aviso acima).
+
+2. **Feature nova: Leads (`/leads`)** — busca de contatos de negócio por
+   nicho + cidade via Google Places API (Text Search + Place Details pra
+   telefone/site), organiza em `LeadList`/`Lead`, exporta CSV, e dispara
+   mensagem via uma API de WhatsApp que o usuário configura em Configurações
+   (URL + token — genérico, compatível com Evolution API/Z-API/WhatsApp Cloud
+   API atrás de proxy; MuriOps não é dono de sessão/número nenhum, só faz
+   `POST { phone, message }` com `Authorization: Bearer <token>`).
+   - Schema: `LeadList`, `Lead` (novos modelos) +
+     `Organization.googleMapsApiKeyEncrypted`/`whatsappApiUrlEncrypted`/
+     `whatsappApiTokenEncrypted` (mesma criptografia AES-256-GCM de
+     `secret-box.ts` que já protege a chave de IA).
+   - Backend: `apps/api/src/application/leads.service.ts` +
+     `apps/api/src/presentation/routes/leads.routes.ts`, registrado em
+     `app.ts`. Limite de 20 resultados por busca (1 página da Text Search) —
+     deliberado, pra manter custo/tempo previsíveis; se quiser mais, precisa
+     paginar com `next_page_token` (a Google exige ~2s de espera entre
+     páginas, código não implementa isso ainda).
+   - Configurações novas em `settings.routes.ts`: `GET/PUT/DELETE
+     /settings/google-maps` e `/settings/whatsapp`. Sem chave do Google Maps
+     configurada, criar lista falha com erro claro (`GoogleMapsKeyRequiredError`,
+     400) — mesmo padrão do gate de IA do Blueprint.
+   - Frontend: `/leads` (buscar + listar), `/leads/[id]` (tabela de leads +
+     export CSV + disparo WhatsApp), seção "Crescimento" nova no menu lateral
+     (`layout.tsx`), card "Integrações de Crescimento" em Configurações
+     (`settings/growth-integrations-card.tsx`).
+   - **Não fiz e o usuário precisa fazer:** criar a própria chave da Google
+     Places API (console.cloud.google.com → APIs e serviços → Credenciais,
+     com a Places API habilitada — **exige billing/cartão no projeto GCP**,
+     que é uma ação financeira que não posso executar) e colar em
+     Configurações. Mesma coisa pra API de WhatsApp — não configurei nenhum
+     gateway de verdade, só o cliente HTTP genérico que espera um.
+
+3. **Feature nova: Métricas (`/metricas`)** — dashboard alimentado por
+   ingestão externa: cria uma "fonte" com token único, qualquer sistema
+   externo (pensado especificamente pro sistema de gerenciamento que o
+   usuário está construindo em `C:\Users\woner\Desktop\Automação` — hoje só
+   um scaffold de venv Python vazio, nada pra integrar de verdade ainda) faz
+   `POST /metrics/ingest/:token` com `{ metric, value, unit?, dimensions?,
+   recordedAt? }` (ou `{ points: [...] }` em lote), sem login, autenticado só
+   pelo token na URL — mesmo padrão de segurança da ponte universal de
+   Aplicação/Atualização.
+   - Schema: `MetricSource`, `MetricSnapshot` (novos modelos).
+   - Backend: `apps/api/src/application/metrics.service.ts` +
+     `apps/api/src/presentation/routes/metrics.routes.ts` (rotas autenticadas
+     de gerenciamento + `metricsIngestRoutes` pública), registrado em `app.ts`.
+   - Frontend: `/metricas` — cria fonte, mostra a URL de ingestão pra copiar,
+     e um painel por fonte com sparkline SVG simples (sem lib nova) agrupando
+     por nome de métrica.
+   - Como o "sistema de gerenciamento" ainda não existe de verdade, não tinha
+     com o que integrar — a ingestão é genérica de propósito, documentada
+     inline na própria tela (`POST {json}`) pro usuário apontar quando o
+     sistema dele estiver pronto.
+
+4. **Migration não aplicada.** Descoberta relevante: `apps/api/prisma/migrations/`
+   só tem `migration_lock.toml`, **nenhuma pasta de migration versionada** —
+   ou seja, apesar do que este arquivo dizia antes ("Dockerfile roda `prisma
+   migrate deploy` no CMD"), não há histórico de migrations no repo pra esse
+   comando aplicar; o schema em produção deve estar sincronizado por `prisma
+   db push` direto (não documentado por quem fez, provavelmente sessão
+   anterior). **Ação necessária do usuário antes de tudo:** rodar `pnpm
+   --filter @qa-ai/api exec prisma db push` (ou criar uma migration de
+   verdade com `prisma migrate dev` se quiser passar a versionar daqui pra
+   frente) contra o banco de produção depois de revisar o schema, e só depois
+   buildar/deployar. Sem isso, a API vai quebrar tentando ler/escrever
+   `LeadList`/`Lead`/`MetricSource`/`MetricSnapshot` e as colunas novas de
+   `Organization` que não existem ainda no Postgres.
+
+5. **Checklist pro usuário antes de subir isto:**
+   - `pnpm install` (nenhuma dependência nova foi adicionada, mas confirme).
+   - `pnpm --filter @qa-ai/api exec prisma generate` (client precisa
+     regenerar pros novos modelos).
+   - `pnpm --filter @qa-ai/api exec prisma db push` contra o banco real.
+   - `pnpm --filter @qa-ai/shared build && pnpm --filter @qa-ai/api typecheck
+     && pnpm --filter @qa-ai/web build` — **nenhum destes rodou nesta
+     sessão**, só revisão manual linha a linha comparando com os arquivos
+     análogos existentes. É bem provável que sobre 1-2 erros de tipo bobos
+     (import faltando, nome de campo) que o typecheck aponta na hora.
+   - `git add` dos arquivos específicos listados acima (novos + modificados:
+     `schema.prisma`, `packages/shared/src/index.ts`, os dois arquivos novos
+     de types, `app.ts`, `settings.routes.ts`, `layout.tsx`, `api.ts`,
+     `queries.ts`, `insecure-patterns.ts`, e as pastas novas
+     `leads.service.ts`/`leads.routes.ts`/`metrics.service.ts`/
+     `metrics.routes.ts`/`app/(app)/leads/`/`app/(app)/metricas/`/
+     `settings/growth-integrations-card.tsx`) — **não** `git add -A` (mesmo
+     motivo de sempre: mudanças de design do GPT podem estar soltas no
+     working tree).
+   - Configurar a chave do Google Maps e a API de WhatsApp em Configurações
+     antes de testar Leads de ponta a ponta.
+
+## Sessão autônoma 31/07/2026 (manhã) — Guardian (novo pilar)
+
+Depois de descartar Leads/Métricas (seção acima), o usuário trouxe uma sugestão
+de outra IA: transformar o produto num "QA Operacional Inteligente"/"Business
+Guardian" — auditoria automática de documentos de negócio (planilha, PDF,
+contrato, formulário) contra regras que o próprio cliente define, com
+classificação de risco, correção sugerida e dashboard executivo verde/
+amarelo/vermelho. Pedi minha opinião antes de codar: concordei que é um bom
+posicionamento, mas argumentei que é um PIVÔ/PILAR NOVO, não um recurso a
+mais dentro do QA de sites — domínio diferente (documento de negócio, não
+site), público diferente. O usuário confirmou "pode prosseguir".
+
+**IMPORTANTE — mesma ressalva da sessão anterior: nada disto foi buildado,
+tipado ou commitado.** Sandbox sem `bash` a sessão inteira (mesmo erro de
+espaço em disco). Todo código escrito via Read/Write/Edit, seguindo os
+padrões exatos do Blueprint (gate de IA obrigatória) e do Atualizar (geração
+assíncrona em background + normalização defensiva do JSON da IA), mas sem
+validação de compilador.
+
+**Escopo do pilar "Guardian" (`/guardian`), v1:**
+- Entrada só por TEXTO COLADO (planilha exportada como CSV/texto, contrato,
+  formulário) — deliberadamente sem upload/parse de PDF ou planilha binária
+  ainda, pra não adicionar dependência nova (pdf-parse, xlsx etc.) numa
+  sessão sem como validar que a lib funciona. Fica como próximo passo natural.
+- **Regras de negócio opcionais** (`GuardianRuleset` — nome + lista de regras
+  em linguagem natural, uma por linha, ex.: "estoque nunca pode ficar
+  negativo"). Sem ruleset selecionado, a IA ainda audita usando julgamento
+  geral de auditor (números que não fecham, datas erradas, duplicidade,
+  campo obrigatório vazio).
+- **Cada auditoria** (`GuardianRun`) gera achados (`GuardianFinding`) com
+  título, descrição em linguagem de negócio, `riskLevel` (low/medium/high/
+  critical), a regra violada (se houver), evidência (trecho literal do
+  documento) e correção sugerida — mesma filosofia achado→severidade→
+  correção do resto do produto. Status por achado (open/acknowledged/
+  resolved/ignored) editável na tela, igual ao padrão de item de Aplicação/
+  Atualizar.
+- **Gate de IA obrigatória** (`AiKeyRequiredError`, mesmo padrão do
+  Blueprint desta madrugada): sem chave de IA configurada na organização,
+  `guardianService.createRun` recusa ANTES de criar o registro — julgamento
+  de risco sem IA de verdade não tem valor de auditoria nenhum, diferente de
+  Análise/Atualizar que sempre têm dado real coletado pra mostrar mesmo sem IA.
+- **Dashboard executivo** (`GET /guardian/dashboard`): contagem de auditorias
+  verde/amarelo/vermelho + achados críticos ainda abertos, exibido como
+  cards no topo de `/guardian`.
+- Arquivos novos: `packages/shared/src/types/guardian.ts`; schema —
+  `GuardianRuleset`/`GuardianRun` (+ relations em `Organization`);
+  `apps/api/src/infrastructure/ai/guardian-prompt.ts` (prompt +
+  normalização defensiva, mesmo padrão de `upgrade-prompt.ts`); método
+  `runGuardianCheck` adicionado à interface `AiProvider` e implementado nos
+  4 providers (Claude/OpenAI/Gemini/Noop — o noop nunca é chamado de
+  verdade por causa do gate, mas a interface exige o método);
+  `apps/api/src/application/guardian.service.ts`;
+  `apps/api/src/presentation/routes/guardian.routes.ts`, registrado em
+  `app.ts`; `recoverStaleGuardianRuns` registrado em `main.ts` (mesmo padrão
+  de recovery no boot dos outros pilares); frontend `/guardian` (dashboard +
+  regras + form de auditoria + lista) e `/guardian/[id]` (achados +
+  atualização de status), item novo no menu lateral (`layout.tsx`).
+- **Não fiz:** upload de PDF/planilha binária (fase 2 natural — precisa de
+  uma lib de parse e não dava pra validar que ela buildaria neste sandbox);
+  "aprendizado com decisões do usuário ao longo do tempo" (item 5 da sugestão
+  original) — não implementado, exigiria um mecanismo de feedback loop
+  alimentando o prompt/histórico que não desenhei ainda; qualquer coisa de
+  "aplicar a correção automaticamente" (item 4 da sugestão) — Guardian só
+  sugere, não tem adapter de aplicação como o resto do produto (poderia
+  reusar a infra de RemediationPlan/adapters no futuro, mas não conectei).
+
+**Checklist pro usuário antes de subir isto (mesmo do item anterior, agora
+cobrindo Guardian também):** `pnpm install`, `prisma generate`, `prisma db
+push` (schema tem 2 modelos novos + 2 enums novos + relations em
+`Organization`), depois `pnpm --filter @qa-ai/shared build && pnpm --filter
+@qa-ai/api typecheck && pnpm --filter @qa-ai/web build`, e só então `git add`
+dos arquivos específicos (nunca `-A`) + commit. Configurar a chave de IA em
+Configurações é pré-requisito pra testar Guardian de ponta a ponta (já é a
+mesma chave usada pelo Blueprint/Análise — não precisa de configuração nova).
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —
@@ -194,8 +420,8 @@ anterior incompleta:
    sem nova chamada de IA); ponte universal (`GET /apply/:token` + `PATCH
    .../items/:id`) validada; **login com Google confirmado ao vivo em
    produção** (29/07/2026 — ver item 2). **Falta ainda:** conectar um
-   projeto real no WordPress/Shopify/FTP e confirmar a aplicação automática
-   *push* (precisa de credenciais reais do usuário).
+   projeto real no GitHub (único adapter *push* que sobrou) e confirmar a
+   aplicação automática (precisa de credenciais reais do usuário).
 2. **[Fase 2] Configurar Google OAuth em produção** — ✅ *Concluído e
    confirmado em produção em 29/07/2026:* Client ID OAuth criado no Google
    Cloud Console (projeto `mystical-banner-424318-g1`, tipo "App da Web",
@@ -330,8 +556,10 @@ anterior incompleta:
    no seu terminal), rotas, hooks, painel de conexão, enum `AdapterKind` e
    menções em docs. O valor `NUVEMSHOP` continua existindo no enum do Postgres
    (não dá pra remover valor de enum sem recriar o tipo) mas não é mais
-   referenciado em nenhum lugar do código — inofensivo. WordPress/Shopify/FTP
-   continuam disponíveis normalmente.
+   referenciado em nenhum lugar do código — inofensivo. **Atualização
+   30/07/2026:** WordPress, Shopify e FTP também foram removidos em algum
+   momento depois desta nota (não documentado por quem fez) — hoje só
+   restam MANUAL_BRIDGE, MCP e GITHUB. Ver correção na seção 4 acima.
 
 ## Convenções
 
