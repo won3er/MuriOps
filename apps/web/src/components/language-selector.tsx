@@ -1,7 +1,7 @@
 "use client";
 
 import { Languages } from "lucide-react";
-import { LOCALES, LOCALE_LABELS, PUBLIC_COPY, type Locale } from "@/lib/i18n";
+import { LOCALES, PUBLIC_COPY, type Locale } from "@/lib/i18n";
 import { useLocale } from "@/lib/locale-context";
 import { cn } from "@/lib/utils";
 
@@ -14,31 +14,35 @@ export function LanguageSelector({
 }) {
   const { locale, setLocale } = useLocale();
   const copy = PUBLIC_COPY[locale];
+  const shortLabels: Record<Locale, string> = { en: "EN", pt: "PT", es: "ES" };
 
   return (
-    <label
+    <div
+      role="group"
+      aria-label={copy.language}
       className={cn(
-        "inline-flex h-9 items-center gap-1.5 rounded-md border bg-background/60 px-2 text-muted-foreground transition-colors hover:border-primary/35 hover:text-foreground",
+        "inline-flex h-9 items-center gap-1 rounded-md border bg-background/60 p-1 text-muted-foreground",
         className,
       )}
     >
-      <Languages className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-      <span className="sr-only">{copy.language}</span>
-      <select
-        value={locale}
-        onChange={(event) => setLocale(event.target.value as Locale)}
-        aria-label={copy.language}
-        className={cn(
-          "cursor-pointer appearance-none bg-transparent text-xs font-medium uppercase outline-none",
-          compact ? "w-6" : "w-[76px]",
-        )}
-      >
-        {LOCALES.map((item) => (
-          <option key={item} value={item} className="bg-card text-foreground">
-            {compact ? item.toUpperCase() : LOCALE_LABELS[item]}
-          </option>
-        ))}
-      </select>
-    </label>
+      {!compact && <Languages className="ml-1 h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
+      {LOCALES.map((item) => (
+        <button
+          key={item}
+          type="button"
+          onClick={() => setLocale(item)}
+          aria-pressed={locale === item}
+          title={item === "en" ? "English" : item === "pt" ? "Português" : "Español"}
+          className={cn(
+            "rounded px-2 py-1 text-[11px] font-semibold tracking-wide transition-colors",
+            locale === item
+              ? "bg-accent text-foreground shadow-sm"
+              : "hover:bg-accent/70 hover:text-foreground",
+          )}
+        >
+          {shortLabels[item]}
+        </button>
+      ))}
+    </div>
   );
 }

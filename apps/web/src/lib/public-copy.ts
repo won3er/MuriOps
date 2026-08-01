@@ -43,9 +43,9 @@ export const LANDING_COPY = {
     ],
     application: {
       eyebrow: "Application",
-      title: "One execution plan for every source",
+      title: "Turn a finding into a work item",
       description:
-        "Application receives completed analyses, blueprints and dependency upgrades, then organizes the selected output as a prioritized checklist. Export it as PDF, expose it through the universal bridge or MCP, or use a configured GitHub connection to register a pull request. Item status remains visible in the workspace.",
+        "For example, an analysis can identify a missing page title, poor contrast and a broken request. Application turns those findings into a prioritized checklist with evidence and instructions. Your team or development tool carries out the change; MuriOps records the work and its status without editing or merging code by itself.",
       badges: [
         "Single document",
         "Package for development AI",
@@ -134,9 +134,9 @@ export const LANDING_COPY = {
     ],
     application: {
       eyebrow: "Aplicação",
-      title: "Um plano de execução para cada origem",
+      title: "Do achado à tarefa de trabalho",
       description:
-        "Aplicação recebe análises concluídas, blueprints e planos de atualização de dependências e organiza o resultado selecionado como checklist priorizado. Exporte em PDF, disponibilize pela ponte universal ou MCP, ou use uma conexão GitHub para registrar uma pull request. O status dos itens permanece visível no workspace.",
+        "Por exemplo: uma análise encontra título ausente, contraste ruim e uma requisição quebrada. Aplicação transforma esses achados em checklist priorizado, com evidência e orientação. Seu time ou ferramenta de desenvolvimento executa a mudança; o MuriOps registra o trabalho e seu status, sem alterar ou fazer merge de código sozinho.",
       badges: ["Documento único", "Pacote para IA de dev", "Checklist ao vivo"],
       planStatus: "Plano de aplicação · 2 de 3 aplicados",
       checklist: [
@@ -221,9 +221,9 @@ export const LANDING_COPY = {
     ],
     application: {
       eyebrow: "Aplicación",
-      title: "Un plan de ejecución para cada origen",
+      title: "Del hallazgo a la tarea de trabajo",
       description:
-        "Aplicación recibe análisis completados, blueprints y planes de actualización de dependencias, y organiza el resultado seleccionado como checklist priorizado. Expórtalo en PDF, publícalo mediante el puente universal o MCP, o usa una conexión GitHub para registrar una pull request. El estado permanece visible en el workspace.",
+        "Por ejemplo: un análisis encuentra un título ausente, contraste deficiente y una solicitud rota. Aplicación convierte esos hallazgos en un checklist priorizado, con evidencia e instrucciones. Tu equipo o herramienta de desarrollo realiza el cambio; MuriOps registra el trabajo y su estado, sin editar ni fusionar código por sí solo.",
       badges: [
         "Documento único",
         "Paquete para IA de desarrollo",

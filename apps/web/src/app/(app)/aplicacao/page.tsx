@@ -51,13 +51,6 @@ const SCOPES: {
 ];
 
 
-/**
- * Aplicação é o executor final das mudanças vindas de Análise, Projetar e
- * Atualizar: exporta os achados num plano, conecta a plataforma real do
- * cliente (GitHub ou MCP) e aplica — manualmente ou
- * via ponte universal. Orquestração usa essas mesmas conexões pra automatizar
- * o ciclo analisar → plano → aplicar → reanalisar.
- */
 export default function AplicacaoPage() {
   return (
     <Suspense
@@ -109,8 +102,31 @@ function AplicacaoPageInner() {
       <PageHeader
         eyebrow="Ciclo de qualidade"
         title="Aplicações"
-        description="Transforme análises, blueprints e upgrades em planos rastreáveis para execução humana ou assistida."
+        description="Converta um resultado do MuriOps em uma lista de trabalho clara para seu time ou sua ferramenta de desenvolvimento."
       />
+
+      <Card>
+        <CardContent className="grid gap-4 py-5 text-sm md:grid-cols-3">
+          <div>
+            <p className="font-medium">1. Você envia um resultado</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Por exemplo: uma análise encontrou contraste ruim, erros de SEO e um header ausente.
+            </p>
+          </div>
+          <div>
+            <p className="font-medium">2. O MuriOps organiza o trabalho</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Cada achado vira um item priorizado, com evidência e orientação para quem vai executar.
+            </p>
+          </div>
+          <div>
+            <p className="font-medium">3. Seu time executa e atualiza</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Use o checklist, PDF, MCP ou uma pull request no GitHub. O MuriOps acompanha o status, mas não altera nem faz merge de código sozinho.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Exportar análises */}
       <Card>
