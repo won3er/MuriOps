@@ -17,6 +17,7 @@ import type { BlueprintDesignInput } from "../infrastructure/ai/blueprint-prompt
 import { decryptSecret } from "../infrastructure/crypto/secret-box.js";
 import { prisma } from "../infrastructure/database/prisma.js";
 import { NotFoundError } from "./analysis.service.js";
+import { scanGithubManifests } from "../modules/upgrade/github-manifest-scanner.js";
 
 /**
  * Blueprint pedido sem a organização ter uma chave de IA própria configurada.
@@ -28,6 +29,10 @@ import { NotFoundError } from "./analysis.service.js";
  * que gerar algo enganosamente "pronto".
  */
 export class AiKeyRequiredError extends Error {
+  readonly statusCode = 400;
+}
+
+export class ProjectBlueprintRequiredError extends Error {
   readonly statusCode = 400;
 }
 
@@ -72,6 +77,11 @@ export const blueprintService = {
       });
       if (!project) throw new NotFoundError("Projeto não encontrado");
       projectId = project.id;
+    }
+    if (mode === "project" && !projectId) {
+      throw new ProjectBlueprintRequiredError(
+        "Escolha um projeto para gerar uma projeção baseada no contexto atual.",
+      );
     }
 
     const created = await prisma.blueprint.create({
@@ -192,7 +202,7 @@ async function generateBlueprint(
     const ai = createAiProviderFor(providerName, override);
     const result = await ai.designBlueprint({
       title: bp.title,
-      description: describeInput(payload),
+      description: await describeBlueprintContext(bp, payload, organizationId),
     });
 
     await prisma.blueprint.update({
@@ -248,6 +258,7 @@ export async function recoverStaleBlueprints(): Promise<void> {
  * É o ponto único de tradução form/canvas/prompt → texto.
  */
 function describeInput(payload: BlueprintInputPayload): string {
+  if (payload.mode === "project") return payload.businessContext?.trim() ?? "";
   if (payload.mode === "prompt") {
     return payload.prompt.trim();
   }
@@ -284,6 +295,87 @@ function describeInput(payload: BlueprintInputPayload): string {
   ];
   if (c.notes?.trim()) parts.push(`Notas: ${c.notes}`);
   return parts.join("\n\n");
+}
+
+/**
+ * Builds an evidence-based context for an existing project. GitHub contributes
+ * only repository metadata and dependency manifests: source files and tokens
+ * are never included in the AI prompt.
+ */
+async function describeBlueprintContext(
+  bp: { projectId: string | null },
+  payload: BlueprintInputPayload,
+  organizationId: string,
+): Promise<string> {
+  if (payload.mode !== "project" || !bp.projectId) return describeInput(payload);
+
+  const project = await prisma.project.findFirst({
+    where: { id: bp.projectId, organizationId },
+    select: {
+      name: true,
+      url: true,
+      description: true,
+      analyses: {
+        where: { status: "COMPLETED" },
+        orderBy: { finishedAt: "desc" },
+        take: 1,
+        select: {
+          score: true,
+          issueCount: true,
+          pagesDiscovered: true,
+          aiSummary: true,
+          issues: {
+            orderBy: { createdAt: "desc" },
+            take: 12,
+            select: { title: true, category: true, severity: true },
+          },
+        },
+      },
+      adapterConnections: {
+        where: { kind: "GITHUB", isActive: true },
+        take: 1,
+        select: { config: true, credentialEncrypted: true },
+      },
+    },
+  });
+  if (!project) throw new NotFoundError("Projeto não encontrado");
+
+  const lines = [
+    "Esta é uma projeção de evolução de um sistema existente, não um projeto do zero.",
+    `Projeto: ${project.name}`,
+    `URL cadastrada: ${project.url}`,
+    `Descrição cadastrada: ${project.description?.trim() || "não informada"}`,
+    `Contexto de negócio informado nesta projeção: ${payload.businessContext?.trim() || "não informado"}`,
+  ];
+  const analysis = project.analyses[0];
+  if (analysis) {
+    const score = analysis.score as { overall?: number } | null;
+    lines.push(`Última análise concluída: score geral ${score?.overall ?? "não calculado"}; ${analysis.pagesDiscovered} página(s) verificadas; ${analysis.issueCount} achado(s).`);
+    if (analysis.aiSummary?.trim()) lines.push(`Resumo da análise: ${analysis.aiSummary.trim()}`);
+    if (analysis.issues.length) {
+      lines.push(`Achados recentes: ${analysis.issues.map((issue) => `${issue.category}/${issue.severity}: ${issue.title}`).join(" | ")}`);
+    }
+  } else {
+    lines.push("Ainda não há análise concluída: deixe claro quais decisões dependem de validar o sistema primeiro.");
+  }
+
+  const github = project.adapterConnections[0];
+  const githubConfig = github?.config as { owner?: string; repo?: string } | null;
+  if (githubConfig?.owner && githubConfig.repo && github?.credentialEncrypted) {
+    try {
+      const scan = await scanGithubManifests(decryptSecret(github.credentialEncrypted), githubConfig.owner, githubConfig.repo);
+      const manifests = scan.manifests.map((m) => `${m.path} (${m.ecosystem})`);
+      lines.push(`Repositório conectado: ${scan.owner}/${scan.repo}@${scan.branch}. Manifestos identificados: ${manifests.join(", ") || "nenhum"}.`);
+      if (scan.skipped.length) lines.push(`Manifestos fora do limite de leitura: ${scan.skipped.join(", ")}.`);
+      if (scan.treeTruncated) lines.push("A árvore do repositório foi truncada pelo GitHub; trate a cobertura da estrutura como parcial.");
+    } catch {
+      lines.push(`Repositório conectado: ${githubConfig.owner}/${githubConfig.repo}. A estrutura não pôde ser lida agora; não invente detalhes sobre o código.`);
+    }
+  } else {
+    lines.push("Nenhum repositório GitHub conectado: não presuma stack, arquivos ou integrações de código.");
+  }
+  lines.push("Proponha evoluções proporcionais às evidências. Diferencie fatos observados, lacunas de informação e recomendações; não afirme que uma correção já foi implementada.");
+  return lines.join("\n");
 }
 
 /** Provider efetivo: o pedido no request, ou o configurado na org, ou 'claude'. */

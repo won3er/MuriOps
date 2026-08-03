@@ -8,7 +8,7 @@
  */
 
 /** Como o usuário descreveu o projeto. */
-export type BlueprintMode = "form" | "canvas" | "prompt";
+export type BlueprintMode = "project" | "form" | "canvas" | "prompt";
 
 export type BlueprintProviderName = "claude" | "openai" | "gemini";
 
@@ -50,6 +50,12 @@ export interface BlueprintCanvasInput {
 
 /** União discriminada da entrada bruta conforme o modo. */
 export type BlueprintInputPayload =
+  | {
+      /** Projection guided by the currently registered project. */
+      mode: "project";
+      /** Optional business/niche context for this projection. */
+      businessContext?: string;
+    }
   | { mode: "form"; form: BlueprintFormInput }
   | { mode: "canvas"; canvas: BlueprintCanvasInput }
   | { mode: "prompt"; prompt: string };

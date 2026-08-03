@@ -4,6 +4,7 @@ import { NotFoundError } from "../../application/analysis.service.js";
 import {
   AiKeyRequiredError,
   blueprintService,
+  ProjectBlueprintRequiredError,
 } from "../../application/blueprint.service.js";
 import { generateBlueprintReportPdf } from "../../infrastructure/pdf/blueprint-report.js";
 
@@ -54,11 +55,16 @@ const promptSchema = z.object({
   prompt: z.string().min(10, "Descreva o projeto com um pouco mais de detalhe."),
 });
 
+const projectSchema = z.object({
+  mode: z.literal("project"),
+  businessContext: z.string().trim().max(2_000).optional(),
+});
+
 const createSchema = z.object({
   title: z.string().min(2),
   provider: providerSchema.optional(),
   projectId: z.string().optional(),
-  input: z.discriminatedUnion("mode", [formSchema, canvasSchema, promptSchema]),
+  input: z.discriminatedUnion("mode", [projectSchema, formSchema, canvasSchema, promptSchema]),
 });
 
 export async function blueprintRoutes(app: FastifyInstance): Promise<void> {
@@ -79,7 +85,7 @@ export async function blueprintRoutes(app: FastifyInstance): Promise<void> {
       // 202: aceito e sendo gerado em background; o cliente acompanha por polling.
       return reply.status(202).send(blueprint);
     } catch (err) {
-      if (err instanceof AiKeyRequiredError)
+      if (err instanceof AiKeyRequiredError || err instanceof ProjectBlueprintRequiredError)
         return reply
           .status(400)
           .send({ statusCode: 400, error: "AiKeyRequired", message: err.message });

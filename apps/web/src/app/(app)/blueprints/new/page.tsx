@@ -5,7 +5,7 @@ import type {
   BlueprintProviderName,
   CreateBlueprintRequest,
 } from "@qa-ai/shared";
-import { AlertTriangle, FileText, Loader2, Network, Sparkles, X } from "lucide-react";
+import { AlertTriangle, FileText, FolderKanban, Loader2, Network, Sparkles, X } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,10 +18,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
-import { useCreateBlueprint } from "@/lib/queries";
+import { useCreateBlueprint, useProjects } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
-type Mode = "form" | "canvas" | "prompt";
+type Mode = "project" | "form" | "canvas" | "prompt";
 
 const MODES: {
   id: Mode;
@@ -29,6 +29,7 @@ const MODES: {
   icon: typeof FileText;
   hint: string;
 }[] = [
+  { id: "project", label: "Projeto atual", icon: FolderKanban, hint: "Dados, análises e GitHub" },
   { id: "form", label: "Formulário", icon: FileText, hint: "Campos + tags" },
   { id: "canvas", label: "Canvas", icon: Network, hint: "Grafo visual" },
   { id: "prompt", label: "Prompt", icon: Sparkles, hint: "Texto livre" },
@@ -43,14 +44,17 @@ const PROVIDERS: { id: BlueprintProviderName | "auto"; label: string }[] = [
 
 export default function NewBlueprintPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("form");
+  const [mode, setMode] = useState<Mode>("project");
   const [title, setTitle] = useState("");
+  const [projectId, setProjectId] = useState("");
+  const [businessContext, setBusinessContext] = useState("");
   const [provider, setProvider] = useState<BlueprintProviderName | "auto">(
     "auto",
   );
   const [error, setError] = useState<string | null>(null);
   const [aiConfigured, setAiConfigured] = useState<boolean | null>(null);
   const create = useCreateBlueprint();
+  const { data: projects = [], isLoading: projectsLoading } = useProjects();
 
   // O Blueprint precisa de IA de verdade pra produzir um plano específico
   // deste projeto — sem chave conectada, o back recusa a criação (ver
@@ -80,11 +84,22 @@ export default function NewBlueprintPage() {
   const [prompt, setPrompt] = useState("");
 
   function buildRequest(): CreateBlueprintRequest | string {
-    if (!title.trim()) return "Dê um título ao blueprint.";
+    if (mode === "project" && !projectId) return "Escolha o projeto que será projetado.";
+    if (!title.trim() && mode !== "project") return "Dê um título ao blueprint.";
     const base = {
-      title: title.trim(),
+      title: title.trim() || `Projeção — ${projects.find((p) => p.id === projectId)?.name ?? "projeto"}`,
       provider: provider === "auto" ? undefined : provider,
     };
+    if (mode === "project") {
+      return {
+        ...base,
+        projectId,
+        input: {
+          mode: "project",
+          ...(businessContext.trim() ? { businessContext: businessContext.trim() } : {}),
+        },
+      };
+    }
     if (mode === "form") {
       if (form.objective.trim().length < 3) return "Descreva o objetivo.";
       return { ...base, input: { mode: "form", form } };
@@ -128,7 +143,7 @@ export default function NewBlueprintPage() {
           { label: "Novo blueprint" },
         ]}
         title="Novo blueprint"
-        description="Escolha a forma de entrada e forneça contexto suficiente para gerar um plano útil."
+        description="Comece pelo projeto atual. A projeção usa dados cadastrados, análises recentes e a estrutura do GitHub quando ele estiver conectado."
       />
 
       {aiConfigured === false && (
@@ -153,24 +168,9 @@ export default function NewBlueprintPage() {
 
       <Card>
         <CardContent className="space-y-5 pt-5">
-          <div className="space-y-1">
-            <label
-              htmlFor="blueprint-title"
-              className="text-xs text-muted-foreground"
-            >
-              Título do projeto
-            </label>
-            <Input
-              id="blueprint-title"
-              placeholder="Ex.: Marketplace B2B de peças"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-
           {/* seletor de modo */}
           <div
-            className="grid gap-2 sm:grid-cols-3"
+            className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
             role="radiogroup"
             aria-label="Formato de entrada"
           >
@@ -196,6 +196,50 @@ export default function NewBlueprintPage() {
               </button>
             ))}
           </div>
+
+          {mode === "project" && (
+            <div className="space-y-4 rounded-lg border border-primary/20 bg-primary/[0.04] p-4">
+              <div className="space-y-1">
+                <label htmlFor="blueprint-project" className="text-xs text-muted-foreground">Projeto atual</label>
+                <select
+                  id="blueprint-project"
+                  value={projectId}
+                  onChange={(e) => {
+                    setProjectId(e.target.value);
+                    const selected = projects.find((p) => p.id === e.target.value);
+                    if (!title.trim() && selected) setTitle(`Projeção — ${selected.name}`);
+                  }}
+                  disabled={projectsLoading}
+                  className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                >
+                  <option value="">{projectsLoading ? "Carregando projetos…" : "Selecione um projeto"}</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>{project.name} — {project.url}</option>
+                  ))}
+                </select>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                O MuriOps reúne a descrição cadastrada, a última análise concluída e, se houver conexão GitHub, apenas os manifestos de dependências e a estrutura do repositório. Nenhum token ou código-fonte é enviado como contexto.
+              </p>
+              <div className="space-y-1">
+                <label htmlFor="blueprint-business-context" className="text-xs text-muted-foreground">Nicho, público ou objetivo de negócio <span className="text-muted-foreground">(opcional)</span></label>
+                <textarea
+                  id="blueprint-business-context"
+                  value={businessContext}
+                  onChange={(e) => setBusinessContext(e.target.value)}
+                  placeholder="Ex.: plataforma B2B para agendamento de serviços; prioridade é reduzir abandono no cadastro e cumprir LGPD."
+                  className="min-h-[88px] w-full rounded-md border border-border bg-background p-3 text-sm outline-none focus:border-primary"
+                />
+              </div>
+            </div>
+          )}
+
+          {mode !== "project" && (
+            <div className="space-y-1">
+              <label htmlFor="blueprint-title" className="text-xs text-muted-foreground">Título do projeto</label>
+              <Input id="blueprint-title" placeholder="Ex.: Marketplace B2B de peças" value={title} onChange={(e) => setTitle(e.target.value)} />
+            </div>
+          )}
 
           {mode === "form" && <FormMode value={form} onChange={setForm} />}
 
