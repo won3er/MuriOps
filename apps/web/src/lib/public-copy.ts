@@ -13,9 +13,9 @@ export const LANDING_COPY = {
     trustLine:
       "Start without a credit card · Bring your own AI key · Keep approval control",
     cycleEyebrow: "One connected cycle",
-    cycleTitle: "Five workflows, one workspace",
+    cycleTitle: "Six workflows, one workspace",
     cycleDescription:
-      "From the first diagnosis to improvement tracking, every stage preserves project context and prepares the next decision.",
+      "From the first diagnosis to improvement tracking, every stage preserves project context and prepares the next decision — including Guardian, a separate audit layer for business documents, not just websites.",
     howItWorks: "From input to tracked work",
     howItWorksDescription:
       "The main workflow connects three real outputs: a diagnosis or plan, an Application checklist, and execution progress.",
@@ -62,7 +62,7 @@ export const LANDING_COPY = {
       eyebrow: "Diagnostic depth",
       title: "What the analysis covers",
       description:
-        "Eight disciplines work together. Every finding includes context, evidence and priority to guide the next action.",
+        "Ten disciplines work together across Standard QA Analysis and Security Analysis. Every finding includes context, evidence and priority to guide the next action.",
       modules: [
         ["Smart crawler", "Discovers pages, menus and flows automatically."],
         ["Performance", "LCP, CLS, INP and real loading time."],
@@ -79,6 +79,14 @@ export const LANDING_COPY = {
         [
           "Console & network",
           "JavaScript errors, failed requests and heavy resources.",
+        ],
+        [
+          "Authorized active testing",
+          "Opt-in only: rate-limit checks, user-enumeration signals and a curated set of detection payloads (SQLi/XSS/path traversal), with a circuit breaker. Requires explicit consent recorded per project.",
+        ],
+        [
+          "Security scan via GitHub",
+          "Scans a connected repository for known-vulnerable dependencies (CVEs) and insecure code patterns, without touching the live site.",
         ],
         ["Version comparison", "What was fixed, introduced or remains."],
       ],
@@ -104,9 +112,9 @@ export const LANDING_COPY = {
     trustLine:
       "Comece sem cartão · Use sua própria chave de IA · Mantenha o controle das aprovações",
     cycleEyebrow: "Um ciclo conectado",
-    cycleTitle: "Cinco frentes, um só workspace",
+    cycleTitle: "Seis frentes, um só workspace",
     cycleDescription:
-      "Do primeiro diagnóstico ao acompanhamento das melhorias, cada etapa preserva o contexto do projeto e prepara a próxima decisão.",
+      "Do primeiro diagnóstico ao acompanhamento das melhorias, cada etapa preserva o contexto do projeto e prepara a próxima decisão — incluindo o Guardian, uma camada de auditoria separada para documentos de negócio, não só sites.",
     howItWorks: "Da origem ao trabalho acompanhado",
     howItWorksDescription:
       "O fluxo principal conecta três resultados reais: um diagnóstico ou plano, um checklist em Aplicação e o acompanhamento da execução.",
@@ -149,7 +157,7 @@ export const LANDING_COPY = {
       eyebrow: "Profundidade de diagnóstico",
       title: "O que a análise cobre",
       description:
-        "Oito frentes trabalham em conjunto. Cada achado chega com contexto, evidência e prioridade para orientar a próxima ação.",
+        "Dez frentes trabalham em conjunto entre a Análise QA padrão e a Análise de Segurança. Cada achado chega com contexto, evidência e prioridade para orientar a próxima ação.",
       modules: [
         ["Crawler inteligente", "Descobre páginas, menus e fluxos sozinho."],
         ["Performance", "LCP, CLS, INP e tempo de carregamento real."],
@@ -166,6 +174,14 @@ export const LANDING_COPY = {
         [
           "Console & rede",
           "Erros de JavaScript, requisições quebradas e recursos pesados.",
+        ],
+        [
+          "Teste Ativo Autorizado",
+          "Opt-in: checagem de rate-limit, indícios de enumeração de usuário e um conjunto curado de payloads de detecção (SQLi/XSS/path traversal), com circuit breaker. Exige consentimento explícito registrado no projeto.",
+        ],
+        [
+          "Análise de segurança via GitHub",
+          "Varre um repositório conectado em busca de dependências com CVE conhecida e padrões de código inseguro, sem tocar no site em produção.",
         ],
         ["Comparação de versões", "O que foi corrigido, surgiu ou persiste."],
       ],
@@ -191,9 +207,9 @@ export const LANDING_COPY = {
     trustLine:
       "Empieza sin tarjeta · Usa tu propia clave de IA · Conserva el control de las aprobaciones",
     cycleEyebrow: "Un ciclo conectado",
-    cycleTitle: "Cinco frentes, un solo workspace",
+    cycleTitle: "Seis frentes, un solo workspace",
     cycleDescription:
-      "Desde el primer diagnóstico hasta el seguimiento de las mejoras, cada etapa conserva el contexto del proyecto y prepara la próxima decisión.",
+      "Desde el primer diagnóstico hasta el seguimiento de las mejoras, cada etapa conserva el contexto del proyecto y prepara la próxima decisión — incluyendo Guardian, una capa de auditoría separada para documentos de negocio, no solo sitios web.",
     howItWorks: "Del origen al trabajo acompañado",
     howItWorksDescription:
       "El flujo principal conecta tres resultados reales: un diagnóstico o plan, un checklist en Aplicación y el seguimiento de la ejecución.",
@@ -240,7 +256,7 @@ export const LANDING_COPY = {
       eyebrow: "Profundidad del diagnóstico",
       title: "Qué cubre el análisis",
       description:
-        "Ocho disciplinas trabajan juntas. Cada hallazgo incluye contexto, evidencia y prioridad para orientar la próxima acción.",
+        "Diez disciplinas trabajan juntas entre el Análisis QA estándar y el Análisis de Seguridad. Cada hallazgo incluye contexto, evidencia y prioridad para orientar la próxima acción.",
       modules: [
         [
           "Crawler inteligente",
@@ -260,6 +276,14 @@ export const LANDING_COPY = {
         [
           "Consola y red",
           "Errores de JavaScript, solicitudes fallidas y recursos pesados.",
+        ],
+        [
+          "Prueba activa autorizada",
+          "Opt-in: verificación de rate-limit, señales de enumeración de usuarios y un conjunto curado de payloads de detección (SQLi/XSS/path traversal), con circuit breaker. Requiere consentimiento explícito registrado en el proyecto.",
+        ],
+        [
+          "Análisis de seguridad vía GitHub",
+          "Escanea un repositorio conectado en busca de dependencias con CVE conocida y patrones de código inseguro, sin tocar el sitio en producción.",
         ],
         ["Comparación de versiones", "Qué se corrigió, apareció o permanece."],
       ],
@@ -289,6 +313,7 @@ export const FEATURE_COPY = {
       "Applications",
       "Orchestrations",
       "Updates",
+      "Guardian",
     ],
     features: [
       {
@@ -344,6 +369,20 @@ export const FEATURE_COPY = {
         route: "Orchestrations / Run",
       },
       {
+        key: "guardian",
+        label: "Guardian",
+        eyebrow: "Business QA",
+        heading: "Audit business documents, not just websites",
+        description:
+          "Paste a spreadsheet export, contract or form — or pick a file straight from a connected Google Drive folder — define optional business rules in plain language, and AI flags inconsistencies and risks with severity, evidence and a suggested fix. Requires a connected AI key.",
+        outcomes: [
+          "Risk severity per finding",
+          "Google Drive file picker",
+          "Status tracking per finding",
+        ],
+        route: "Guardian / Audit",
+      },
+      {
         key: "acompanhar",
         label: "Overview",
         eyebrow: "Management",
@@ -372,6 +411,7 @@ export const FEATURE_COPY = {
       "Aplicações",
       "Orquestrações",
       "Atualizações",
+      "Guardian",
     ],
     features: [
       {
@@ -431,6 +471,20 @@ export const FEATURE_COPY = {
         route: "Orquestrações / Execução",
       },
       {
+        key: "guardian",
+        label: "Guardian",
+        eyebrow: "QA operacional",
+        heading: "Audite documentos de negócio, não só sites",
+        description:
+          "Cole uma planilha exportada, contrato ou formulário — ou escolha um arquivo direto de uma pasta do Google Drive conectada — defina regras de negócio opcionais em linguagem natural, e a IA aponta inconsistências e riscos com severidade, evidência e correção sugerida. Exige chave de IA conectada.",
+        outcomes: [
+          "Severidade por achado",
+          "Seletor de arquivo do Google Drive",
+          "Status por achado",
+        ],
+        route: "Guardian / Auditoria",
+      },
+      {
         key: "acompanhar",
         label: "Visão geral",
         eyebrow: "Gestão",
@@ -459,6 +513,7 @@ export const FEATURE_COPY = {
       "Aplicaciones",
       "Orquestaciones",
       "Actualizaciones",
+      "Guardian",
     ],
     features: [
       {
@@ -516,6 +571,20 @@ export const FEATURE_COPY = {
           "Reanudación controlada",
         ],
         route: "Orquestaciones / Ejecución",
+      },
+      {
+        key: "guardian",
+        label: "Guardian",
+        eyebrow: "QA operativo",
+        heading: "Audita documentos de negocio, no solo sitios web",
+        description:
+          "Pega una hoja de cálculo exportada, contrato o formulario — o elige un archivo directo de una carpeta de Google Drive conectada — define reglas de negocio opcionales en lenguaje natural, y la IA señala inconsistencias y riesgos con severidad, evidencia y corrección sugerida. Requiere una clave de IA conectada.",
+        outcomes: [
+          "Severidad por hallazgo",
+          "Selector de archivos de Google Drive",
+          "Estado por hallazgo",
+        ],
+        route: "Guardian / Auditoría",
       },
       {
         key: "acompanhar",
@@ -581,6 +650,17 @@ export const PREVIEW_COPY = {
         ["Reanalyze", "Waiting", "Next stage"],
       ],
     },
+    guardian: {
+      title: "Business audit",
+      badge: "Needs review",
+      metric: "3",
+      metricLabel: "open findings",
+      rows: [
+        ["Expense category formula error", "High", "#ERROR! in every row"],
+        ["Duplicate invoice number", "Medium", "Rows 12 and 47"],
+        ["Missing renewal date", "Medium", "Vendor contract, clause 4"],
+      ],
+    },
     acompanhar: {
       title: "Workspace health",
       badge: "Updated now",
@@ -638,6 +718,17 @@ export const PREVIEW_COPY = {
         ["Reanalisar", "Aguardando", "Próxima etapa"],
       ],
     },
+    guardian: {
+      title: "Auditoria de negócio",
+      badge: "Precisa de revisão",
+      metric: "3",
+      metricLabel: "achados abertos",
+      rows: [
+        ["Erro de fórmula na categoria de despesa", "Alto", "#ERROR! em todas as linhas"],
+        ["Número de nota fiscal duplicado", "Médio", "Linhas 12 e 47"],
+        ["Data de renovação ausente", "Médio", "Contrato de fornecedor, cláusula 4"],
+      ],
+    },
     acompanhar: {
       title: "Saúde do workspace",
       badge: "Atualizado agora",
@@ -693,6 +784,17 @@ export const PREVIEW_COPY = {
         ["Analizar", "Completado", "92 puntos"],
         ["Evaluar gates", "Completado", "6 aprobados"],
         ["Volver a analizar", "En espera", "Próxima etapa"],
+      ],
+    },
+    guardian: {
+      title: "Auditoría de negocio",
+      badge: "Necesita revisión",
+      metric: "3",
+      metricLabel: "hallazgos abiertos",
+      rows: [
+        ["Error de fórmula en categoría de gasto", "Alto", "#ERROR! en todas las filas"],
+        ["Número de factura duplicado", "Medio", "Filas 12 y 47"],
+        ["Falta fecha de renovación", "Medio", "Contrato de proveedor, cláusula 4"],
       ],
     },
     acompanhar: {

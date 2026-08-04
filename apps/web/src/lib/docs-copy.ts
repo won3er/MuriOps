@@ -138,6 +138,26 @@ export const DOCS_COPY = {
               "available",
               "Dependency upgrade plan from package.json.",
             ],
+            [
+              "Authorized active testing",
+              "available",
+              "Opt-in only: rate-limit checks, user-enumeration signals and a curated set of detection payloads, with a circuit breaker. Requires explicit per-project consent.",
+            ],
+            [
+              "Security scan via GitHub",
+              "available",
+              "Scans a connected repository for known-vulnerable dependencies (CVEs) and insecure code patterns, without touching the live site.",
+            ],
+          ],
+        },
+        {
+          title: "Business audit",
+          items: [
+            [
+              "Guardian",
+              "available",
+              "Audits pasted documents (spreadsheets, contracts, forms) or files picked from a connected Google Drive folder against optional business rules, with severity, evidence and a suggested fix. Requires a connected AI key.",
+            ],
           ],
         },
         {
@@ -357,6 +377,26 @@ export const DOCS_COPY = {
               "available",
               "Plano de atualização de dependências a partir de um package.json.",
             ],
+            [
+              "Teste Ativo Autorizado",
+              "available",
+              "Opt-in: checagem de rate-limit, indícios de enumeração de usuário e um conjunto curado de payloads de detecção, com circuit breaker. Exige consentimento explícito registrado no projeto.",
+            ],
+            [
+              "Análise de segurança via GitHub",
+              "available",
+              "Varre um repositório conectado em busca de dependências com CVE conhecida e padrões de código inseguro, sem tocar no site em produção.",
+            ],
+          ],
+        },
+        {
+          title: "Auditoria de negócio",
+          items: [
+            [
+              "Guardian",
+              "available",
+              "Audita um documento colado (planilha, contrato, formulário) ou escolhido de uma pasta do Google Drive conectada, contra regras de negócio opcionais, com severidade, evidência e correção sugerida. Exige chave de IA conectada.",
+            ],
           ],
         },
         {
@@ -575,6 +615,26 @@ export const DOCS_COPY = {
               "Actualizar",
               "available",
               "Plan de actualización de dependencias a partir de package.json.",
+            ],
+            [
+              "Prueba activa autorizada",
+              "available",
+              "Opcional: comprobación de rate-limit, señales de enumeración de usuarios y un conjunto curado de payloads de detección, con circuit breaker. Requiere consentimiento explícito registrado en el proyecto.",
+            ],
+            [
+              "Análisis de seguridad vía GitHub",
+              "available",
+              "Escanea un repositorio conectado en busca de dependencias con CVE conocida y patrones de código inseguros, sin tocar el sitio en producción.",
+            ],
+          ],
+        },
+        {
+          title: "Auditoría de negocio",
+          items: [
+            [
+              "Guardian",
+              "available",
+              "Audita un documento pegado (hoja de cálculo, contrato, formulario) o elegido desde una carpeta de Google Drive conectada, contra reglas de negocio opcionales, con severidad, evidencia y corrección sugerida. Requiere una clave de IA conectada.",
             ],
           ],
         },

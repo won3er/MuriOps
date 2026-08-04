@@ -410,6 +410,114 @@ dos arquivos específicos (nunca `-A`) + commit. Configurar a chave de IA em
 Configurações é pré-requisito pra testar Guardian de ponta a ponta (já é a
 mesma chave usada pelo Blueprint/Análise — não precisa de configuração nova).
 
+## Sessão 04/08/2026 — Guardian × Google Drive (fase 1)
+
+A pedido do usuário: conectar Google Drive ao Guardian pra escolher um
+documento de uma pasta em vez de exigir colar o texto manualmente (ideia
+maior do usuário era automação completa fim-de-dia + e-mail — recomendei
+fatiar em duas fases porque falta agendador/cron e provedor de e-mail no
+projeto; essa sessão cobre só a fase 1, conexão + seleção manual de arquivo).
+
+**Fluxo:** OAuth padrão "authorization code" com refresh token offline —
+diferente do login com Google (`auth.service.ts`), que só verifica um ID
+token sem nunca trocar segredo com o Google. Escopo `drive.readonly` (só
+leitura). Token (access+refresh) fica criptografado por organização
+(mesmo AES-256-GCM de `secret-box.ts` usado pra chave de IA), não por
+usuário — qualquer membro da organização vê a mesma conexão.
+
+- `apps/api/src/application/google-drive.service.ts` (novo): `buildAuthUrl`
+  (monta o link de consentimento do Google com um "state" assinado por HMAC
+  contendo `organizationId` — o callback é um redirect de navegador sem
+  Authorization header, então a identidade da organização só pode vir daí),
+  `handleCallback` (troca code por tokens, salva, redireciona de volta pro
+  frontend), `getValidAccessToken` (renova sozinho via refresh token quando
+  expira), `listFiles` (lista pasta do Drive), `downloadFileAsText` (baixa
+  Google Docs/Sheets exportados como texto/CSV, ou arquivos
+  .txt/.csv/.tsv/.json direto — qualquer outro tipo, incluindo PDF e Excel
+  binário, é recusado com mensagem explicando a limitação, mesma do fluxo
+  de colar texto). Limite de 200.000 caracteres por documento, igual ao
+  paste manual.
+- `apps/api/src/presentation/routes/guardian-drive.routes.ts` (novo):
+  registrado como plugin **separado** de `guardian.routes.ts` de propósito
+  — aquele arquivo aplica `onRequest: authenticate` em todas as rotas via
+  hook de plugin, mas `/guardian/drive/callback` precisa ser público (é o
+  Google redirecionando o navegador, não um fetch autenticado).
+- Schema: 4 campos novos em `Organization`
+  (`googleDriveRefreshTokenEncrypted`/`googleDriveAccessTokenEncrypted`/
+  `googleDriveTokenExpiresAt`/`googleDriveConnectedEmail`) — já aplicados
+  via `prisma db push` nesta sessão (aditivos, sem risco de perda de dado).
+- `env.ts`: 3 variáveis novas, todas opcionais (sem elas, a conexão de
+  Drive fica desabilitada mas o resto do app funciona normal):
+  `GOOGLE_CLIENT_SECRET` (segredo do MESMO client OAuth usado no login —
+  o login usa só o Client ID; Drive precisa do secret porque troca code por
+  refresh token de verdade), `GOOGLE_DRIVE_REDIRECT_URI` (fallback:
+  `PUBLIC_API_URL + /guardian/drive/callback`), `PUBLIC_WEB_URL` (origem
+  canônica do frontend pra onde o callback redireciona no final — separado
+  de `CORS_ORIGIN` porque esse pode ter mais de um domínio).
+- Frontend: card "Google Drive" no topo de `/guardian` — botão conectar
+  (abre popup do consentimento do Google numa aba nova; a aba original
+  revalida o status ao reganhar foco, já que não dá pra saber exatamente
+  quando o popup fecha), navegador de pastas com breadcrumb, clique num
+  arquivo já carrega o conteúdo direto no campo de auditoria.
+
+**Pendente de configuração pelo usuário antes de funcionar (não é algo que
+o agente possa fazer — exige acesso ao Google Cloud Console do usuário):**
+1. No [console.cloud.google.com](https://console.cloud.google.com), projeto
+   `mystical-banner-424318-g1` (mesmo do login): APIs e serviços →
+   Biblioteca → habilitar **Google Drive API**.
+2. APIs e serviços → Credenciais → abrir o Client ID OAuth existente (o
+   mesmo usado no "Entrar com Google") → copiar o **Client secret** → colar
+   em `GOOGLE_CLIENT_SECRET` no Render (produção) e no `.env` local.
+3. No mesmo Client ID, em "URIs de redirecionamento autorizados", adicionar
+   `https://elevate-qa-api.onrender.com/guardian/drive/callback` (produção)
+   e `http://localhost:3333/guardian/drive/callback` (local).
+4. Na tela de consentimento OAuth (OAuth consent screen), adicionar o
+   escopo `.../auth/drive.readonly` em "Acesso a dados"/Scopes — sem isso o
+   Google recusa o consentimento com esse escopo. Se o app ainda estiver em
+   modo "Testing" (não publicado), confirmar que a conta do usuário está na
+   lista de "Test users".
+5. Definir `PUBLIC_WEB_URL` (produção: `https://elevate-qa.vercel.app`;
+   local: `http://localhost:3000`) e `GOOGLE_DRIVE_REDIRECT_URI` (local:
+   `http://localhost:3333/guardian/drive/callback`) nos `.env`.
+
+**Fase 2, não implementada:** agendamento automático (rodar sozinho todo
+fim de dia, precisa de um scheduler — nada disso existe no backend hoje) +
+envio por e-mail (nenhum provedor configurado — nem SendGrid, Resend, nem
+SMTP) do resumo/dashboard gerado a partir do documento. Fica pro próximo
+passo natural depois que a fase 1 for testada em produção.
+
+**✅ Testado de ponta a ponta em produção (04/08/2026, sessão autônoma
+noturna, autorizada pelo usuário a usar o navegador e testar sozinho):** o
+Client ID/Secret OAuth, o redirect URI e a Drive API já estavam configurados
+corretamente desde a sessão anterior — a única coisa que faltava era a
+conta `jadsonpavia@gmail.com` estar cadastrada como **usuário de teste** no
+Google Auth Platform (o app está em status "Testando"/não verificado, que
+por padrão bloqueia todo mundo, inclusive o dono, com `access_denied`).
+Corrigido em Google Cloud Console → Google Auth Platform → Público-alvo →
+"+ Adicionar usuários". Depois disso, fluxo completo validado ao vivo:
+conectar (consentimento OAuth → callback → token salvo) → card mostra
+"Conectado como jadsonpavia@gmail.com" → "Escolher arquivo" lista pastas e
+arquivos reais do Drive → clicar num arquivo (planilha) carrega o conteúdo
+exportado no campo de auditoria → "Auditar documento" roda a IA (Gemini) de
+verdade e gera um achado real (`#ERROR!` numa coluna calculada da
+planilha, severidade "Alto", evidência literal, correção sugerida) →
+mudar status do achado para "Reconhecido" persiste. Nenhum bug de código
+encontrado nesse caminho.
+**Fato de infraestrutura descoberto nesta sessão, não documentado antes:**
+a API em produção responde tanto em `elevate-qa-api.onrender.com` quanto
+em `api.muriops.com.br` (domínio customizado apontando pro mesmo serviço
+Render) — é esse segundo domínio que está registrado como redirect URI do
+OAuth do Drive, enquanto `NEXT_PUBLIC_API_URL` na Vercel ainda usa o
+domínio `.onrender.com` direto.
+**Suspeita não confirmada, não corrigida:** o botão "Conectar Google Drive"
+(`useConnectGuardianDrive` em `apps/web/src/lib/queries.ts`) parece chamar
+`window.open()` dentro do `onSuccess` de uma mutation assíncrona — em teoria
+isso pode perder o "user activation" do navegador e ser bloqueado como
+pop-up em alguns navegadores/condições, mesmo funcionando normalmente no
+Chrome do teste desta sessão com clique real. Não reproduzido como bug de
+verdade; fica como possível hardening futuro (abrir a aba em branco
+imediato no clique, só definir a URL depois do fetch resolver).
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —

@@ -3,9 +3,11 @@
 import {
   ArrowRight,
   Bot,
+  Crosshair,
   FileDown,
   Gauge,
   GitCompare,
+  Github,
   Lock,
   Search,
   ShieldAlert,
@@ -31,6 +33,8 @@ const MODULE_ICONS = [
   Lock,
   ShieldAlert,
   Terminal,
+  Crosshair,
+  Github,
   GitCompare,
 ] as const;
 
