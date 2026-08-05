@@ -7,6 +7,10 @@ import {
   InvalidGuardianInputError,
   MAX_GUARDIAN_DOCUMENT_CHARACTERS,
 } from "../../application/guardian.service.js";
+import {
+  DocumentExtractionError,
+  extractTextFromBinary,
+} from "../../infrastructure/documents/text-extractor.js";
 
 const providerSchema = z.enum(["claude", "openai", "gemini"]);
 
@@ -80,6 +84,36 @@ export async function guardianRoutes(app: FastifyInstance): Promise<void> {
     }
   });
 
+  // ---- upload de arquivo (PDF/Excel) — extrai texto pro campo de auditoria ----
+
+  app.post("/guardian/extract-text", async (req, reply) => {
+    const file = await req.file();
+    if (!file) {
+      return reply
+        .status(400)
+        .send({ statusCode: 400, error: "ValidationError", message: "Envie um arquivo" });
+    }
+    const buffer = await file.toBuffer();
+    try {
+      const content = await extractTextFromBinary(buffer, file.mimetype, file.filename);
+      if (content.length > MAX_GUARDIAN_DOCUMENT_CHARACTERS) {
+        return reply.status(413).send({
+          statusCode: 413,
+          error: "TooLarge",
+          message: `"${file.filename}" excede o limite de 200.000 caracteres. Envie uma parte do documento.`,
+        });
+      }
+      return { name: file.filename, content };
+    } catch (err) {
+      if (err instanceof DocumentExtractionError) {
+        return reply
+          .status(err.statusCode)
+          .send({ statusCode: err.statusCode, error: "ExtractionError", message: err.message });
+      }
+      throw err;
+    }
+  });
+
   // ---- runs (auditorias) ----
 
   app.get("/guardian/runs", async (req) => {
@@ -119,6 +153,28 @@ export async function guardianRoutes(app: FastifyInstance): Promise<void> {
         .status(404)
         .send({ statusCode: 404, error: "NotFound", message: "Auditoria não encontrada" });
     return run;
+  });
+
+  app.post("/guardian/runs/:id/retry", async (req, reply) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    try {
+      const run = await guardianService.retryRun(req.user.organizationId, id);
+      return reply.status(202).send(run);
+    } catch (err) {
+      if (err instanceof AiKeyRequiredError)
+        return reply
+          .status(400)
+          .send({ statusCode: 400, error: "AiKeyRequired", message: err.message });
+      if (err instanceof InvalidGuardianInputError)
+        return reply
+          .status(400)
+          .send({ statusCode: 400, error: "ValidationError", message: err.message });
+      if (err instanceof NotFoundError)
+        return reply
+          .status(404)
+          .send({ statusCode: 404, error: "NotFound", message: err.message });
+      throw err;
+    }
   });
 
   app.patch("/guardian/runs/:id/findings/:findingId", async (req, reply) => {

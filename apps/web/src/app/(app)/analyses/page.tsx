@@ -261,6 +261,14 @@ function AnalysesHub() {
                 </p>
               )}
             </div>
+            {(selectedType === "qa" || selectedType === "security") && (
+              <p className="mt-3 max-w-2xl text-xs leading-5 text-muted-foreground">
+                Sites grandes ou muito pesados podem falhar com "Interrompida
+                (API reiniciada)" — é um limite de memória do servidor
+                gratuito usado hoje, não um erro do site. Se acontecer, rode a
+                análise de novo; costuma completar numa segunda tentativa.
+              </p>
+            )}
           </div>
         </div>
       </section>

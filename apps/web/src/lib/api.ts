@@ -11,6 +11,8 @@ import type {
   CreateBlueprintRequest,
   CreateGuardianRulesetRequest,
   CreateGuardianRunRequest,
+  CreateGuardianScheduleRequest,
+  UpdateGuardianScheduleRequest,
   CreateOrchestrationRunRequest,
   CreateProjectRequest,
   CreateRemediationPlanRequest,
@@ -21,6 +23,7 @@ import type {
   GuardianRulesetSummary,
   GuardianRun,
   GuardianRunSummary,
+  GuardianSchedule,
   IssueFilters,
   LoginRequest,
   OrchestrationEvent,
@@ -487,6 +490,21 @@ export const api = {
     }),
   deleteAiSettings: () => request<void>("/settings/ai", { method: "DELETE" }),
 
+  // ---- configurações de e-mail (Resend — usado pelos agendamentos do Guardian) ----
+  getEmailSettings: () =>
+    request<{
+      configured: boolean;
+      provider: string | null;
+      maskedKey: string | null;
+      fromAddress: string | null;
+    }>("/settings/email"),
+  saveEmailSettings: (apiKey: string, fromAddress: string) =>
+    request<void>("/settings/email", {
+      method: "PUT",
+      body: JSON.stringify({ apiKey, fromAddress }),
+    }),
+  deleteEmailSettings: () => request<void>("/settings/email", { method: "DELETE" }),
+
   // ---- Guardian (auditoria operacional de negócio) ----
   listGuardianRulesets: () => request<GuardianRulesetSummary[]>("/guardian/rulesets"),
   createGuardianRuleset: (body: CreateGuardianRulesetRequest) =>
@@ -506,6 +524,33 @@ export const api = {
       body: JSON.stringify(body),
     }),
   getGuardianRun: (id: string) => request<GuardianRun>(`/guardian/runs/${id}`),
+  retryGuardianRun: (id: string) =>
+    request<GuardianRun>(`/guardian/runs/${id}/retry`, { method: "POST" }),
+  // Upload de PDF/Excel — não usa request() porque FormData precisa que o
+  // navegador defina o Content-Type (com boundary) sozinho.
+  extractGuardianFileText: async (
+    file: File,
+  ): Promise<{ name: string; content: string }> => {
+    const token = getToken();
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${BASE}/guardian/extract-text`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: form,
+    });
+    if (!res.ok) {
+      let message = res.statusText;
+      try {
+        const body = await res.json();
+        message = body.message ?? message;
+      } catch {
+        /* ignore */
+      }
+      throw new ApiError(message, res.status);
+    }
+    return res.json();
+  },
   updateGuardianFinding: (id: string, findingId: string, status: GuardianFindingStatus) =>
     request<GuardianRun>(`/guardian/runs/${id}/findings/${findingId}`, {
       method: "PATCH",
@@ -514,6 +559,21 @@ export const api = {
   deleteGuardianRun: (id: string) =>
     request<void>(`/guardian/runs/${id}`, { method: "DELETE" }),
   guardianDashboard: () => request<GuardianDashboardStats>("/guardian/dashboard"),
+
+  // ---- Guardian: agendamento automático ----
+  listGuardianSchedules: () => request<GuardianSchedule[]>("/guardian/schedules"),
+  createGuardianSchedule: (body: CreateGuardianScheduleRequest) =>
+    request<GuardianSchedule>("/guardian/schedules", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateGuardianSchedule: (id: string, body: UpdateGuardianScheduleRequest) =>
+    request<GuardianSchedule>(`/guardian/schedules/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  deleteGuardianSchedule: (id: string) =>
+    request<void>(`/guardian/schedules/${id}`, { method: "DELETE" }),
 
   // ---- Guardian × Google Drive ----
   guardianDriveStatus: () =>

@@ -12,10 +12,11 @@ import {
   ShieldAlert,
   ShieldCheck,
   Trash2,
+  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ActionError } from "@/components/action-error";
 import { PageHeader } from "@/components/page-header";
@@ -28,15 +29,20 @@ import {
   useConnectGuardianDrive,
   useCreateGuardianRuleset,
   useCreateGuardianRun,
+  useCreateGuardianSchedule,
   useDeleteGuardianRuleset,
   useDeleteGuardianRun,
+  useDeleteGuardianSchedule,
   useDisconnectGuardianDrive,
+  useExtractGuardianFileText,
   useGuardianDashboard,
   useGuardianDriveFiles,
   useGuardianDriveStatus,
   useGuardianRulesets,
   useGuardianRuns,
+  useGuardianSchedules,
   useProjects,
+  useUpdateGuardianSchedule,
 } from "@/lib/queries";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -78,6 +84,22 @@ export default function GuardianPage() {
   const [projectId, setProjectId] = useState("");
   const [rulesetId, setRulesetId] = useState("");
   const [documentText, setDocumentText] = useState("");
+  const extractFile = useExtractGuardianFileText();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function onFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permite selecionar o mesmo arquivo de novo depois
+    if (!file) return;
+    try {
+      const { name, content } = await extractFile.mutateAsync(file);
+      setDocumentText(content);
+      setSourceName(name);
+      toast.success(`"${name}" lido — revise e clique em Auditar`);
+    } catch {
+      // erro já mostrado via toast pelo hook (onError)
+    }
+  }
 
   // ---- Google Drive ----
   const searchParams = useSearchParams();
@@ -452,6 +474,35 @@ export default function GuardianPage() {
             </select>
           )}
 
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              Ou envie um arquivo PDF ou Excel (.xlsx/.xls) direto — o texto é
+              extraído automaticamente. PDF escaneado (sem texto, só imagem)
+              ainda não é suportado.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              disabled={extractFile.isPending}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {extractFile.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Upload className="h-3.5 w-3.5" />
+              )}
+              Enviar arquivo
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.xlsx,.xls,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              className="hidden"
+              onChange={onFileSelected}
+            />
+          </div>
+
           <textarea
             value={documentText}
             onChange={(e) => setDocumentText(e.target.value)}
@@ -476,6 +527,12 @@ export default function GuardianPage() {
           />
         </CardContent>
       </Card>
+
+      <GuardianScheduleSection
+        projects={projects}
+        rulesets={rulesets}
+        driveConnected={driveStatus?.connected === true}
+      />
 
       {isError ? (
         <QueryErrorState title="Não foi possível carregar as auditorias" onRetry={() => void refetch()} />
@@ -525,5 +582,294 @@ export default function GuardianPage() {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Reauditoria automática diária de um arquivo do Google Drive, com resumo
+ * opcional por e-mail. Tem seu próprio estado de navegação do Drive
+ * (independente do painel "Escolher arquivo" da auditoria manual acima) pra
+ * não misturar os dois fluxos.
+ */
+function GuardianScheduleSection({
+  projects,
+  rulesets,
+  driveConnected,
+}: {
+  projects: { id: string; name: string }[];
+  rulesets: { id: string; name: string; ruleCount: number }[];
+  driveConnected: boolean;
+}) {
+  const { data: schedules = [], isLoading } = useGuardianSchedules();
+  const createSchedule = useCreateGuardianSchedule();
+  const updateSchedule = useUpdateGuardianSchedule();
+  const deleteSchedule = useDeleteGuardianSchedule();
+
+  const [showForm, setShowForm] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+  const [stack, setStack] = useState<DriveCrumb[]>([{ id: undefined, name: "Meu Drive" }]);
+  const currentFolder = stack[stack.length - 1];
+  const { data: files = [], isLoading: filesLoading } = useGuardianDriveFiles(
+    { folderId: currentFolder.id },
+    showPicker && driveConnected,
+  );
+
+  const [pickedFile, setPickedFile] = useState<{ id: string; name: string } | null>(null);
+  const [name, setName] = useState("");
+  const [projectId, setProjectId] = useState("");
+  const [rulesetId, setRulesetId] = useState("");
+  const [hourUtc, setHourUtc] = useState(21); // ~18h em Brasília (UTC-3)
+  const [recipientEmail, setRecipientEmail] = useState("");
+
+  function criar() {
+    if (!pickedFile) return;
+    createSchedule.mutate(
+      {
+        name: name.trim() || undefined,
+        projectId: projectId || undefined,
+        rulesetId: rulesetId || undefined,
+        driveFileId: pickedFile.id,
+        driveFileName: pickedFile.name,
+        hourUtc,
+        recipientEmail: recipientEmail.trim() || undefined,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Agendamento criado");
+          setShowForm(false);
+          setPickedFile(null);
+          setName("");
+          setRecipientEmail("");
+        },
+      },
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="space-y-4 py-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold">Agendamento automático</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Reaudita um arquivo do Google Drive todo dia, no horário
+              escolhido, e envia o resumo por e-mail (se configurado em
+              Configurações).
+            </p>
+          </div>
+          {driveConnected && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowForm((s) => !s)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {showForm ? "Fechar" : "Novo agendamento"}
+            </Button>
+          )}
+        </div>
+
+        {!driveConnected && (
+          <p className="text-xs text-muted-foreground">
+            Conecte o Google Drive acima pra habilitar agendamentos — a
+            reauditoria automática precisa reler o arquivo todo dia.
+          </p>
+        )}
+
+        {showForm && (
+          <div className="space-y-3 rounded-md border bg-background/40 p-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input
+                placeholder="Nome do agendamento (opcional)"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <select
+                value={projectId}
+                onChange={(e) => setProjectId(e.target.value)}
+                className="h-10 w-full rounded-md border border-input bg-background/60 px-3 text-sm"
+              >
+                <option value="">Sem vínculo com projeto…</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {rulesets.length > 0 && (
+              <select
+                value={rulesetId}
+                onChange={(e) => setRulesetId(e.target.value)}
+                className="h-10 w-full rounded-md border border-input bg-background/60 px-3 text-sm sm:w-auto"
+              >
+                <option value="">Sem conjunto de regras específico…</option>
+                {rulesets.map((rs) => (
+                  <option key={rs.id} value={rs.id}>
+                    {rs.name} ({rs.ruleCount} regra(s))
+                  </option>
+                ))}
+              </select>
+            )}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-muted-foreground">Hora (UTC)</label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={23}
+                  value={hourUtc}
+                  onChange={(e) => setHourUtc(Number(e.target.value))}
+                  className="w-20"
+                />
+                <span className="text-xs text-muted-foreground">
+                  (~{(hourUtc + 21) % 24}h em Brasília, UTC-3)
+                </span>
+              </div>
+              <Input
+                type="email"
+                placeholder="E-mail pra receber o resumo (opcional)"
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPicker((s) => !s)}
+              >
+                <File className="h-3.5 w-3.5" />
+                {pickedFile ? pickedFile.name : "Escolher arquivo do Drive"}
+              </Button>
+              {pickedFile && (
+                <Button variant="ghost" size="sm" onClick={() => setPickedFile(null)}>
+                  Trocar
+                </Button>
+              )}
+            </div>
+
+            {showPicker && (
+              <div className="space-y-2 rounded-md border bg-background/60 p-3">
+                <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+                  {stack.map((crumb, i) => (
+                    <span key={crumb.id ?? "root"} className="flex items-center gap-1">
+                      {i > 0 && <span>/</span>}
+                      <button
+                        type="button"
+                        className="hover:text-foreground hover:underline"
+                        onClick={() => setStack(stack.slice(0, i + 1))}
+                      >
+                        {crumb.name}
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                {filesLoading ? (
+                  <div className="flex items-center gap-2 py-3 text-xs text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando…
+                  </div>
+                ) : files.length === 0 ? (
+                  <p className="py-3 text-center text-xs text-muted-foreground">Pasta vazia.</p>
+                ) : (
+                  <div className="max-h-56 space-y-0.5 overflow-y-auto">
+                    {files.map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() =>
+                          f.isFolder
+                            ? setStack([...stack, { id: f.id, name: f.name }])
+                            : (setPickedFile({ id: f.id, name: f.name }), setShowPicker(false))
+                        }
+                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent"
+                      >
+                        {f.isFolder ? (
+                          <Folder className="h-3.5 w-3.5 shrink-0 text-primary" />
+                        ) : (
+                          <File className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        )}
+                        <span className="truncate">{f.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex justify-end">
+              <Button onClick={criar} disabled={!pickedFile || createSchedule.isPending}>
+                {createSchedule.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                Criar agendamento
+              </Button>
+            </div>
+            <ActionError
+              error={createSchedule.error}
+              message="Não foi possível criar o agendamento."
+            />
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="flex items-center gap-2 py-3 text-xs text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando agendamentos…
+          </div>
+        ) : schedules.length > 0 ? (
+          <div className="space-y-2">
+            {schedules.map((s) => (
+              <div
+                key={s.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-background/40 px-3 py-2 text-sm"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{s.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {s.driveFileName} · {s.hourUtc}h UTC
+                    {s.recipientEmail ? ` · envia pra ${s.recipientEmail}` : ""}
+                    {s.lastRunAt ? ` · última vez: ${new Date(s.lastRunAt).toLocaleString("pt-BR")}` : ""}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      updateSchedule.mutate({ id: s.id, body: { active: !s.active } })
+                    }
+                  >
+                    {s.active ? "Ativo" : "Pausado"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-destructive"
+                    aria-label="Remover agendamento"
+                    onClick={() => {
+                      if (confirm(`Remover o agendamento "${s.name}"?`)) {
+                        deleteSchedule.mutate(s.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          !showForm && (
+            <p className="text-xs text-muted-foreground">Nenhum agendamento ainda.</p>
+          )
+        )}
+      </CardContent>
+    </Card>
   );
 }

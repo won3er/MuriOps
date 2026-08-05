@@ -8,6 +8,8 @@ import type {
   CreateBlueprintRequest,
   CreateGuardianRulesetRequest,
   CreateGuardianRunRequest,
+  CreateGuardianScheduleRequest,
+  UpdateGuardianScheduleRequest,
   CreateOrchestrationRunRequest,
   CreateProjectRequest,
   CreateRemediationPlanRequest,
@@ -56,6 +58,8 @@ export const qk = {
   guardianDriveStatus: ["guardian-drive-status"] as const,
   guardianDriveFiles: (folderId?: string, query?: string) =>
     ["guardian-drive-files", folderId ?? null, query ?? null] as const,
+  guardianSchedules: ["guardian-schedules"] as const,
+  emailSettings: ["email-settings"] as const,
 };
 
 /** Estados em que o loop ainda está em andamento — mantém o polling ligado. */
@@ -683,6 +687,62 @@ export function useCreateGuardianRun() {
     },
     onError: (err) =>
       toast.error(err instanceof Error ? err.message : "Falha ao iniciar auditoria"),
+  });
+}
+
+export function useGuardianSchedules() {
+  return useQuery({ queryKey: qk.guardianSchedules, queryFn: api.listGuardianSchedules });
+}
+
+export function useCreateGuardianSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateGuardianScheduleRequest) => api.createGuardianSchedule(body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.guardianSchedules }),
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao criar agendamento"),
+  });
+}
+
+export function useUpdateGuardianSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: UpdateGuardianScheduleRequest }) =>
+      api.updateGuardianSchedule(id, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.guardianSchedules }),
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao atualizar agendamento"),
+  });
+}
+
+export function useDeleteGuardianSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteGuardianSchedule(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.guardianSchedules }),
+    onError: () => toast.error("Falha ao remover agendamento"),
+  });
+}
+
+export function useExtractGuardianFileText() {
+  return useMutation({
+    mutationFn: (file: File) => api.extractGuardianFileText(file),
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao ler o arquivo"),
+  });
+}
+
+export function useRetryGuardianRun(runId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.retryGuardianRun(runId),
+    onSuccess: (run) => {
+      qc.setQueryData(qk.guardianRun(runId), run);
+      qc.invalidateQueries({ queryKey: qk.guardianRuns });
+      qc.invalidateQueries({ queryKey: qk.guardianDashboard });
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao tentar de novo"),
   });
 }
 

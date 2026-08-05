@@ -112,3 +112,40 @@ export interface GuardianDashboardStats {
   red: number;
   openCriticalFindings: number;
 }
+
+// ---------- Agendamento automático (reauditoria diária via Google Drive) ----------
+
+export interface GuardianSchedule {
+  id: string;
+  projectId: string | null;
+  rulesetId: string | null;
+  rulesetName: string | null;
+  name: string;
+  driveFileId: string;
+  driveFileName: string;
+  /** Hora do dia (0-23) em UTC na qual a auditoria roda automaticamente. */
+  hourUtc: number;
+  recipientEmail: string | null;
+  active: boolean;
+  lastRunAt: string | null;
+  lastRunId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateGuardianScheduleRequest {
+  name?: string;
+  projectId?: string | null;
+  rulesetId?: string | null;
+  driveFileId: string;
+  driveFileName: string;
+  hourUtc: number;
+  recipientEmail?: string | null;
+}
+
+export interface UpdateGuardianScheduleRequest {
+  active?: boolean;
+  hourUtc?: number;
+  recipientEmail?: string | null;
+  rulesetId?: string | null;
+}

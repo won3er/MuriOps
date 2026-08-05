@@ -12,7 +12,7 @@ import type {
   GuardianRunSummary,
   UpdateGuardianFindingRequest,
 } from "@qa-ai/shared";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import {
   AI_PROVIDER_NAMES,
   createAiProviderFor,
@@ -207,6 +207,37 @@ export const guardianService = {
     return (await this.getRun(organizationId, id))!;
   },
 
+  /**
+   * Reenvia uma auditoria que falhou (ex.: erro transiente do provider de
+   * IA) sem o usuário precisar recriar do zero — reusa o mesmo documento,
+   * ruleset e provider já gravados. Só faz sentido em status FAILED.
+   */
+  async retryRun(organizationId: string, id: string): Promise<GuardianRun> {
+    const row = await prisma.guardianRun.findFirst({ where: { id, organizationId } });
+    if (!row) throw new NotFoundError("Auditoria não encontrada");
+    if (row.status !== "FAILED") {
+      throw new InvalidGuardianInputError("Só é possível tentar de novo uma auditoria que falhou");
+    }
+
+    const org = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { aiProvider: true, aiApiKeyEncrypted: true },
+    });
+    if (!org?.aiProvider || !org.aiApiKeyEncrypted) {
+      throw new AiKeyRequiredError(
+        "O Guardian precisa de um provider de IA conectado (Claude, OpenAI ou Gemini) para avaliar riscos de verdade. Configure uma chave em Configurações antes de continuar.",
+      );
+    }
+
+    await prisma.guardianRun.update({
+      where: { id },
+      data: { status: "PENDING", error: null, result: Prisma.JsonNull, overallStatus: null },
+    });
+
+    void generate(id, organizationId);
+    return (await this.getRun(organizationId, id))!;
+  },
+
   async deleteRun(organizationId: string, id: string): Promise<void> {
     const row = await prisma.guardianRun.findFirst({
       where: { id, organizationId },
@@ -245,7 +276,15 @@ export const guardianService = {
 
 // ---------- geração em background ----------
 
-async function generate(id: string, organizationId: string): Promise<void> {
+/**
+ * Roda a geração de uma auditoria já criada em PENDING. Exportado (não só
+ * uso interno) porque o runner de agendamento do Guardian
+ * (guardian-schedule.service.ts) precisa aguardar a conclusão de verdade
+ * antes de enviar o e-mail de resumo — diferente do fluxo normal via
+ * createRun(), que dispara em "fire and forget" e a UI acompanha por
+ * polling.
+ */
+export async function generate(id: string, organizationId: string): Promise<void> {
   try {
     const run = await prisma.guardianRun.findUnique({
       where: { id },

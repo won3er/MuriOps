@@ -1,4 +1,5 @@
 import { recoverStaleBlueprints } from "./application/blueprint.service.js";
+import { guardianScheduleService } from "./application/guardian-schedule.service.js";
 import { recoverStaleGuardianRuns } from "./application/guardian.service.js";
 import { recoverStaleRemediationPlans } from "./application/remediation.service.js";
 import { recoverStaleUpgradePlans } from "./application/upgrade.service.js";
@@ -19,6 +20,21 @@ async function main(): Promise<void> {
   await recoverStaleOrchestrationRuns();
   await app.listen({ port: env.API_PORT, host: env.API_HOST });
   app.log.info(`🚀 MuriOps API em http://${env.API_HOST}:${env.API_PORT}`);
+
+  // Agendamentos do Guardian (reauditoria diária + e-mail): sem fila/cron
+  // externo no projeto, então um setInterval de 15min checa quem está na
+  // hora certa de rodar hoje (ver guardianScheduleService.runDueSchedules).
+  // Falhas em um agendamento não derrubam o processo nem afetam os outros.
+  const GUARDIAN_SCHEDULE_CHECK_MS = 15 * 60 * 1000;
+  setInterval(() => {
+    guardianScheduleService
+      .runDueSchedules()
+      .catch((err) => app.log.error({ err }, "Falha ao rodar agendamentos do Guardian"));
+  }, GUARDIAN_SCHEDULE_CHECK_MS);
+  // Roda uma checagem logo no boot também, sem esperar o primeiro intervalo.
+  void guardianScheduleService
+    .runDueSchedules()
+    .catch((err) => app.log.error({ err }, "Falha ao rodar agendamentos do Guardian (boot)"));
 }
 
 main().catch((err) => {

@@ -579,6 +579,91 @@ e decisões:
    segurança que faltavam em "Módulos cobertos". Tudo já commitado e enviado
    pro GitHub pelo usuário.
 
+## Sessão 05/08/2026 (continuação) — 4 melhorias autorizadas em bloco ("faça tudo que falta")
+
+Depois da varredura funcional (seção anterior), o usuário perguntou se o
+projeto estava 100% — resposta foi uma lista honesta de 4 itens pendentes +
+3 decisões em aberto (Fase 4/design, reativar Wix/Squarespace/Webnode/
+Nuvemshop, agendamento+e-mail no Guardian). O usuário autorizou tudo de uma
+vez ("Faça todas essas coisas... já dei direito a você fazer tudo que
+falta") e respondeu as 3 decisões: Fase 4 continua só com o GPT (não mexo
+nisso), manter os adapters removidos (não reativar), e sim pro agendamento
+do Guardian. **Mesma ressalva de sempre: sandbox sem `bash` a sessão
+inteira ("Not enough disk space") — nada foi validado por `tsc`/`build`,
+só revisão manual de código linha a linha comparando com os padrões já
+existentes no projeto.** Numa sessão seguinte (ainda sem sandbox
+disponível), reli todo o código gerado (schema, service, rotas, tipos
+compartilhados, hooks do frontend e o componente novo) e confirmei que os
+formatos batem ponta a ponta — não é a mesma coisa que compilar, mas é o
+máximo de verificação possível sem `bash`.
+
+1. **Aviso de limite de memória do crawler.** `analyses/page.tsx` ganhou um
+   parágrafo explicativo abaixo do botão "Iniciar análise" (só pra QA
+   padrão/Segurança) avisando que sites grandes podem falhar com
+   "Interrompida (API reiniciada)" por limite de memória do Render free
+   tier, não por erro do site. `analyses/[id]/page.tsx`: a mensagem de
+   FAILED agora detecta esse texto no erro (`data.error?.includes("reiniciada")`)
+   e explica a causa real em vez da mensagem genérica de "site fora do ar".
+2. **Botão "Tentar de novo" no Guardian.** Endpoint novo
+   `POST /guardian/runs/:id/retry` (`guardian.service.ts.retryRun` +
+   `guardian.routes.ts`) — só aceita reprocessar um run `FAILED`, exige
+   chave de IA configurada, reseta status pra `PENDING` e chama `generate()`
+   de novo (essa função virou `export` só por isso). Botão na tela de
+   detalhe (`guardian/[id]/page.tsx`), dentro do mesmo card de erro amigável
+   já existente, reaproveitando o polling que já existia
+   (`refetchInterval` enquanto `PENDING`) — sem lógica nova de UI.
+3. **Guardian aceita upload de PDF/Excel binário.** Antes só dava pra colar
+   texto ou escolher um arquivo de texto/CSV/Sheets do Drive. Módulo novo
+   `apps/api/src/infrastructure/documents/text-extractor.ts`
+   (`extractTextFromBinary`, usa `pdf-parse` e `xlsx`/SheetJS, sem OCR — PDF
+   escaneado é recusado com erro amigável) usado em dois pontos: (a)
+   endpoint novo `POST /guardian/extract-text` (multipart, registrado via
+   `@fastify/multipart` em `app.ts`) pra upload direto na tela de nova
+   auditoria; (b) `google-drive.service.ts.downloadFileAsText` passou a
+   reconhecer PDF/Excel do Drive também, não só os tipos de texto simples
+   de antes. Frontend: botão "Enviar arquivo" na tela `/guardian` ao lado
+   do textarea de documento, chama `useExtractGuardianFileText()` (um
+   `fetch()` próprio em `api.ts`, fora do helper `request()` genérico,
+   porque `FormData` precisa do Content-Type com boundary que o navegador
+   define sozinho — o helper força `application/json`).
+4. **Agendamento automático + e-mail (o maior dos 4).** Reaudita um arquivo
+   do Google Drive todo dia, num horário fixo (UTC), e manda o resumo por
+   e-mail via Resend. Sem cron/fila no projeto — é um `setInterval` de 15min
+   em `main.ts` chamando `guardianScheduleService.runDueSchedules()` (mais
+   uma checagem imediata no boot), mesma filosofia leve dos `recoverStale*`
+   que já existiam. Modelo novo `GuardianSchedule` no schema (nome, arquivo
+   do Drive, `hourUtc` 0-23, e-mail destinatário opcional, `active`,
+   `lastRunAt`/`lastRunId`) + 3 campos novos em `Organization`
+   (`emailProvider`/`emailApiKeyEncrypted`/`emailFromAddress`, mesma
+   criptografia AES-256-GCM das outras chaves). Só cria agendamento se a
+   organização já tiver o Drive conectado (senão não haveria o que reler no
+   dia seguinte) — validado em `guardianScheduleService.create()`. Provider
+   de e-mail é só Resend por enquanto, via `fetch()` direto (sem SDK,
+   mesmo padrão do `gemini-provider.ts`) em
+   `infrastructure/email/email-provider.ts`. Card novo "E-mail (Resend)" em
+   Configurações (mesmo padrão visual do card de IA: chave mascarada, campo
+   de remetente, salvar/remover). Frontend do agendamento é o componente
+   `GuardianScheduleSection` dentro de `guardian/page.tsx` — navegador de
+   pastas do Drive próprio (não reaproveita o estado do picker da auditoria
+   manual, pra não interferir no fluxo que já funcionava), formulário de
+   criação e lista de agendamentos com toggle ativo/pausado e exclusão.
+   **Configuração pendente do usuário, não é algo que o agente possa
+   fazer:** criar conta em resend.com, gerar uma API key, verificar um
+   domínio de remetente lá, e colar tudo em Configurações → "E-mail
+   (Resend)". Sem isso, os agendamentos continuam rodando e gravando a
+   auditoria normalmente — só não mandam e-mail (falha silenciosa, só loga
+   no servidor, não derruba o agendamento nem os outros).
+
+**Checklist de validação local antes de subir isto (mais arriscado que as
+sessões anteriores, por causa da migration + 3 dependências novas):**
+`pnpm install` (novo: `pdf-parse`, `xlsx`, `@fastify/multipart`,
+`@types/pdf-parse`) → `pnpm --filter @qa-ai/api exec prisma generate` →
+`pnpm --filter @qa-ai/api exec prisma db push` (schema novo: modelo
+`GuardianSchedule` + 3 campos em `Organization`) → `pnpm --filter
+@qa-ai/shared build && pnpm --filter @qa-ai/api exec tsc --noEmit &&
+pnpm --filter @qa-ai/web build` → só então `git add` dos arquivos
+específicos (nunca `-A`) + commit + push.
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —

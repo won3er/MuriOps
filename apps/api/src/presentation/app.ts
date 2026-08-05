@@ -1,5 +1,6 @@
 import fastifyCors from "@fastify/cors";
 import fastifyHelmet from "@fastify/helmet";
+import fastifyMultipart from "@fastify/multipart";
 import fastifyRateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
 import { ZodError } from "zod";
@@ -13,6 +14,7 @@ import { dashboardRoutes } from "./routes/dashboard.routes.js";
 import { evidenceRoutes } from "./routes/evidence.routes.js";
 import { guardianRoutes } from "./routes/guardian.routes.js";
 import { guardianDriveRoutes } from "./routes/guardian-drive.routes.js";
+import { guardianScheduleRoutes } from "./routes/guardian-schedule.routes.js";
 import { mcpBridgeRoutes } from "./routes/mcp.routes.js";
 import { orchestrationRoutes } from "./routes/orchestration.routes.js";
 import { projectRoutes } from "./routes/project.routes.js";
@@ -67,6 +69,12 @@ export async function buildApp(): Promise<FastifyInstance> {
     timeWindow: "1 minute",
   });
 
+  // Usado só pelo upload de arquivo do Guardian (PDF/Excel) — 15MB cobre
+  // folgadamente o limite de 200.000 caracteres de texto extraído.
+  await app.register(fastifyMultipart, {
+    limits: { fileSize: 15 * 1024 * 1024 },
+  });
+
   await app.register(authPlugin);
 
   // Serve evidências (screenshots, logs) sob /evidence/<analysisId>/<arquivo>.
@@ -118,6 +126,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // do Google) — por isso fica num plugin próprio, fora do addHook de
   // autenticação global de guardianRoutes.
   await app.register(guardianDriveRoutes);
+  await app.register(guardianScheduleRoutes);
   await app.register(orchestrationRoutes);
   // Bridge MCP: pública, autenticada só pelo token da conexão na URL.
   await app.register(mcpBridgeRoutes);

@@ -148,4 +148,54 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
     });
     return reply.status(204).send();
   });
+
+  // ---- E-mail (Resend) — usado só pelo resumo dos agendamentos do Guardian ----
+
+  const emailSaveSchema = z.object({
+    apiKey: z.string().min(10),
+    fromAddress: z.string().email(),
+  });
+
+  app.get("/settings/email", async (req) => {
+    const org = await prisma.organization.findUnique({
+      where: { id: req.user.organizationId },
+      select: { emailProvider: true, emailApiKeyEncrypted: true, emailFromAddress: true },
+    });
+    if (!org?.emailProvider || !org.emailApiKeyEncrypted) {
+      return { configured: false, provider: null, maskedKey: null, fromAddress: null };
+    }
+    let maskedKey: string | null = null;
+    try {
+      maskedKey = maskSecret(decryptSecret(org.emailApiKeyEncrypted));
+    } catch {
+      maskedKey = "••••";
+    }
+    return {
+      configured: true,
+      provider: org.emailProvider,
+      maskedKey,
+      fromAddress: org.emailFromAddress,
+    };
+  });
+
+  app.put("/settings/email", async (req, reply) => {
+    const body = emailSaveSchema.parse(req.body);
+    await prisma.organization.update({
+      where: { id: req.user.organizationId },
+      data: {
+        emailProvider: "resend",
+        emailApiKeyEncrypted: encryptSecret(body.apiKey),
+        emailFromAddress: body.fromAddress,
+      },
+    });
+    return reply.status(204).send();
+  });
+
+  app.delete("/settings/email", async (req, reply) => {
+    await prisma.organization.update({
+      where: { id: req.user.organizationId },
+      data: { emailProvider: null, emailApiKeyEncrypted: null, emailFromAddress: null },
+    });
+    return reply.status(204).send();
+  });
 }

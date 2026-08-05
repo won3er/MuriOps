@@ -42,6 +42,15 @@ model Organization {
   googleDriveTokenExpiresAt        DateTime?
   googleDriveConnectedEmail        String?
 
+  // Provider de e-mail (opcional, por organização) — usado só pra enviar o
+  // resumo das auditorias agendadas do Guardian. Sem chave configurada, o
+  // agendamento ainda roda e grava a auditoria normalmente, só não envia
+  // e-mail. Hoje só suporta Resend (API simples, sem SMTP). Criptografado
+  // com o mesmo secret-box.ts das outras chaves.
+  emailProvider       String?
+  emailApiKeyEncrypted String?
+  emailFromAddress     String?
+
   users             User[]
   projects          Project[]
   subscription      Subscription?
@@ -50,6 +59,7 @@ model Organization {
   upgradePlans      UpgradePlan[]
   guardianRulesets  GuardianRuleset[]
   guardianRuns      GuardianRun[]
+  guardianSchedules GuardianSchedule[]
 }
 
 model User {
@@ -569,8 +579,39 @@ model GuardianRuleset {
 
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   runs         GuardianRun[]
+  schedules    GuardianSchedule[]
 
   @@index([organizationId])
+}
+
+// Auditoria Guardian recorrente: reaudita automaticamente um arquivo do
+// Google Drive conectado, todo dia num horário fixo (UTC), e opcionalmente
+// envia o resumo por e-mail. Depende da conexão Drive da organização (pra
+// reler a versão mais recente do arquivo a cada execução) — não funciona
+// com texto colado, já que não haveria o que reler no dia seguinte.
+model GuardianSchedule {
+  id             String    @id @default(cuid())
+  organizationId String
+  createdById    String
+  projectId      String?
+  rulesetId      String?
+  name           String
+  driveFileId    String
+  driveFileName  String
+  // Hora do dia (0-23) em UTC na qual a auditoria roda.
+  hourUtc        Int
+  recipientEmail String?
+  active         Boolean   @default(true)
+  lastRunAt      DateTime?
+  lastRunId      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ruleset      GuardianRuleset? @relation(fields: [rulesetId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([active, hourUtc])
 }
 
 model GuardianRun {

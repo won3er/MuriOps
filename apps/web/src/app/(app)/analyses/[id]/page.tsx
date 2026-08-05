@@ -249,9 +249,9 @@ export default function AnalysisDetailPage() {
             <div className="min-w-0 flex-1 space-y-2">
               <p className="font-medium">Não deu para concluir esta análise</p>
               <p className="text-sm text-muted-foreground">
-                O site pode estar fora do ar, bloqueando o acesso do crawler, ou
-                algo travou no meio do processo. Volte pro projeto e rode uma
-                nova análise pra tentar de novo.
+                {data.error?.includes("reiniciada")
+                  ? "Isso costuma ser o servidor gratuito atingindo o limite de memória em sites grandes — não é um erro do site analisado. Rode a análise de novo; costuma completar numa segunda tentativa."
+                  : "O site pode estar fora do ar, bloqueando o acesso do crawler, ou algo travou no meio do processo. Rode uma nova análise pra tentar de novo."}
               </p>
               {data.error && (
                 <details className="text-xs text-muted-foreground">

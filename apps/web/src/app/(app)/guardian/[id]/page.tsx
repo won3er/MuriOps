@@ -1,13 +1,13 @@
 "use client";
 
 import type { GuardianFindingStatus } from "@qa-ai/shared";
-import { AlertTriangle, CheckCircle2, Loader2, ShieldAlert } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, RefreshCw, ShieldAlert } from "lucide-react";
 import { useParams } from "next/navigation";
 import { QueryErrorState } from "@/components/query-error-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
-import { useGuardianRun, useUpdateGuardianFinding } from "@/lib/queries";
+import { useGuardianRun, useRetryGuardianRun, useUpdateGuardianFinding } from "@/lib/queries";
 
 const OVERALL_BADGE: Record<string, string> = {
   green: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
@@ -46,6 +46,7 @@ export default function GuardianRunPage() {
   const params = useParams<{ id: string }>();
   const { data: run, isLoading, isError, refetch } = useGuardianRun(params.id);
   const updateFinding = useUpdateGuardianFinding(params.id);
+  const retryRun = useRetryGuardianRun(params.id);
 
   if (isLoading) {
     return (
@@ -103,6 +104,19 @@ export default function GuardianRunPage() {
                   </pre>
                 </details>
               )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => retryRun.mutate()}
+                disabled={retryRun.isPending}
+              >
+                {retryRun.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                Tentar de novo
+              </Button>
             </div>
           </CardContent>
         </Card>

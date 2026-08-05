@@ -3,6 +3,11 @@ import { OAuth2Client } from "google-auth-library";
 import { env } from "../config/env.js";
 import { prisma } from "../infrastructure/database/prisma.js";
 import { decryptSecret, encryptSecret } from "../infrastructure/crypto/secret-box.js";
+import {
+  DocumentExtractionError,
+  extractTextFromBinary,
+  isExtractableBinaryMime,
+} from "../infrastructure/documents/text-extractor.js";
 
 /**
  * Conexão OAuth com Google Drive, usada pelo Guardian pra listar/ler
@@ -16,9 +21,9 @@ import { decryptSecret, encryptSecret } from "../infrastructure/crypto/secret-bo
 
 const DRIVE_SCOPES = "openid email https://www.googleapis.com/auth/drive.readonly";
 
-// Tipos de arquivo que sabemos transformar em texto pro Guardian auditar.
-// PDF/planilha binária de verdade (.xlsx) ainda não têm parser no produto —
-// mesma limitação já documentada pro fluxo de colar texto manualmente.
+// Tipos de arquivo que sabemos transformar em texto pro Guardian auditar
+// direto (sem parser adicional). PDF e planilha Excel binária (.xlsx/.xls)
+// também são suportados, mas via extractTextFromBinary() — ver abaixo.
 const GOOGLE_DOC_EXPORT_MIME = "text/plain";
 const GOOGLE_SHEET_EXPORT_MIME = "text/csv";
 const DOWNLOADABLE_TEXT_MIME_TYPES = new Set([
@@ -334,15 +339,19 @@ export const googleDriveService = {
     const meta = (await metaRes.json()) as { id: string; name: string; mimeType: string };
 
     let url: string;
+    let binary = false;
     if (meta.mimeType === "application/vnd.google-apps.document") {
       url = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=${GOOGLE_DOC_EXPORT_MIME}`;
     } else if (meta.mimeType === "application/vnd.google-apps.spreadsheet") {
       url = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=${GOOGLE_SHEET_EXPORT_MIME}`;
     } else if (DOWNLOADABLE_TEXT_MIME_TYPES.has(meta.mimeType)) {
       url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+    } else if (isExtractableBinaryMime(meta.mimeType)) {
+      url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+      binary = true;
     } else {
       throw new GoogleDriveError(
-        `"${meta.name}" é do tipo ${meta.mimeType}, que o Guardian ainda não sabe ler. Por enquanto funciona com Google Docs, Google Sheets, e arquivos .csv/.txt/.tsv/.json.`,
+        `"${meta.name}" é do tipo ${meta.mimeType}, que o Guardian ainda não sabe ler. Por enquanto funciona com Google Docs, Google Sheets, PDF, Excel (.xlsx/.xls), e arquivos .csv/.txt/.tsv/.json.`,
         400,
       );
     }
@@ -350,7 +359,22 @@ export const googleDriveService = {
     const fileRes = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (!fileRes.ok)
       throw new GoogleDriveError(`Falha ao baixar o conteúdo do arquivo (${fileRes.status}).`, 502);
-    const content = await fileRes.text();
+
+    let content: string;
+    if (binary) {
+      const buffer = Buffer.from(await fileRes.arrayBuffer());
+      try {
+        content = await extractTextFromBinary(buffer, meta.mimeType, meta.name);
+      } catch (err) {
+        if (err instanceof DocumentExtractionError) {
+          throw new GoogleDriveError(err.message, err.statusCode);
+        }
+        throw err;
+      }
+    } else {
+      content = await fileRes.text();
+    }
+
     if (content.length > MAX_DRIVE_DOCUMENT_CHARACTERS) {
       throw new GoogleDriveError(
         `"${meta.name}" excede o limite de 200.000 caracteres. Escolha uma parte menor do documento.`,

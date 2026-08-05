@@ -5,6 +5,7 @@ import {
   Check,
   Download,
   Loader2,
+  Mail,
   ShieldCheck,
   Trash2,
 } from "lucide-react";
@@ -49,6 +50,17 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<unknown>(null);
 
+  // ---- E-mail (Resend) — usado só pelo resumo dos agendamentos do Guardian ----
+  const [emailConfigured, setEmailConfigured] = useState(false);
+  const [emailMaskedKey, setEmailMaskedKey] = useState<string | null>(null);
+  const [emailFromAddress, setEmailFromAddress] = useState<string | null>(null);
+  const [emailApiKey, setEmailApiKey] = useState("");
+  const [emailFromInput, setEmailFromInput] = useState("");
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailRemoving, setEmailRemoving] = useState(false);
+  const [emailSaved, setEmailSaved] = useState(false);
+  const [emailActionError, setEmailActionError] = useState<unknown>(null);
+
   async function loadSettings() {
     setLoading(true);
     setLoadError(null);
@@ -57,6 +69,10 @@ export default function SettingsPage() {
       setConfigured(settings.configured);
       setMaskedKey(settings.maskedKey);
       if (settings.provider) setProvider(settings.provider);
+      const email = await api.getEmailSettings();
+      setEmailConfigured(email.configured);
+      setEmailMaskedKey(email.maskedKey);
+      setEmailFromAddress(email.fromAddress);
     } catch (error) {
       setLoadError(error);
     } finally {
@@ -67,6 +83,48 @@ export default function SettingsPage() {
   useEffect(() => {
     void loadSettings();
   }, []);
+
+  async function saveEmail() {
+    if (emailApiKey.trim().length < 10 || !emailFromInput.trim()) return;
+    setEmailSaving(true);
+    setEmailSaved(false);
+    setEmailActionError(null);
+    try {
+      await api.saveEmailSettings(emailApiKey.trim(), emailFromInput.trim());
+      setEmailConfigured(true);
+      setEmailMaskedKey(`••••${emailApiKey.trim().slice(-4)}`);
+      setEmailFromAddress(emailFromInput.trim());
+      setEmailApiKey("");
+      setEmailFromInput("");
+      setEmailSaved(true);
+      setTimeout(() => setEmailSaved(false), 3000);
+    } catch (error) {
+      setEmailActionError(error);
+    } finally {
+      setEmailSaving(false);
+    }
+  }
+
+  async function removeEmail() {
+    if (
+      !confirm(
+        "Remover a chave de e-mail? Os agendamentos do Guardian continuam rodando e gravando auditorias, só param de enviar o resumo por e-mail.",
+      )
+    )
+      return;
+    setEmailRemoving(true);
+    setEmailActionError(null);
+    try {
+      await api.deleteEmailSettings();
+      setEmailConfigured(false);
+      setEmailMaskedKey(null);
+      setEmailFromAddress(null);
+    } catch (error) {
+      setEmailActionError(error);
+    } finally {
+      setEmailRemoving(false);
+    }
+  }
 
   async function save() {
     if (apiKey.trim().length < 10) return;
@@ -314,6 +372,105 @@ export default function SettingsPage() {
           </aside>
         </div>
       )}
+
+      <Card>
+        <CardContent className="space-y-6 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-medium">E-mail (Resend)</h2>
+              <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+                Opcional — usado só pra enviar o resumo dos{" "}
+                <strong>agendamentos automáticos do Guardian</strong>. Sem
+                chave, os agendamentos continuam rodando e gravando as
+                auditorias normalmente, só não chegam por e-mail.
+              </p>
+            </div>
+            {emailConfigured && (
+              <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-emerald-500">
+                <Mail className="h-3.5 w-3.5" />
+                Configurado
+              </span>
+            )}
+          </div>
+
+          {emailConfigured && emailMaskedKey && (
+            <div className="flex items-start justify-between gap-3 rounded-md border bg-background/40 px-3 py-2 text-sm">
+              <span className="min-w-0 break-words">
+                Remetente: <strong>{emailFromAddress}</strong> — chave{" "}
+                <code className="break-all text-muted-foreground">
+                  {emailMaskedKey}
+                </code>
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-destructive"
+                onClick={removeEmail}
+                disabled={emailRemoving}
+                aria-label="Remover chave de e-mail"
+              >
+                {emailRemoving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+            <Input
+              type="password"
+              placeholder="Chave de API do Resend (re_...)"
+              value={emailApiKey}
+              onChange={(e) => setEmailApiKey(e.target.value)}
+              autoComplete="new-password"
+            />
+            <Input
+              type="email"
+              placeholder="Remetente (ex.: guardian@seudominio.com)"
+              value={emailFromInput}
+              onChange={(e) => setEmailFromInput(e.target.value)}
+            />
+            <Button
+              type="button"
+              onClick={saveEmail}
+              disabled={
+                emailSaving ||
+                emailApiKey.trim().length < 10 ||
+                !emailFromInput.trim()
+              }
+              className="sm:min-w-24"
+            >
+              {emailSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : emailSaved ? (
+                <>
+                  <Check className="h-4 w-4" /> Salvo
+                </>
+              ) : (
+                "Salvar"
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Crie a conta e a chave em{" "}
+            <a
+              href="https://resend.com"
+              target="_blank"
+              rel="noreferrer"
+              className="underline hover:text-foreground"
+            >
+              resend.com
+            </a>{" "}
+            — o remetente precisa ser um endereço de um domínio verificado lá.
+          </p>
+          <ActionError
+            error={emailActionError}
+            message="Não foi possível salvar as configurações de e-mail."
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="space-y-6 py-6">
