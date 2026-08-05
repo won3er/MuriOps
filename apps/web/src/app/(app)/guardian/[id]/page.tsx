@@ -82,9 +82,30 @@ export default function GuardianRunPage() {
       )}
 
       {run.status === "FAILED" && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          Falha na auditoria: {run.error}
-        </div>
+        <Card>
+          <CardContent className="flex items-start gap-3 pt-5">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <p className="font-medium">Não foi possível concluir a auditoria</p>
+              <p className="text-sm text-muted-foreground">
+                A IA configurada não respondeu corretamente. Às vezes é uma falha
+                passageira do provedor — tente rodar a auditoria de novo. Se
+                persistir, confira em Configurações se a chave de API ainda está
+                válida.
+              </p>
+              {run.error && (
+                <details className="text-xs text-muted-foreground">
+                  <summary className="cursor-pointer select-none hover:text-foreground">
+                    Detalhe técnico
+                  </summary>
+                  <pre className="mt-2 whitespace-pre-wrap break-words rounded bg-black/30 p-2 font-mono text-[11px]">
+                    {run.error}
+                  </pre>
+                </details>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {run.status === "READY" && run.result && (

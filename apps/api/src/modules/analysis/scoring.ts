@@ -28,26 +28,40 @@ const CATEGORY_WEIGHT: Record<AnalysisCategory, number> = {
   SOURCE_SECURITY_SCAN: 1.5,
 };
 
-export function computeScores(issues: DetectedIssue[]): ScoreBreakdown {
-  const categories = {} as CategoryScores;
+/**
+ * `executedCategories` deve ser a lista de categorias que essa análise de
+ * fato rodou (o `categories` pedido no start da análise). Sem isso, uma
+ * dimensão nunca executada (ex.: ACTIVE_SECURITY_TEST numa análise QA
+ * padrão) ficaria com 0 problemas encontrados e mostraria nota 100 — como
+ * se tivesse passado numa checagem que nunca aconteceu. Por padrão usa
+ * ALL_CATEGORIES para não quebrar chamadas antigas, mas todo chamador
+ * novo deve passar a lista real.
+ */
+export function computeScores(
+  issues: DetectedIssue[],
+  executedCategories: AnalysisCategory[] = ALL_CATEGORIES,
+): ScoreBreakdown {
+  const categories: CategoryScores = {};
 
-  for (const category of ALL_CATEGORIES) {
+  for (const category of executedCategories) {
     const penalty = issues
       .filter((i) => i.category === category)
       .reduce((sum, i) => sum + SEVERITY_WEIGHT[i.severity], 0);
     categories[category] = clamp(100 - penalty);
   }
 
-  const totalWeight = ALL_CATEGORIES.reduce(
+  const totalWeight = executedCategories.reduce(
     (s, c) => s + CATEGORY_WEIGHT[c],
     0,
   );
-  const overall = Math.round(
-    ALL_CATEGORIES.reduce(
-      (s, c) => s + categories[c] * CATEGORY_WEIGHT[c],
-      0,
-    ) / totalWeight,
-  );
+  const overall = totalWeight
+    ? Math.round(
+        executedCategories.reduce(
+          (s, c) => s + (categories[c] ?? 100) * CATEGORY_WEIGHT[c],
+          0,
+        ) / totalWeight,
+      )
+    : 100;
 
   return { overall: clamp(overall), categories };
 }

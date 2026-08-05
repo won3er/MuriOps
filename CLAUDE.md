@@ -518,6 +518,67 @@ Chrome do teste desta sessão com clique real. Não reproduzido como bug de
 verdade; fica como possível hardening futuro (abrir a aba em branco
 imediato no clique, só definir a URL depois do fetch resolver).
 
+## Sessão 05/08/2026 — Varredura funcional completa + 2 correções + decisão sobre o crawler
+
+A pedido do usuário ("teste todas as funções"), sessão de QA manual cobrindo
+todo o produto no navegador em produção: login/dashboard, Análises (QA +
+Segurança), Projetar, Aplicações, Orquestrações, Atualizar, Guardian
+(incluindo ruleset de regras de negócio customizado) e Configurações. Achados
+e decisões:
+
+1. **Limitação do crawler no Render free tier (item #91) — decisão do
+   usuário: manter como está.** Reproduzida de novo nesta sessão (falha
+   "Interrompida (API reiniciada)" num site mais pesado). O usuário decidiu
+   não resolver agora (custaria subir de tier no Render ou otimizar ainda
+   mais o consumo de memória do crawler) e só deixar a limitação comunicada
+   na própria funcionalidade. **Ainda não implementado**: nenhuma mensagem
+   proativa no produto avisando sobre esse limite antes/durante a análise —
+   hoje o usuário só descobre quando a análise falha. Se for fazer, o lugar
+   natural é uma nota no formulário de nova análise ou no estado "Falhou".
+2. **Corrigido: nota "100" enganosa em dimensões que nunca rodaram.** Causa:
+   `computeScores()` em `apps/api/src/modules/analysis/scoring.ts` sempre
+   iterava as 10 categorias fixas (`ALL_CATEGORIES`), então uma categoria não
+   pedida na análise (ex.: Teste Ativo Autorizado numa análise só de QA
+   padrão) tinha zero problemas encontrados → penalidade zero → nota 100,
+   como se tivesse passado numa checagem que nunca executou. Corrigido: (a)
+   `CategoryScores` em `packages/shared/src/types/score.ts` virou
+   `Partial<Record<AnalysisCategory, number>>` em vez de `Record` completo;
+   (b) `computeScores()` ganhou um segundo parâmetro `executedCategories` e só
+   calcula essas; (c) `engine.ts` passa `categories` (a lista pedida no start
+   da análise) nas duas chamadas. O frontend (`ScoreBars`) já iterava com
+   `Object.entries`, então uma categoria ausente do objeto simplesmente não
+   aparece na lista — sem precisar de um estado visual novo de "não
+   executado". **Não validado por typecheck** (sandbox sem disco disponível
+   nesta sessão) — rodar `pnpm --filter @qa-ai/shared build && pnpm --filter
+   @qa-ai/api exec tsc --noEmit` antes de subir.
+3. **Corrigido: erro cru da IA exposto no Guardian.** Ao vivo em produção, uma
+   auditoria falhou com o JSON cru da API do Gemini na tela
+   (`Gemini API error: 400 {"error":{"code":400,...}}`), violando a convenção
+   do produto (mensagem amigável + "Detalhe técnico" recolhível). Um retry
+   idêntico funcionou na hora — então era falha transiente do provedor, não
+   bug reproduzível de request malformado. Corrigido só o **display**:
+   `apps/web/src/app/(app)/guardian/[id]/page.tsx`, estado `FAILED`, agora
+   segue o mesmo padrão já usado em Blueprint (`blueprints/[id]/page.tsx`) —
+   card com texto amigável sugerindo tentar de novo ou checar a chave em
+   Configurações, e o erro cru dentro de um `<details>` recolhível. Não foi
+   adicionado botão de "tentar de novo" nem retry automático no backend —
+   hoje o usuário precisa criar uma nova auditoria manualmente.
+4. **Fase 4 (Design geral) — ainda não iniciada**, e não é trabalho deste
+   agente: é a etapa visual que fica a cargo da ferramenta baseada em GPT que
+   o usuário roda em paralelo (ver regra na seção Stack). Só listada aqui
+   como lembrete de status, não como pendência deste agente.
+5. **Docs desatualizados corrigidos**: `/docs/funcionalidades`
+   (`apps/web/src/lib/docs-copy.ts`) não mencionava Guardian, Teste Ativo
+   Autorizado nem a Análise de Segurança via GitHub — adicionados nos 3
+   locales (en/pt/es). `/docs/guia` (passo a passo 01-05) não precisou de
+   mudança — continua descrevendo corretamente o ciclo principal
+   Analisar→Aplicar→Reanalisar, que não mudou; Projetar/Atualizar/Guardian
+   são pontos de entrada alternativos, não etapas desse ciclo específico.
+   Homepage (`page.tsx`, `feature-showcase.tsx`, `public-copy.ts`) também
+   atualizada na mesma sessão com a aba/copy do Guardian e os dois módulos de
+   segurança que faltavam em "Módulos cobertos". Tudo já commitado e enviado
+   pro GitHub pelo usuário.
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —

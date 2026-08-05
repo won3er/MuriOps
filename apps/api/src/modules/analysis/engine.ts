@@ -219,7 +219,7 @@ export async function runEngine(input: EngineInput): Promise<EngineResult> {
     }
 
     const issues = [...byFingerprint.values()];
-    const preliminaryScore = computeScores(issues);
+    const preliminaryScore = computeScores(issues, categories);
 
     // Módulo 11 — Revisão por IA (pode marcar falsos positivos como IGNORED).
     await onStatus?.(AnalysisStatus.AI_REVIEW, { issues: issues.length });
@@ -234,7 +234,7 @@ export async function runEngine(input: EngineInput): Promise<EngineResult> {
     // Recalcula o score sem os problemas descartados pela IA — falsos
     // positivos não devem penalizar a nota do site.
     const validIssues = issues.filter((i) => i.status !== IssueStatus.IGNORED);
-    const score = computeScores(validIssues);
+    const score = computeScores(validIssues, categories);
 
     // Um resumo gerado pela IA não pode contradizer a coleta. Quando não há
     // achados válidos, uma conclusão determinística é mais honesta do que uma
