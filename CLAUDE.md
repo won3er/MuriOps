@@ -791,6 +791,69 @@ validado por `tsc`/build, só revisão manual.**
   se o build reclamar disso, envolver o conteúdo da página num Suspense
   boundary.
 
+## Sessão 06/08/2026 — Projeção (terceira função de Projetar, #154)
+
+A pedido do usuário (autorização em bloco da madrugada anterior), implementada
+a primeira versão de "Projeção": decompõe o roadmap de um Blueprint em
+tarefas rastreáveis, cada uma virando uma Issue no GitHub do projeto
+conectado. **Decisão de produto confirmada com o usuário (AskUserQuestion):
+Issue, não branch+PR** — mais simples e seguro, sem tocar em código; a Issue
+já dá rastreabilidade suficiente e evita o peso de mexer na árvore do repo do
+cliente. **Mesma ressalva de sempre: sandbox sem `bash` — nada validado por
+`tsc`/build nesta sessão, só revisão manual.**
+
+- **Schema**: modelo novo `ProjectionTask` (title, description, order,
+  status, `githubIssueNumber`/`githubIssueUrl`, `error`, `lastSyncedAt`),
+  vinculado a `Blueprint` E a `Project` (a tarefa pertence ao blueprint, mas
+  precisa do projeto pra achar a conexão GitHub). Enum
+  `ProjectionTaskStatus`: PENDING → IN_PROGRESS (issue criada) → DONE (issue
+  fechada no GitHub) ou FAILED (sem conexão GitHub, token inválido etc.).
+- **Geração de tarefas**: `projectionService.generateFromMilestones()` mapeia
+  os `milestones` já existentes no `BlueprintResult` (cronograma) em tarefas
+  — determinístico, **sem nova chamada de IA**. Blueprint sem projeto
+  vinculado (`projectId: null`) ou sem milestones recusa com mensagem clara.
+  Também dá pra adicionar tarefa manual (título + descrição livre).
+- **Sync com GitHub**: `createIssueForTask()` usa a mesma `AdapterConnection`
+  GITHUB que Aplicação já usa (mesmo token, sem pedir nova credencial) — cria
+  a issue com label `muriops-projecao`. `syncAllPending()` roda por polling
+  em `main.ts` (10min, mesmo padrão leve do `guardianScheduleService`) e
+  verifica o estado de toda issue ainda IN_PROGRESS; se fechou no GitHub, a
+  tarefa vira DONE sozinha — é o "Aplicação lê o estado do GitHub e marca as
+  tarefas do Projetar como feitas" que o usuário pediu. Sem webhook dedicado
+  ainda (adicionar um endpoint público pra isso é escopo maior, não entrou
+  nesta v1).
+- **Frontend**: `ProjectionSection` (`components/blueprint/projection-section.tsx`)
+  embutido em `/blueprints/[id]` logo após o Cronograma — lista as tarefas
+  com status colorido, link pra issue no GitHub, botão "Gerar do cronograma"
+  (cria as tarefas E já abre as issues) e campo pra adicionar tarefa manual.
+  Só aparece se o blueprint tiver `projectId` (Projeção não faz sentido sem
+  projeto pra achar a conexão GitHub).
+- **Não fiz**: nenhuma decomposição por IA (as tarefas vêm 1:1 dos
+  milestones, sem refinamento); nenhum webhook (só polling); nenhuma tela de
+  "todas as Projeções" fora do blueprint individual — cada blueprint tem sua
+  própria lista de tarefas, sem visão consolidada por projeto ainda.
+
+**Checklist de validação antes de subir isto:**
+```
+cd "C:\Users\woner\Desktop\Atlas QA"
+pnpm --filter @qa-ai/api exec prisma generate
+pnpm --filter @qa-ai/api exec prisma db push
+pnpm --filter @qa-ai/shared build
+pnpm --filter @qa-ai/api exec tsc --noEmit
+pnpm --filter @qa-ai/web build
+```
+Schema novo (`ProjectionTask` + enum `ProjectionTaskStatus` + relations em
+`Blueprint`/`Project`) precisa do `db push` antes do `tsc` do `api` passar
+(o Prisma Client precisa regenerar pros tipos novos existirem). Depois `git
+add` dos arquivos específicos (nunca `-A`): `apps/api/prisma/schema.prisma`,
+`packages/shared/src/types/projection.ts`, `packages/shared/src/index.ts`,
+`apps/api/src/application/projection.service.ts`,
+`apps/api/src/presentation/routes/projection.routes.ts`,
+`apps/api/src/presentation/app.ts`, `apps/api/src/main.ts`,
+`apps/web/src/lib/api.ts`, `apps/web/src/lib/queries.ts`,
+`apps/web/src/components/blueprint/projection-section.tsx`,
+`apps/web/src/app/(app)/blueprints/[id]/page.tsx`.
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —

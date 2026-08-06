@@ -16,6 +16,7 @@ import type {
   GuardianFindingStatus,
   OrchestrationRun,
   Project,
+  ProjectionTask,
   ProjectWithStats,
   RemediationItemStatus,
   RemediationPlan,
@@ -33,6 +34,7 @@ import { api } from "./api";
 export const qk = {
   blueprints: ["blueprints"] as const,
   blueprint: (id: string) => ["blueprint", id] as const,
+  projectionTasks: (blueprintId: string) => ["projection-tasks", blueprintId] as const,
   projects: ["projects"] as const,
   dashboard: ["dashboard"] as const,
   remediationPlan: (id: string) => ["remediation-plan", id] as const,
@@ -140,6 +142,65 @@ export function useDeleteBlueprint() {
     },
     onSuccess: () => toast.success("Blueprint apagado"),
     onSettled: () => qc.invalidateQueries({ queryKey: qk.blueprints }),
+  });
+}
+
+// ---------- Projeção (tarefas rastreáveis a partir de um blueprint) ----------
+
+/** Lista de tarefas de Projeção — polling leve enquanto houver alguma IN_PROGRESS aguardando sync com o GitHub. */
+export function useProjectionTasks(blueprintId: string) {
+  return useQuery({
+    queryKey: qk.projectionTasks(blueprintId),
+    queryFn: () => api.listProjectionTasks(blueprintId),
+    enabled: !!blueprintId,
+    refetchInterval: (query) =>
+      (query.state.data ?? []).some((t) => t.status === "IN_PROGRESS") ? 15_000 : false,
+  });
+}
+
+export function useGenerateProjectionTasks(blueprintId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (createIssuesNow: boolean) =>
+      api.generateProjectionTasks(blueprintId, createIssuesNow),
+    onSuccess: (tasks) => {
+      qc.setQueryData<ProjectionTask[]>(qk.projectionTasks(blueprintId), tasks);
+      toast.success("Tarefas de Projeção geradas a partir dos marcos");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao gerar tarefas"),
+  });
+}
+
+export function useCreateProjectionTask(blueprintId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { title: string; description: string }) =>
+      api.createProjectionTask(blueprintId, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.projectionTasks(blueprintId) }),
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Falha ao criar tarefa"),
+  });
+}
+
+export function useCreateProjectionIssue(blueprintId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: string) => api.createProjectionIssue(taskId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.projectionTasks(blueprintId) });
+      toast.success("Issue criada no GitHub");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao criar issue no GitHub"),
+  });
+}
+
+export function useDeleteProjectionTask(blueprintId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: string) => api.deleteProjectionTask(taskId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.projectionTasks(blueprintId) }),
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Falha ao apagar tarefa"),
   });
 }
 

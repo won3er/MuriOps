@@ -20,6 +20,7 @@ import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { GanttChart } from "@/components/blueprint/gantt-chart";
 import { MermaidDiagram } from "@/components/blueprint/mermaid-diagram";
+import { ProjectionSection } from "@/components/blueprint/projection-section";
 import { QaRadar } from "@/components/blueprint/qa-radar";
 import { RiskMatrix } from "@/components/blueprint/risk-matrix";
 import { TestPyramid } from "@/components/blueprint/test-pyramid";
@@ -310,6 +311,12 @@ export default function BlueprintDetailPage() {
               </div>
             </Section>
           )}
+
+          <ProjectionSection
+            blueprintId={id}
+            hasMilestones={r.milestones.length > 0}
+            hasProject={!!bp.projectId}
+          />
 
           {/* Stack — as tecnologias escolhidas e por quê. */}
           {r.techStack.length > 0 && (

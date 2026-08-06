@@ -130,6 +130,7 @@ model Project {
   orchestrationRuns    OrchestrationRun[]
   qualityGates         ProjectQualityGate[]
   adapterConnections   AdapterConnection[]
+  projectionTasks      ProjectionTask[]
 
   @@index([organizationId])
 }
@@ -293,6 +294,7 @@ model Blueprint {
   updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projectionTasks ProjectionTask[]
 
   @@index([organizationId])
   @@index([projectId])
@@ -543,6 +545,53 @@ model AdapterConnection {
   @@unique([projectId, kind])
   @@index([projectId])
   @@index([organizationId])
+}
+
+// ---------- Projeção (tarefas rastreáveis a partir de um Blueprint) ----------
+// Terceira função de Projetar: decompõe o roadmap de um Blueprint em tarefas
+// concretas, cada uma virando uma Issue no repositório GitHub conectado do
+// projeto (não uma branch/PR direto — decisão de produto: mais simples e
+// seguro, sem tocar em código, e a Issue já dá rastreabilidade suficiente).
+// Sincroniza por polling (mesmo padrão leve do GuardianSchedule/setInterval
+// em main.ts, sem webhook dedicado ainda): quando a Issue fecha no GitHub, a
+// tarefa vira DONE aqui automaticamente — é o "Aplicação lê o estado do
+// GitHub e marca as tarefas do Projetar como feitas" que o produto promete.
+
+enum ProjectionTaskStatus {
+  PENDING
+  // Issue criada no GitHub, aguardando o dev fechar/resolver.
+  IN_PROGRESS
+  DONE
+  // Não foi possível criar a Issue (sem conexão GitHub, token inválido etc.).
+  FAILED
+}
+
+model ProjectionTask {
+  id             String               @id @default(cuid())
+  blueprintId    String
+  projectId      String
+  organizationId String
+  title          String
+  description    String
+  // Ordem de execução sugerida, só cosmético (não bloqueia nada).
+  order          Int                  @default(0)
+  status         ProjectionTaskStatus @default(PENDING)
+  githubIssueNumber Int?
+  githubIssueUrl    String?
+  // Guarda o motivo quando status = FAILED (ex.: "sem conexão GitHub").
+  error          String?
+  lastSyncedAt   DateTime?
+  createdById    String
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  blueprint Blueprint @relation(fields: [blueprintId], references: [id], onDelete: Cascade)
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([blueprintId])
+  @@index([projectId])
+  @@index([organizationId])
+  @@index([status])
 }
 
 // ---------- Guardian (auditoria operacional de negócio) ----------

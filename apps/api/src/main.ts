@@ -1,6 +1,7 @@
 import { recoverStaleBlueprints } from "./application/blueprint.service.js";
 import { guardianScheduleService } from "./application/guardian-schedule.service.js";
 import { recoverStaleGuardianRuns } from "./application/guardian.service.js";
+import { projectionService } from "./application/projection.service.js";
 import { recoverStaleRemediationPlans } from "./application/remediation.service.js";
 import { recoverStaleUpgradePlans } from "./application/upgrade.service.js";
 import { env } from "./config/env.js";
@@ -35,6 +36,20 @@ async function main(): Promise<void> {
   void guardianScheduleService
     .runDueSchedules()
     .catch((err) => app.log.error({ err }, "Falha ao rodar agendamentos do Guardian (boot)"));
+
+  // Sync da Projeção (Projetar → tarefas com Issue no GitHub): sem webhook
+  // dedicado ainda, então um polling de 10min verifica se alguma issue foi
+  // fechada no GitHub e marca a tarefa como DONE aqui. Falha isolada por
+  // tarefa não derruba o processo nem afeta as demais.
+  const PROJECTION_SYNC_CHECK_MS = 10 * 60 * 1000;
+  setInterval(() => {
+    projectionService
+      .syncAllPending()
+      .catch((err) => app.log.error({ err }, "Falha ao sincronizar tarefas de Projeção"));
+  }, PROJECTION_SYNC_CHECK_MS);
+  void projectionService
+    .syncAllPending()
+    .catch((err) => app.log.error({ err }, "Falha ao sincronizar tarefas de Projeção (boot)"));
 }
 
 main().catch((err) => {

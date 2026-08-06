@@ -6,6 +6,7 @@ export * from "./types/evidence.js";
 export * from "./types/score.js";
 export * from "./types/auth.js";
 export * from "./types/blueprint.js";
+export * from "./types/projection.js";
 export * from "./types/remediation.js";
 export * from "./types/upgrade.js";
 export * from "./types/orchestration.js";

@@ -26,6 +26,7 @@ import type {
   GuardianSchedule,
   IssueFilters,
   LoginRequest,
+  ProjectionTask,
   OrchestrationEvent,
   OrchestrationRun,
   HumanCheckResponse,
@@ -351,6 +352,24 @@ export const api = {
     a.remove();
     URL.revokeObjectURL(url);
   },
+
+  // ---- projeção (tarefas rastreáveis a partir de um blueprint) ----
+  listProjectionTasks: (blueprintId: string) =>
+    request<ProjectionTask[]>(`/blueprints/${blueprintId}/projection-tasks`),
+  createProjectionTask: (blueprintId: string, body: { title: string; description: string }) =>
+    request<ProjectionTask>(`/blueprints/${blueprintId}/projection-tasks`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  generateProjectionTasks: (blueprintId: string, createIssuesNow: boolean) =>
+    request<ProjectionTask[]>(`/blueprints/${blueprintId}/projection-tasks/generate`, {
+      method: "POST",
+      body: JSON.stringify({ createIssuesNow }),
+    }),
+  createProjectionIssue: (taskId: string) =>
+    request<ProjectionTask>(`/projection-tasks/${taskId}/create-issue`, { method: "POST" }),
+  deleteProjectionTask: (taskId: string) =>
+    request<void>(`/projection-tasks/${taskId}`, { method: "DELETE" }),
 
   // ---- aplicação (RemediationPlan) ----
   listRemediationPlans: () =>
