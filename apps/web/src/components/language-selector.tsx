@@ -15,6 +15,9 @@ export function LanguageSelector({
   const { locale, setLocale } = useLocale();
   const copy = PUBLIC_COPY[locale];
   const shortLabels: Record<Locale, string> = { en: "EN", pt: "PT", es: "ES" };
+  // Bandeira por idioma — pt aponta pra 🇧🇷 (público do produto), não 🇵🇹, já
+  // que toda a copy em português é pt-BR.
+  const flags: Record<Locale, string> = { en: "🇺🇸", pt: "🇧🇷", es: "🇪🇸" };
 
   return (
     <div
@@ -34,12 +37,15 @@ export function LanguageSelector({
           aria-pressed={locale === item}
           title={item === "en" ? "English" : item === "pt" ? "Português" : "Español"}
           className={cn(
-            "rounded px-2 py-1 text-[11px] font-semibold tracking-wide transition-colors",
+            "flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-semibold tracking-wide transition-colors",
             locale === item
               ? "bg-accent text-foreground shadow-sm"
               : "hover:bg-accent/70 hover:text-foreground",
           )}
         >
+          <span className="text-sm leading-none" aria-hidden="true">
+            {flags[item]}
+          </span>
           {shortLabels[item]}
         </button>
       ))}
