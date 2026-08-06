@@ -4,6 +4,7 @@ import { AccessibilityAnalyzer } from "./accessibility.analyzer.js";
 import { ActiveSecurityTestAnalyzer } from "./active-security-test/active-security-test.analyzer.js";
 import { ConsoleAnalyzer } from "./console.analyzer.js";
 import { DeepSecurityAnalyzer } from "./deep-security/deep-security.analyzer.js";
+import { ExposedSecretsAnalyzer } from "./exposed-secrets.analyzer.js";
 import { NetworkAnalyzer } from "./network.analyzer.js";
 import { PerformanceAnalyzer } from "./performance.analyzer.js";
 import { SecurityAnalyzer } from "./security.analyzer.js";
@@ -19,7 +20,7 @@ export const PAGE_ANALYZERS: Record<AnalysisCategory, PageAnalyzer[]> = {
   PERFORMANCE: [new PerformanceAnalyzer()],
   SEO: [new SeoAnalyzer()],
   ACCESSIBILITY: [new AccessibilityAnalyzer()],
-  SECURITY: [],
+  SECURITY: [new ExposedSecretsAnalyzer()],
   CONSOLE: [new ConsoleAnalyzer()],
   NETWORK: [new NetworkAnalyzer()],
   DEEP_SECURITY: [],

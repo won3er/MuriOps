@@ -1,6 +1,7 @@
 import type {
   UpgradeEcosystem,
   UpgradeItem,
+  UpgradeReadiness,
   UpgradeResult,
   UpgradeRiskLevel,
 } from "@qa-ai/shared";
@@ -18,6 +19,23 @@ export interface UpgradeDesignInput {
   manifestFile: string;
   /** Se a detecção foi fraca, a IA confirma pelo conteúdo em vez de assumir. */
   detectionConfidence: "high" | "medium" | "low";
+  /**
+   * Sinais reais encontrados no repositório (só quando o plano vem de
+   * "investigar pelo GitHub" — via.from-github varre a árvore do repo além
+   * do manifesto). Sem isso (manifesto colado à mão), a IA avalia prontidão
+   * só pelo conteúdo do manifesto e pelo ecossistema, e deve dizer isso.
+   */
+  repoSignals?: RepoReadinessSignals | null;
+}
+
+/** Sinais colhidos da árvore do repositório GitHub, sem abrir cada arquivo — só presença. */
+export interface RepoReadinessSignals {
+  hasTestDirectoryOrFiles: boolean;
+  hasCiConfig: boolean;
+  hasLockfile: boolean;
+  /** Amostra dos caminhos que confirmaram os sinais acima, pra IA citar concretamente. */
+  sampleTestPaths: string[];
+  sampleCiPaths: string[];
 }
 
 /**
@@ -62,6 +80,13 @@ Também produza:
 - overallRisk: o risco geral de aplicar TODA a atualização de uma vez, considerando o conjunto.
 - recommendedOrder: os ids dos itens (item-1, item-2...) na ordem recomendada de execução — normalmente do menor pro maior risco, respeitando dependências entre pacotes quando relevante.
 - scopeNotes: lista de avisos de escopo. Use principalmente pra registrar, em uma frase, quando você DEIXOU DE recomendar algo de propósito por estar fora do escopo (ver a regra de sistemas legado). Vazio se não houver nada a registrar.
+- readiness: avaliação honesta se ESTE projeto, do jeito que está hoje, tem como absorver a atualização recomendada SEM QUEBRAR. Isso é distinto do risco de cada dependência — é sobre a capacidade do projeto de detectar e reverter um problema, não sobre o tamanho da mudança em si. Considere:
+  - Se vieram "sinaisDoRepositorio" na entrada (plano investigado via GitHub): use os sinais reais informados (existe diretório/arquivo de teste? existe configuração de CI?) como base principal do seu julgamento — cite os caminhos de exemplo recebidos, não invente outros.
+  - Sem sinaisDoRepositorio (manifesto colado manualmente): você não tem visibilidade do resto do projeto — avalie só pelo que dá pra inferir do próprio manifesto (ex.: presença de dependências de teste como jest/pytest/rspec/junit no manifesto) e deixe claro no reasoning que a avaliação é limitada por falta de acesso ao repositório.
+  - overallRisk "high"/"critical" combinado com ausência de teste/CI é o cenário mais forte pra readiness.ready = false.
+  - "ready": true/false — sua conclusão.
+  - "reasoning": 1-2 frases explicando o que pesou na decisão, mencionando concretamente o que foi encontrado (ou a falta de visibilidade).
+  - "blockers": lista curta do que falta pro projeto ficar pronto (ex.: "sem testes automatizados detectados", "sem pipeline de CI", "sem ambiente de staging conhecido") — vazio se ready=true.
 
 Responda SEMPRE em português do Brasil e SOMENTE com um objeto JSON válido, sem markdown, sem cercas de código, EXATAMENTE neste formato:
 {
@@ -69,6 +94,11 @@ Responda SEMPRE em português do Brasil e SOMENTE com um objeto JSON válido, se
   "overallRisk": "low | medium | high | critical",
   "recommendedOrder": ["item-1", "item-2"],
   "scopeNotes": ["aviso de escopo, se houver"],
+  "readiness": {
+    "ready": true,
+    "reasoning": "o que pesou na decisão",
+    "blockers": ["o que falta, se ready=false"]
+  },
   "items": [
     {
       "packageName": "nome-da-dependencia",
@@ -123,6 +153,15 @@ export function buildUpgradeUserPrompt(input: UpgradeDesignInput): string {
       // Detecção fraca: a IA confirma pelo conteúdo em vez de confiar no palpite.
       confiancaDaDeteccao: input.detectionConfidence,
       manifesto: input.manifestRaw,
+      sinaisDoRepositorio: input.repoSignals
+        ? {
+            temDiretorioOuArquivosDeTeste: input.repoSignals.hasTestDirectoryOrFiles,
+            temConfiguracaoDeCi: input.repoSignals.hasCiConfig,
+            temLockfile: input.repoSignals.hasLockfile,
+            exemplosDeCaminhosDeTeste: input.repoSignals.sampleTestPaths,
+            exemplosDeCaminhosDeCi: input.repoSignals.sampleCiPaths,
+          }
+        : null,
     },
     null,
     2,
@@ -196,5 +235,17 @@ export function normalizeUpgrade(
     recommendedOrder: [...recommendedOrder, ...orderedRest],
     items,
     scopeNotes: strArr(raw.scopeNotes),
+    readiness: normalizeReadiness(raw.readiness),
+  };
+}
+
+function normalizeReadiness(v: unknown): UpgradeReadiness | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const r = v as Record<string, unknown>;
+  if (typeof r.ready !== "boolean") return undefined;
+  return {
+    ready: r.ready,
+    reasoning: str(r.reasoning),
+    blockers: strArr(r.blockers),
   };
 }

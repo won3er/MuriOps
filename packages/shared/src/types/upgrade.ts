@@ -70,6 +70,23 @@ export interface UpgradeResult {
    * (fora do escopo do produto), pra o usuário entender a ausência.
    */
   scopeNotes?: string[];
+  /**
+   * Avaliação de prontidão: o projeto tem como absorver esta atualização sem
+   * quebrar (testes, CI, ambiente de staging, ou — pra planos gerados via
+   * GitHub — sinais reais encontrados no repositório)? Quando `ready` é
+   * `false`, a recomendação do produto é levar o plano para o Projetar em
+   * vez de aplicar direto, para desenhar a rede de segurança que falta antes.
+   * Ausente em planos antigos (gerados antes desta função existir).
+   */
+  readiness?: UpgradeReadiness;
+}
+
+export interface UpgradeReadiness {
+  ready: boolean;
+  /** Explicação curta da avaliação — o que foi considerado, em linguagem simples. */
+  reasoning: string;
+  /** O que falta pro projeto suportar a atualização com segurança (testes, CI, staging...). */
+  blockers: string[];
 }
 
 export interface UpgradePlan {

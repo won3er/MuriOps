@@ -61,6 +61,75 @@ export interface ScanResult {
   skipped: string[];
   /** true = a árvore do repo é grande demais e veio cortada pela API. */
   treeTruncated: boolean;
+  /** Sinais de prontidão pra atualização com segurança — ver readiness em upgrade-prompt.ts. */
+  readinessSignals: RepoReadinessSignals;
+}
+
+/** Mesma forma de RepoReadinessSignals em upgrade-prompt.ts — duplicado aqui pra não criar
+ * dependência circular entre módulos de camadas diferentes (application/ai vs modules/upgrade). */
+export interface RepoReadinessSignals {
+  hasTestDirectoryOrFiles: boolean;
+  hasCiConfig: boolean;
+  hasLockfile: boolean;
+  sampleTestPaths: string[];
+  sampleCiPaths: string[];
+}
+
+const CI_FILE_PATHS = new Set([
+  ".gitlab-ci.yml",
+  ".circleci/config.yml",
+  "azure-pipelines.yml",
+  "jenkinsfile",
+  ".travis.yml",
+  "bitbucket-pipelines.yml",
+]);
+
+const LOCKFILE_NAMES = new Set([
+  "package-lock.json",
+  "pnpm-lock.yaml",
+  "yarn.lock",
+  "poetry.lock",
+  "gemfile.lock",
+  "go.sum",
+  "composer.lock",
+  "cargo.lock",
+]);
+
+const TEST_DIR_NAMES = new Set(["test", "tests", "spec", "specs", "__tests__"]);
+
+function isTestPath(path: string): boolean {
+  const segments = path.toLowerCase().split("/");
+  if (segments.some((s) => TEST_DIR_NAMES.has(s))) return true;
+  const fileName = segments[segments.length - 1] ?? "";
+  return (
+    fileName.includes(".test.") ||
+    fileName.includes(".spec.") ||
+    fileName.startsWith("test_") ||
+    fileName.endsWith("_test.py") ||
+    fileName.endsWith("_test.go")
+  );
+}
+
+function isCiPath(path: string): boolean {
+  const lower = path.toLowerCase();
+  if (lower.startsWith(".github/workflows/")) return true;
+  return CI_FILE_PATHS.has(lower);
+}
+
+/** Só olha os caminhos já baixados na listagem da árvore — sem chamada de API extra. */
+function detectReadinessSignals(entries: TreeEntry[]): RepoReadinessSignals {
+  const testPaths = entries.filter((e) => e.type === "blob" && isTestPath(e.path)).map((e) => e.path);
+  const ciPaths = entries.filter((e) => e.type === "blob" && isCiPath(e.path)).map((e) => e.path);
+  const hasLockfile = entries.some(
+    (e) => e.type === "blob" && LOCKFILE_NAMES.has((e.path.split("/").pop() ?? "").toLowerCase()),
+  );
+  return {
+    hasTestDirectoryOrFiles: testPaths.length > 0,
+    hasCiConfig: ciPaths.length > 0,
+    hasLockfile,
+    sampleTestPaths: testPaths.slice(0, 5),
+    sampleCiPaths: ciPaths.slice(0, 5),
+  };
 }
 
 export class GithubScanError extends Error {
@@ -184,6 +253,7 @@ export async function scanGithubManifests(
     manifests,
     skipped,
     treeTruncated: Boolean(tree.truncated),
+    readinessSignals: detectReadinessSignals(tree.tree ?? []),
   };
 }
 
