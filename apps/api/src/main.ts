@@ -1,4 +1,5 @@
 import { recoverStaleBlueprints } from "./application/blueprint.service.js";
+import { criticalFlowService } from "./application/critical-flow.service.js";
 import { guardianScheduleService } from "./application/guardian-schedule.service.js";
 import { recoverStaleGuardianRuns } from "./application/guardian.service.js";
 import { projectionService } from "./application/projection.service.js";
@@ -50,6 +51,20 @@ async function main(): Promise<void> {
   void projectionService
     .syncAllPending()
     .catch((err) => app.log.error({ err }, "Falha ao sincronizar tarefas de Projeção (boot)"));
+
+  // Fluxos Críticos: checagem a cada 5min de quem já passou do próprio
+  // intervalo (15min/1h/diário) desde a última execução — mesmo padrão de
+  // polling leve dos outros agendamentos, sem fila/cron externo. Falha em
+  // um fluxo não derruba o processo nem afeta os demais.
+  const CRITICAL_FLOW_CHECK_MS = 5 * 60 * 1000;
+  setInterval(() => {
+    criticalFlowService
+      .runDueFlows()
+      .catch((err) => app.log.error({ err }, "Falha ao rodar Fluxos Críticos"));
+  }, CRITICAL_FLOW_CHECK_MS);
+  void criticalFlowService
+    .runDueFlows()
+    .catch((err) => app.log.error({ err }, "Falha ao rodar Fluxos Críticos (boot)"));
 }
 
 main().catch((err) => {

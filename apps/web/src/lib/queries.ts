@@ -13,6 +13,9 @@ import type {
   CreateOrchestrationRunRequest,
   CreateProjectRequest,
   CreateRemediationPlanRequest,
+  CreateCriticalFlowRequest,
+  UpdateCriticalFlowRequest,
+  CriticalFlow,
   GuardianFindingStatus,
   OrchestrationRun,
   Project,
@@ -62,6 +65,9 @@ export const qk = {
     ["guardian-drive-files", folderId ?? null, query ?? null] as const,
   guardianSchedules: ["guardian-schedules"] as const,
   emailSettings: ["email-settings"] as const,
+  criticalFlows: (projectId: string) => ["critical-flows", projectId] as const,
+  criticalFlow: (id: string) => ["critical-flow", id] as const,
+  flowRuns: (id: string) => ["flow-runs", id] as const,
 };
 
 /** Estados em que o loop ainda está em andamento — mantém o polling ligado. */
@@ -201,6 +207,83 @@ export function useDeleteProjectionTask(blueprintId: string) {
     mutationFn: (taskId: string) => api.deleteProjectionTask(taskId),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.projectionTasks(blueprintId) }),
     onError: (err) => toast.error(err instanceof Error ? err.message : "Falha ao apagar tarefa"),
+  });
+}
+
+// ---------- Fluxos Críticos (monitoramento sintético de jornadas) ----------
+
+export function useCriticalFlows(projectId: string) {
+  return useQuery({
+    queryKey: qk.criticalFlows(projectId),
+    queryFn: () => api.listCriticalFlows(projectId),
+    enabled: !!projectId,
+  });
+}
+
+export function useCriticalFlow(id: string) {
+  return useQuery({
+    queryKey: qk.criticalFlow(id),
+    queryFn: () => api.getCriticalFlow(id),
+    enabled: !!id,
+  });
+}
+
+export function useFlowRuns(id: string) {
+  return useQuery({
+    queryKey: qk.flowRuns(id),
+    queryFn: () => api.listFlowRuns(id),
+    enabled: !!id,
+    refetchInterval: 20_000,
+  });
+}
+
+export function useCreateCriticalFlow(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateCriticalFlowRequest) => api.createCriticalFlow(projectId, body),
+    onSuccess: (flow) => {
+      qc.setQueryData<CriticalFlow>(qk.criticalFlow(flow.id), flow);
+      qc.invalidateQueries({ queryKey: qk.criticalFlows(projectId) });
+      toast.success("Fluxo crítico criado");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Falha ao criar fluxo crítico"),
+  });
+}
+
+export function useUpdateCriticalFlow(id: string, projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: UpdateCriticalFlowRequest) => api.updateCriticalFlow(id, body),
+    onSuccess: (flow) => {
+      qc.setQueryData<CriticalFlow>(qk.criticalFlow(id), flow);
+      qc.invalidateQueries({ queryKey: qk.criticalFlows(projectId) });
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Falha ao atualizar fluxo crítico"),
+  });
+}
+
+export function useDeleteCriticalFlow(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteCriticalFlow(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.criticalFlows(projectId) }),
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Falha ao apagar fluxo crítico"),
+  });
+}
+
+export function useRunCriticalFlowNow(id: string, projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.runCriticalFlowNow(id),
+    onSuccess: (run) => {
+      qc.invalidateQueries({ queryKey: qk.flowRuns(id) });
+      qc.invalidateQueries({ queryKey: qk.criticalFlow(id) });
+      qc.invalidateQueries({ queryKey: qk.criticalFlows(projectId) });
+      toast[run.status === "PASSED" ? "success" : "error"](
+        run.status === "PASSED" ? "Fluxo passou" : `Fluxo falhou: ${run.errorMessage ?? "erro desconhecido"}`,
+      );
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Falha ao rodar fluxo"),
   });
 }
 

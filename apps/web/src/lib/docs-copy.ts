@@ -161,6 +161,16 @@ export const DOCS_COPY = {
           ],
         },
         {
+          title: "Continuous monitoring",
+          items: [
+            [
+              "Critical Flows",
+              "available",
+              "Scripted synthetic monitoring of business-critical journeys (login, checkout, lead forms) running on a schedule (every 15 minutes, hourly or daily). Alerts by email with a screenshot of the exact step that broke, so a broken journey is caught before it costs sales.",
+            ],
+          ],
+        },
+        {
           title: "Apply and track",
           items: [
             [
@@ -411,6 +421,16 @@ export const DOCS_COPY = {
           ],
         },
         {
+          title: "Monitoramento contínuo",
+          items: [
+            [
+              "Fluxos Críticos",
+              "available",
+              "Monitoramento sintético por script de jornadas críticas de negócio (login, checkout, formulário de lead) rodando numa frequência fixa (15 min, 1h ou diária). Alerta por e-mail com screenshot do exato passo que quebrou, pra pegar uma jornada quebrada antes que ela custe uma venda.",
+            ],
+          ],
+        },
+        {
           title: "Aplicar e acompanhar",
           items: [
             [
@@ -657,6 +677,16 @@ export const DOCS_COPY = {
               "Guardian",
               "available",
               "Audita un documento pegado (hoja de cálculo, contrato, formulario) o elegido desde una carpeta de Google Drive conectada, contra reglas de negocio opcionales, con severidad, evidencia y corrección sugerida. Requiere una clave de IA conectada.",
+            ],
+          ],
+        },
+        {
+          title: "Monitoreo continuo",
+          items: [
+            [
+              "Flujos Críticos",
+              "available",
+              "Monitoreo sintético con script de recorridos críticos del negocio (login, checkout, formulario de contacto) que corre en una frecuencia fija (15 min, 1h o diaria). Alerta por correo con una captura del paso exacto que falló, para detectar un recorrido roto antes de que cueste una venta.",
             ],
           ],
         },

@@ -60,6 +60,7 @@ model Organization {
   guardianRulesets  GuardianRuleset[]
   guardianRuns      GuardianRun[]
   guardianSchedules GuardianSchedule[]
+  criticalFlows     CriticalFlow[]
 }
 
 model User {
@@ -131,6 +132,7 @@ model Project {
   qualityGates         ProjectQualityGate[]
   adapterConnections   AdapterConnection[]
   projectionTasks      ProjectionTask[]
+  criticalFlows        CriticalFlow[]
 
   @@index([organizationId])
 }
@@ -691,4 +693,94 @@ model GuardianRun {
   @@index([organizationId])
   @@index([projectId])
   @@index([rulesetId])
+}
+
+// ---------- Fluxos Críticos (monitoramento sintético) ----------
+// Terceiro pilar do produto: enquanto Análise faz um scan pontual sob demanda,
+// Fluxos Críticos roda scripts de passos (login, checkout, formulário de lead
+// etc.) periodicamente, simulando um usuário real, pra pegar quebras de
+// jornada de negócio (não só problemas de código/SEO/acessibilidade) antes
+// que o cliente perca vendas por causa delas. Reusa o mesmo lançador de
+// Chromium com memória controlada do crawler (crawler.ts) e o mesmo
+// provider de e-mail (Resend) já usado pelo agendamento do Guardian.
+
+enum CriticalFlowStepAction {
+  NAVIGATE
+  CLICK
+  FILL
+  SELECT
+  WAIT_FOR_SELECTOR
+  ASSERT_TEXT
+  ASSERT_URL
+}
+
+enum CriticalFlowFrequency {
+  EVERY_15_MIN
+  EVERY_HOUR
+  DAILY
+}
+
+enum FlowRunStatus {
+  PENDING
+  RUNNING
+  PASSED
+  FAILED
+}
+
+// Um passo é um objeto simples { action, selector?, value?, expected? } —
+// guardado como Json (CriticalFlowStep[]) em vez de tabela própria porque a
+// ordem/edição em lote é sempre feita como array inteiro pela UI, igual ao
+// padrão já usado em GuardianRuleset.rules.
+model CriticalFlow {
+  id             String                 @id @default(cuid())
+  projectId      String
+  organizationId String
+  createdById    String
+  name           String
+  // URL inicial do fluxo — pode divergir da URL cadastrada no projeto (ex.:
+  // testar direto a página de checkout).
+  startUrl       String
+  // CriticalFlowStep[] em ordem de execução.
+  steps          Json
+  frequency      CriticalFlowFrequency  @default(EVERY_HOUR)
+  active         Boolean                @default(true)
+  alertEmail     String?
+  // Só alerta de novo depois de N falhas seguidas, pra não spammar e-mail
+  // por uma instabilidade transiente de rede.
+  alertAfterConsecutiveFailures Int     @default(1)
+  consecutiveFailures            Int    @default(0)
+  lastRunAt      DateTime?
+  lastRunStatus  FlowRunStatus?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  runs         FlowRun[]
+
+  @@index([projectId])
+  @@index([organizationId])
+  @@index([active])
+}
+
+model FlowRun {
+  id             String         @id @default(cuid())
+  criticalFlowId String
+  status         FlowRunStatus  @default(PENDING)
+  // Índice do passo (em CriticalFlow.steps) onde parou — sucesso (percorreu
+  // todos) ou falha (quebrou em algum). Null enquanto RUNNING/PENDING.
+  failedStepIndex Int?
+  errorMessage    String?
+  // Screenshot em base64 do momento da falha (sem storage de objeto externo
+  // configurado no projeto ainda — mesmo motivo do texto colado no Guardian,
+  // simples o bastante pra v1).
+  screenshotBase64 String?        @db.Text
+  durationMs      Int?
+  startedAt       DateTime       @default(now())
+  finishedAt      DateTime?
+
+  criticalFlow CriticalFlow @relation(fields: [criticalFlowId], references: [id], onDelete: Cascade)
+
+  @@index([criticalFlowId])
+  @@index([status])
 }

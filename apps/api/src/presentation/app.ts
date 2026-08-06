@@ -11,6 +11,7 @@ import { authRoutes } from "./routes/auth.routes.js";
 import { accountRoutes } from "./routes/account.routes.js";
 import { blueprintRoutes } from "./routes/blueprint.routes.js";
 import { projectionRoutes } from "./routes/projection.routes.js";
+import { criticalFlowRoutes } from "./routes/critical-flow.routes.js";
 import { dashboardRoutes } from "./routes/dashboard.routes.js";
 import { evidenceRoutes } from "./routes/evidence.routes.js";
 import { guardianRoutes } from "./routes/guardian.routes.js";
@@ -115,6 +116,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(analysisRoutes);
   await app.register(blueprintRoutes);
   await app.register(projectionRoutes);
+  await app.register(criticalFlowRoutes);
   await app.register(remediationRoutes);
   // Ponte universal da Aplicação: pública, autenticada por token do plano.
   await app.register(remediationBridgeRoutes);

@@ -16,6 +16,10 @@ import type {
   CreateOrchestrationRunRequest,
   CreateProjectRequest,
   CreateRemediationPlanRequest,
+  CreateCriticalFlowRequest,
+  UpdateCriticalFlowRequest,
+  CriticalFlow,
+  FlowRun,
   DashboardStats,
   GuardianDashboardStats,
   GuardianFindingStatus,
@@ -370,6 +374,25 @@ export const api = {
     request<ProjectionTask>(`/projection-tasks/${taskId}/create-issue`, { method: "POST" }),
   deleteProjectionTask: (taskId: string) =>
     request<void>(`/projection-tasks/${taskId}`, { method: "DELETE" }),
+
+  // ---- fluxos críticos (monitoramento sintético de jornadas) ----
+  listCriticalFlows: (projectId: string) =>
+    request<CriticalFlow[]>(`/projects/${projectId}/critical-flows`),
+  createCriticalFlow: (projectId: string, body: CreateCriticalFlowRequest) =>
+    request<CriticalFlow>(`/projects/${projectId}/critical-flows`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  getCriticalFlow: (id: string) => request<CriticalFlow>(`/critical-flows/${id}`),
+  updateCriticalFlow: (id: string, body: UpdateCriticalFlowRequest) =>
+    request<CriticalFlow>(`/critical-flows/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  deleteCriticalFlow: (id: string) => request<void>(`/critical-flows/${id}`, { method: "DELETE" }),
+  listFlowRuns: (id: string) => request<FlowRun[]>(`/critical-flows/${id}/runs`),
+  runCriticalFlowNow: (id: string) =>
+    request<FlowRun>(`/critical-flows/${id}/run-now`, { method: "POST" }),
 
   // ---- aplicação (RemediationPlan) ----
   listRemediationPlans: () =>

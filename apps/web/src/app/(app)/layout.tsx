@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Activity,
   ArrowUpCircle,
   Boxes,
   CircleHelp,
@@ -46,6 +47,12 @@ const NAV_GROUPS = [
     label: "Guardian",
     items: [
       { href: "/guardian", label: "Auditoria operacional", icon: ShieldCheck },
+    ],
+  },
+  {
+    label: "Monitoramento",
+    items: [
+      { href: "/monitoramento", label: "Fluxos Críticos", icon: Activity },
     ],
   },
   {

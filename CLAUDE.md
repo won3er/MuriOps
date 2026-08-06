@@ -854,6 +854,118 @@ add` dos arquivos específicos (nunca `-A`): `apps/api/prisma/schema.prisma`,
 `apps/web/src/components/blueprint/projection-section.tsx`,
 `apps/web/src/app/(app)/blueprints/[id]/page.tsx`.
 
+## Sessão 06/08/2026 (continuação, ~2h autônoma) — Fluxos Críticos (novo pilar, monitoramento sintético)
+
+Depois de fechar a Projeção e corrigir o pipeline de deploy da Vercel (lockfile
+desatualizado — ver histórico de commits do dia), o usuário perguntou como seria
+a arquitetura de uma funcionalidade pra evitar que empresas percam vendas/
+clientes por bug em produção, sem ele especificar de antemão. Propus um pilar
+novo (não uma extensão de Análise, que é scan pontual): "Fluxos Críticos" —
+monitoramento sintético que roda um script de passos (login, checkout,
+formulário de lead) periodicamente, simulando um usuário real, e alerta por
+e-mail quando quebra. Usuário aprovou e autorizou trabalho autônomo por ~2h,
+inclusive uso do navegador se precisasse (não precisou nesta parte —
+implementação só de schema/backend/frontend). **Mesma ressalva de sempre:
+sandbox sem `bash` a sessão inteira ("Not enough disk space") — nada validado
+por `tsc`/build, só revisão manual comparando com os padrões já existentes
+(Guardian/Projeção como referência direta).**
+
+- **Schema**: `CriticalFlow` (nome, `startUrl`, `steps` Json —
+  `CriticalFlowStep[]` com `action`/`selector`/`value`/`expected`/`label`,
+  `frequency` EVERY_15_MIN/EVERY_HOUR/DAILY, `active`, `alertEmail`,
+  `alertAfterConsecutiveFailures` + `consecutiveFailures` pra não spammar
+  e-mail por instabilidade transiente) e `FlowRun` (status PENDING/RUNNING/
+  PASSED/FAILED, `failedStepIndex`, `errorMessage`, `screenshotBase64` em
+  base64 — mesma decisão de simplicidade do texto colado do Guardian, sem
+  storage de objeto externo configurado no projeto), relações com `Project`
+  e `Organization`.
+- **Engine de execução** (`apps/api/src/modules/critical-flow/flow-runner.ts`):
+  reusa exatamente as flags de baixo consumo de memória do
+  `crawler.ts.launchWithRetry()` (mesmo limite de 512MB do Render free tier),
+  mas diferente do crawler (que só observa) aqui os passos *interagem* com o
+  site — é um teste E2E rodando contra produção. Timeout de 15s por passo,
+  `assertPublicUrl()` (mesmo guard de SSRF do resto do produto) checado antes
+  de qualquer navegação, screenshot JPEG em base64 automático no momento exato
+  da falha, e para no primeiro passo que quebrar (sem "continuar mesmo assim"
+  — um fluxo quebrado no passo 3 não prova nada sobre os passos 4-5).
+- **Service** (`critical-flow.service.ts`): CRUD por projeto+organização
+  (mesma checagem de dono usada em todo o resto do produto, pós rodada 2 da
+  revisão de segurança de 29/07), `runNow()` (execução manual) e
+  `runDueFlows()` (chamado por polling, mesmo padrão leve de
+  `guardianScheduleService`/`projectionService` — sem fila/cron externo).
+  Alerta por Resend reusa `email-provider.ts` e `secret-box.ts` já existentes,
+  só dispara se `consecutiveFailures >= alertAfterConsecutiveFailures`.
+- **Scheduler em `main.ts`**: checagem a cada 5min (intervalo mais curto que
+  os outros porque a frequência mínima de um fluxo é 15min — 5min de folga
+  garante que não atrasa mais que isso), mais uma checagem imediata no boot.
+- **Rotas** (`critical-flow.routes.ts`, registradas em `app.ts`): listagem/
+  criação aninhada em `/projects/:projectId/critical-flows` (todo fluxo
+  pertence a um projeto), manipulação solta em `/critical-flows/:id` — mesmo
+  padrão de `/projection-tasks/:id`.
+- **Frontend**: página nova `/monitoramento` (não aninhada dentro de
+  `/projects/[id]` — pillar próprio, como Guardian) com seletor de projeto,
+  formulário de criação de fluxo com um step-builder simples (linha por
+  passo: ação/seletor/valor/esperado), lista de fluxos com badge de último
+  status, e por fluxo expandido: botão "Rodar agora", lista de passos e
+  histórico de execuções recentes com polling de 20s. Item novo no menu
+  lateral (`layout.tsx`), grupo "Monitoramento" próprio, ícone `Activity`.
+- **Docs** (`docs-copy.ts`): seção nova "Monitoramento contínuo"/"Continuous
+  monitoring"/"Monitoreo continuo" em `/docs/funcionalidades`, nos 3 locales,
+  logo depois de "Auditoria de negócio" (Guardian).
+- **Não fiz / decisões deliberadas**:
+  - **Não toquei em `FeatureShowcase`** (`feature-showcase.tsx`) nem no
+    `cycleTitle`/`cycleDescription` ("Seis frentes...") do `public-copy.ts`
+    que alimentam esse componente — é a regra permanente combinada com o
+    usuário de nunca mexer nesse componente específico. Adicionar Fluxos
+    Críticos como uma 7ª aba ali ficaria pro usuário decidir explicitamente,
+    não foi pedido.
+  - **Não adicionei ao grid "O que a análise cobre"** (`coverage.modules` em
+    `public-copy.ts`) — esse grid é especificamente sobre as 10 categorias de
+    Análise QA/Segurança (documentado como tal na própria description), e
+    Guardian (o outro pilar separado) também não está listado ali. Manter a
+    mesma convenção: pilares separados de Análise não entram nesse grid
+    específico.
+  - **Sem UI de "editar fluxo"** — só criar/apagar/rodar agora. Editar exigiria
+    reabrir o step-builder pré-preenchido; ficou de fora por tempo, o backend
+    (`PATCH /critical-flows/:id`) já suporta.
+  - **Sem gráfico de uptime/MTTR** — a v1 mostra só lista de execuções
+    recentes com status/duração/erro. Um dashboard agregado (% de uptime,
+    tempo médio até detectar) seria a evolução natural, não implementado.
+  - **Sem estimativa de impacto em receita** (fase 2 da ideia original do
+    usuário) — precisaria de alguma integração com dados de vendas que não
+    existe no produto; documentado como próximo passo possível, não
+    implementado.
+  - **Screenshot em `db.Text`/base64 direto no Postgres** — mesma decisão de
+    simplicidade do texto colado do Guardian; se os fluxos gerarem muito
+    volume, migrar pra um bucket de objeto (S3/R2) seria o próximo passo
+    natural, mas exigiria configurar um provider novo que o projeto não tem.
+
+**Checklist de validação antes de subir isto:**
+```
+cd "C:\Users\woner\Desktop\Atlas QA"
+pnpm --filter @qa-ai/api exec prisma generate
+pnpm --filter @qa-ai/api exec prisma db push
+pnpm --filter @qa-ai/shared build
+pnpm --filter @qa-ai/api exec tsc --noEmit
+pnpm --filter @qa-ai/web build
+```
+Schema novo (`CriticalFlow`/`FlowRun` + 3 enums novos + relations em
+`Project`/`Organization`) precisa do `db push` antes do `tsc` do `api` passar.
+Depois `git add` dos arquivos específicos (nunca `-A`):
+`apps/api/prisma/schema.prisma`,
+`packages/shared/src/types/critical-flow.ts`,
+`packages/shared/src/index.ts`,
+`apps/api/src/modules/critical-flow/flow-runner.ts`,
+`apps/api/src/application/critical-flow.service.ts`,
+`apps/api/src/presentation/routes/critical-flow.routes.ts`,
+`apps/api/src/presentation/app.ts`,
+`apps/api/src/main.ts`,
+`apps/web/src/lib/api.ts`,
+`apps/web/src/lib/queries.ts`,
+`apps/web/src/app/(app)/monitoramento/page.tsx`,
+`apps/web/src/app/(app)/layout.tsx`,
+`apps/web/src/lib/docs-copy.ts`.
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —
