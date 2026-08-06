@@ -16,7 +16,6 @@ import {
   Terminal,
   Wrench,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { FeatureShowcase } from "@/components/feature-showcase";
 import { PublicHeader } from "@/components/public-header";
@@ -41,38 +40,36 @@ const MODULE_ICONS = [
 
 const INTEGRATION_ICONS = [HardDrive, Github, Terminal, Bot] as const;
 
+/**
+ * Redesign minimalista (06/08/2026): sem gradientes/blur decorativos, sem
+ * mascotes na home, sem glass/shadow — bordas finas de 1px, tipografia como
+ * hierarquia principal, espaço em branco no lugar de enfeite. Referência:
+ * styles.refero.design. FeatureShowcase (as 6 frentes) permanece intocado
+ * por pedido explícito — só o espaço ao redor mudou.
+ */
 export default function LandingPage() {
   const { hasSession } = useAuth();
   const { locale, href } = useLocale();
   const copy = LANDING_COPY[locale];
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden">
+    <div className="flex min-h-screen flex-col">
       <PublicHeader />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-16 -z-10 h-[760px] bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,0.15),transparent_58%)]"
-      />
       <main
         id="conteudo-principal"
-        className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-5 sm:px-6"
+        className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 sm:px-6"
       >
-        {/* Hero — compacto de propósito: a home deve chegar às 6 frentes sem
-            precisar rolar a tela (pedido explícito do usuário, styles.refero.design
-            como referência de densidade). Sem animação de entrada: candidato a LCP. */}
-        <section className="relative mt-8 flex flex-col items-center text-center sm:mt-10">
-          <div
-            aria-hidden="true"
-            className="absolute left-1/2 top-0 -z-10 h-64 w-[min(920px,100vw)] -translate-x-1/2 rounded-full border border-primary/10 bg-primary/[0.025] blur-3xl"
-          />
-          <span className="mb-4 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary">
+        {/* Hero — compacto: a home deve chegar às 6 frentes sem precisar
+            rolar a tela. Sem animação de entrada: candidato a LCP. */}
+        <section className="flex flex-col items-center pt-10 text-center sm:pt-14">
+          <span className="mb-4 text-xs font-medium uppercase tracking-wider text-primary">
             {copy.eyebrow}
           </span>
-          <h1 className="max-w-2xl text-balance text-3xl font-bold leading-[1.1] sm:text-4xl md:text-5xl">
+          <h1 className="max-w-2xl text-balance text-3xl font-semibold leading-[1.15] sm:text-4xl md:text-[2.75rem]">
             {copy.heroBefore}{" "}
             <span className="text-primary">{copy.heroAccent}</span>
           </h1>
-          <p className="mt-4 max-w-xl text-balance text-base text-muted-foreground sm:text-lg">
+          <p className="mt-4 max-w-xl text-balance text-base text-muted-foreground">
             {copy.heroDescription}
           </p>
 
@@ -94,15 +91,14 @@ export default function LandingPage() {
           <p className="mt-4 text-xs text-muted-foreground">{copy.trustLine}</p>
         </section>
 
-        {/* Destaques — pills + screenshot real, no espírito da home do GitHub.
-            Logo em seguida ao hero, sem seção intermediária, pra caber na
-            primeira dobra. */}
+        {/* Seis frentes — logo em seguida ao hero, sem seção intermediária,
+            pra caber na primeira dobra. */}
         <section className="mt-12 sm:mt-14">
           <div className="mb-6 max-w-3xl">
             <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-primary">
               {copy.cycleEyebrow}
             </p>
-            <h2 className="text-2xl font-semibold sm:text-3xl lg:text-4xl">
+            <h2 className="text-2xl font-semibold sm:text-3xl">
               {copy.cycleTitle}
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
@@ -113,27 +109,20 @@ export default function LandingPage() {
         </section>
 
         {/* Fluxo operacional */}
-        <section className="mt-20">
-          <div className="mb-10 text-center">
-            <h2 className="text-3xl font-semibold">{copy.howItWorks}</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
+        <section className="mt-24">
+          <div className="mb-8 max-w-2xl">
+            <h2 className="text-2xl font-semibold">{copy.howItWorks}</h2>
+            <p className="mt-2 text-base leading-7 text-muted-foreground">
               {copy.howItWorksDescription}
             </p>
           </div>
-          <ol className="relative grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div
-              aria-hidden="true"
-              className="absolute left-[10%] right-[10%] top-8 -z-10 hidden h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent lg:block"
-            />
+          <ol className="grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
             {copy.steps.map((s) => (
-              <li
-                key={s.n}
-                className="group rounded-xl border border-border bg-card/35 p-5 transition-colors hover:border-primary/35 hover:bg-card"
-              >
-                <span className="tabular inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-primary/25 bg-background px-2 text-xs font-semibold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+              <li key={s.n} className="bg-background p-5">
+                <span className="tabular text-xs font-medium text-primary">
                   {s.n}
                 </span>
-                <h3 className="mt-4 font-medium">{s.title}</h3>
+                <h3 className="mt-2 font-medium">{s.title}</h3>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">
                   {s.desc}
                 </p>
@@ -143,25 +132,13 @@ export default function LandingPage() {
         </section>
 
         {/* Destaque da Aplicação — o diferencial */}
-        <section className="mt-20">
-          <div className="glass relative isolate grid items-center gap-8 overflow-hidden rounded-2xl p-7 md:grid-cols-2 md:p-12">
-            <div
-              aria-hidden="true"
-              className="absolute -right-16 -top-24 -z-20 h-96 w-96 rounded-full bg-primary/[0.08] blur-3xl"
-            />
-            <Image
-              src="/mascot-build.png"
-              alt=""
-              width={1024}
-              height={1536}
-              sizes="280px"
-              className="pointer-events-none absolute -bottom-24 left-[43%] -z-10 hidden h-auto w-64 select-none opacity-[0.12] lg:block"
-            />
-            <div className="relative z-10">
-              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary">
-                <Bot className="h-3.5 w-3.5" /> {copy.application.eyebrow}
-              </span>
-              <h2 className="text-3xl font-semibold leading-tight">
+        <section className="mt-24">
+          <div className="grid items-center gap-8 rounded-lg border border-border p-7 md:grid-cols-2 md:p-10">
+            <div>
+              <p className="mb-3 text-xs font-medium uppercase tracking-wider text-primary">
+                {copy.application.eyebrow}
+              </p>
+              <h2 className="text-2xl font-semibold leading-tight sm:text-3xl">
                 {copy.application.title}
               </h2>
               <p className="mt-4 text-muted-foreground">
@@ -183,7 +160,7 @@ export default function LandingPage() {
               </div>
             </div>
             {/* Mock do checklist — ilustra o resultado sem prometer nada falso. */}
-            <div className="relative z-10 rounded-xl border border-border bg-background/80 p-5 shadow-[0_24px_60px_-42px_rgba(99,102,241,0.8)] backdrop-blur">
+            <div className="rounded-lg border border-border p-5">
               <p className="mb-4 text-xs text-muted-foreground">
                 {copy.application.planStatus}
               </p>
@@ -218,45 +195,24 @@ export default function LandingPage() {
         </section>
 
         {/* Módulos cobertos */}
-        <section className="mt-20">
-          <div className="mb-10 grid items-end gap-6 sm:grid-cols-[minmax(0,1fr)_260px]">
-            <div className="max-w-2xl">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-primary">
-                {copy.coverage.eyebrow}
-              </p>
-              <h2 className="text-3xl font-semibold sm:text-4xl">
-                {copy.coverage.title}
-              </h2>
-              <p className="mt-3 max-w-xl leading-7 text-muted-foreground">
-                {copy.coverage.description}
-              </p>
-            </div>
-            <div className="relative hidden h-44 sm:block">
-              <div
-                aria-hidden="true"
-                className="absolute inset-6 rounded-full bg-primary/10 blur-3xl"
-              />
-              <Image
-                src="/mascot-investigate.png"
-                alt=""
-                width={1024}
-                height={1536}
-                sizes="240px"
-                className="absolute -bottom-6 right-0 h-56 w-auto select-none object-contain"
-              />
-            </div>
+        <section className="mt-24">
+          <div className="mb-8 max-w-2xl">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-primary">
+              {copy.coverage.eyebrow}
+            </p>
+            <h2 className="text-2xl font-semibold sm:text-3xl">
+              {copy.coverage.title}
+            </h2>
+            <p className="mt-3 leading-7 text-muted-foreground">
+              {copy.coverage.description}
+            </p>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-5">
             {copy.coverage.modules.map(([label, desc], index) => {
               const Icon = MODULE_ICONS[index];
               return (
-                <div
-                  key={label}
-                  className="group rounded-xl border border-border bg-card/25 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-card"
-                >
-                  <span className="mb-4 grid h-9 w-9 place-items-center rounded-lg border bg-background transition-colors group-hover:border-primary/30 group-hover:bg-primary/10">
-                    <Icon className="h-4 w-4 text-primary" />
-                  </span>
+                <div key={label} className="bg-background p-5">
+                  <Icon className="mb-3 h-4 w-4 text-primary" />
                   <h3 className="text-sm font-medium">{label}</h3>
                   <p className="mt-1 text-sm leading-6 text-muted-foreground">
                     {desc}
@@ -268,29 +224,24 @@ export default function LandingPage() {
         </section>
 
         {/* Integrações reais — o que de fato conecta e o que faz, sem enfeite. */}
-        <section className="mt-20">
+        <section className="mt-24">
           <div className="mx-auto max-w-2xl text-center">
             <p className="mb-2 text-xs font-medium uppercase tracking-wider text-primary">
               {copy.integrations.eyebrow}
             </p>
-            <h2 className="text-3xl font-semibold sm:text-4xl">
+            <h2 className="text-2xl font-semibold sm:text-3xl">
               {copy.integrations.title}
             </h2>
             <p className="mt-3 leading-7 text-muted-foreground">
               {copy.integrations.description}
             </p>
           </div>
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
             {copy.integrations.items.map(([label, desc], index) => {
               const Icon = INTEGRATION_ICONS[index];
               return (
-                <div
-                  key={label}
-                  className="group rounded-xl border border-border bg-card/25 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-card"
-                >
-                  <span className="mb-4 grid h-10 w-10 place-items-center rounded-lg border bg-background transition-colors group-hover:border-primary/30 group-hover:bg-primary/10">
-                    <Icon className="h-5 w-5 text-primary" />
-                  </span>
+                <div key={label} className="bg-background p-5">
+                  <Icon className="mb-3 h-4 w-4 text-primary" />
                   <h3 className="text-sm font-medium">{label}</h3>
                   <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
                     {desc}
@@ -302,37 +253,29 @@ export default function LandingPage() {
         </section>
 
         {/* Entrada no sistema — estrutura sóbria, sem estética de campanha. */}
-        <section className="mt-28 border-y bg-card/25">
-          <div className="mx-auto max-w-6xl px-5 py-8 sm:px-6 sm:py-12">
-            <div className="relative isolate overflow-hidden rounded-2xl border border-border bg-background px-6 py-8 shadow-[0_24px_70px_-50px_rgba(99,102,241,0.65)] sm:px-10 sm:py-11">
-              <div aria-hidden="true" className="absolute inset-y-0 right-0 -z-10 hidden w-[48%] bg-[linear-gradient(110deg,transparent,rgba(99,102,241,0.07))] lg:block" />
-              <div aria-hidden="true" className="absolute -right-10 -top-24 -z-10 h-80 w-80 rounded-full bg-primary/[0.10] blur-3xl" />
-              <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_270px] lg:items-center">
-                <div className="max-w-2xl">
-                  <p className="mb-3 text-xs font-medium uppercase tracking-wider text-primary">{copy.cta.eyebrow}</p>
-                  <h2 className="text-balance text-3xl font-semibold leading-tight sm:text-4xl">{copy.cta.title}</h2>
-                  <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">{copy.cta.description}</p>
-                  <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm text-muted-foreground">
-                    <span className="inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" />Projeto e contexto</span>
-                    <span className="inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" />Análise não invasiva</span>
-                    <span className="inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" />Histórico técnico</span>
-                  </div>
-                  <div className="mt-8">
-                    <Link href={hasSession ? "/dashboard" : href("/register")}>
-                      <Button>{hasSession ? copy.cta.dashboard : copy.cta.start}<ArrowRight className="h-4 w-4" /></Button>
-                    </Link>
-                  </div>
-                </div>
-                <div className="relative mx-auto hidden min-h-56 w-full max-w-[270px] lg:block">
-                  <div aria-hidden="true" className="absolute inset-x-5 bottom-3 h-12 rounded-full bg-primary/15 blur-2xl" />
-                  <div aria-hidden="true" className="absolute right-1 top-4 h-40 w-40 rounded-2xl border border-primary/20 bg-primary/[0.045]" />
-                  <Image src="/mascot-monitor.png" alt="" width={1024} height={1536} sizes="270px" className="absolute bottom-0 left-0 h-64 w-auto select-none object-contain" />
-                  <div className="absolute right-0 top-9 rounded-lg border border-border bg-card/90 px-3 py-2 text-[11px] text-muted-foreground shadow-lg backdrop-blur">
-                    <span className="block font-medium text-foreground">Projeto conectado</span>
-                    <span>Pronto para análise</span>
-                  </div>
-                </div>
-              </div>
+        <section className="my-24 rounded-lg border border-border p-8 sm:p-12">
+          <div className="mx-auto max-w-xl text-center">
+            <p className="mb-3 text-xs font-medium uppercase tracking-wider text-primary">
+              {copy.cta.eyebrow}
+            </p>
+            <h2 className="text-balance text-2xl font-semibold leading-tight sm:text-3xl">
+              {copy.cta.title}
+            </h2>
+            <p className="mt-4 text-sm leading-6 text-muted-foreground sm:text-base">
+              {copy.cta.description}
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-sm text-muted-foreground">
+              <span>Projeto e contexto</span>
+              <span>Análise não invasiva</span>
+              <span>Histórico técnico</span>
+            </div>
+            <div className="mt-7">
+              <Link href={hasSession ? "/dashboard" : href("/register")}>
+                <Button>
+                  {hasSession ? copy.cta.dashboard : copy.cta.start}
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
