@@ -57,24 +57,26 @@ export default function LandingPage() {
         id="conteudo-principal"
         className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-5 sm:px-6"
       >
-        {/* Hero — sem animação de entrada: é o candidato a LCP. */}
-        <section className="relative mt-16 flex flex-col items-center text-center sm:mt-24">
+        {/* Hero — compacto de propósito: a home deve chegar às 6 frentes sem
+            precisar rolar a tela (pedido explícito do usuário, styles.refero.design
+            como referência de densidade). Sem animação de entrada: candidato a LCP. */}
+        <section className="relative mt-8 flex flex-col items-center text-center sm:mt-10">
           <div
             aria-hidden="true"
-            className="absolute left-1/2 top-0 -z-10 h-80 w-[min(920px,100vw)] -translate-x-1/2 rounded-full border border-primary/10 bg-primary/[0.025] blur-3xl"
+            className="absolute left-1/2 top-0 -z-10 h-64 w-[min(920px,100vw)] -translate-x-1/2 rounded-full border border-primary/10 bg-primary/[0.025] blur-3xl"
           />
-          <span className="mb-5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary">
+          <span className="mb-4 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-primary">
             {copy.eyebrow}
           </span>
-          <h1 className="max-w-3xl text-balance text-4xl font-bold leading-[1.1] sm:text-5xl md:text-6xl">
+          <h1 className="max-w-2xl text-balance text-3xl font-bold leading-[1.1] sm:text-4xl md:text-5xl">
             {copy.heroBefore}{" "}
             <span className="text-primary">{copy.heroAccent}</span>
           </h1>
-          <p className="mt-5 max-w-2xl text-balance text-lg text-muted-foreground">
+          <p className="mt-4 max-w-xl text-balance text-base text-muted-foreground sm:text-lg">
             {copy.heroDescription}
           </p>
 
-          <div className="mt-9 flex flex-wrap justify-center gap-3">
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link href={hasSession ? "/dashboard" : href("/register")}>
               <Button size="lg">
                 {hasSession ? copy.openWorkspace : copy.createWorkspace}{" "}
@@ -89,19 +91,21 @@ export default function LandingPage() {
               </Link>
             )}
           </div>
-          <p className="mt-6 text-xs text-muted-foreground">{copy.trustLine}</p>
+          <p className="mt-4 text-xs text-muted-foreground">{copy.trustLine}</p>
         </section>
 
-        {/* Destaques — pills + screenshot real, no espírito da home do GitHub */}
-        <section className="mt-28 sm:mt-36">
-          <div className="mb-9 max-w-3xl">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-primary">
+        {/* Destaques — pills + screenshot real, no espírito da home do GitHub.
+            Logo em seguida ao hero, sem seção intermediária, pra caber na
+            primeira dobra. */}
+        <section className="mt-12 sm:mt-14">
+          <div className="mb-6 max-w-3xl">
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-primary">
               {copy.cycleEyebrow}
             </p>
-            <h2 className="text-3xl font-semibold sm:text-4xl lg:text-5xl">
+            <h2 className="text-2xl font-semibold sm:text-3xl lg:text-4xl">
               {copy.cycleTitle}
             </h2>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
               {copy.cycleDescription}
             </p>
           </div>
@@ -109,7 +113,7 @@ export default function LandingPage() {
         </section>
 
         {/* Fluxo operacional */}
-        <section className="mt-28">
+        <section className="mt-20">
           <div className="mb-10 text-center">
             <h2 className="text-3xl font-semibold">{copy.howItWorks}</h2>
             <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
@@ -139,7 +143,7 @@ export default function LandingPage() {
         </section>
 
         {/* Destaque da Aplicação — o diferencial */}
-        <section className="mt-28">
+        <section className="mt-20">
           <div className="glass relative isolate grid items-center gap-8 overflow-hidden rounded-2xl p-7 md:grid-cols-2 md:p-12">
             <div
               aria-hidden="true"
@@ -214,7 +218,7 @@ export default function LandingPage() {
         </section>
 
         {/* Módulos cobertos */}
-        <section className="mt-28">
+        <section className="mt-20">
           <div className="mb-10 grid items-end gap-6 sm:grid-cols-[minmax(0,1fr)_260px]">
             <div className="max-w-2xl">
               <p className="mb-2 text-xs font-medium uppercase tracking-wider text-primary">
@@ -264,7 +268,7 @@ export default function LandingPage() {
         </section>
 
         {/* Integrações reais — o que de fato conecta e o que faz, sem enfeite. */}
-        <section className="mt-28">
+        <section className="mt-20">
           <div className="mx-auto max-w-2xl text-center">
             <p className="mb-2 text-xs font-medium uppercase tracking-wider text-primary">
               {copy.integrations.eyebrow}
