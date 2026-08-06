@@ -12,7 +12,9 @@ import {
   Download,
   FileCode2,
   Loader2,
+  Network,
   PackageSearch,
+  ShieldCheck,
   Trash2,
   Wrench,
 } from "lucide-react";
@@ -124,6 +126,28 @@ export default function UpgradePlanDetailPage() {
       { sourceType: "upgrade", sourceId: plan.id },
       { onSuccess: (rp) => router.push(`/aplicacao/${rp.id}`) },
     );
+  }
+
+  /** Leva um plano "não pronto" pro Projetar já com o contexto preenchido. */
+  function sendToBlueprint() {
+    if (!plan?.result?.readiness) return;
+    const { reasoning, blockers } = plan.result.readiness;
+    const promptText = [
+      `O plano de atualização "${plan.title}" foi avaliado como NÃO PRONTO para aplicar com segurança.`,
+      "",
+      `Avaliação: ${reasoning}`,
+      "",
+      "O que falta resolver antes de atualizar as dependências:",
+      ...blockers.map((b) => `- ${b}`),
+      "",
+      "Desenhe um plano para colocar este projeto em condições de receber a atualização com segurança (testes, CI, ambiente de staging conforme aplicável).",
+    ].join("\n");
+    const params = new URLSearchParams({
+      prompt: promptText,
+      title: `Prontidão para atualizar — ${plan.title}`,
+    });
+    if (plan.projectId) params.set("projectId", plan.projectId);
+    router.push(`/blueprints/new?${params.toString()}`);
   }
 
   /** Copia o pacote pra colar direto no chat da IA (Claude Code, Windsurf...). */
@@ -358,6 +382,55 @@ export default function UpgradePlanDetailPage() {
             <Card>
               <CardContent className="pt-5">
                 <p className="text-sm leading-relaxed">{plan.result.summary}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {plan.result.readiness && (
+            <Card
+              className={cn(
+                plan.result.readiness.ready
+                  ? "border-emerald-500/30 bg-emerald-500/[0.04]"
+                  : "border-amber-500/30 bg-amber-500/[0.06]",
+              )}
+            >
+              <CardContent className="flex flex-col gap-3 pt-5 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-3">
+                  {plan.result.readiness.ready ? (
+                    <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
+                  ) : (
+                    <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+                  )}
+                  <div className="space-y-2">
+                    <p className="font-medium">
+                      {plan.result.readiness.ready
+                        ? "Projeto pronto para receber esta atualização"
+                        : "Projeto ainda não está pronto para esta atualização"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {plan.result.readiness.reasoning}
+                    </p>
+                    {plan.result.readiness.blockers.length > 0 && (
+                      <ul className="list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">
+                        {plan.result.readiness.blockers.map((b) => (
+                          <li key={b}>{b}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+                {!plan.result.readiness.ready && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={sendToBlueprint}
+                    title="Leva este contexto para Projetar, para desenhar a rede de segurança que falta"
+                  >
+                    <Network className="h-3.5 w-3.5" />
+                    Enviar para Projetar
+                  </Button>
+                )}
               </CardContent>
             </Card>
           )}

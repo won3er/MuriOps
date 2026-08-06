@@ -8,7 +8,7 @@ import type {
 import { AlertTriangle, FileText, FolderKanban, Loader2, Network, Sparkles, X } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 import {
   CanvasEditor,
@@ -44,9 +44,13 @@ const PROVIDERS: { id: BlueprintProviderName | "auto"; label: string }[] = [
 
 export default function NewBlueprintPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("project");
-  const [title, setTitle] = useState("");
-  const [projectId, setProjectId] = useState("");
+  const searchParams = useSearchParams();
+  const prefillPrompt = searchParams.get("prompt");
+  const prefillTitle = searchParams.get("title");
+  const prefillProjectId = searchParams.get("projectId");
+  const [mode, setMode] = useState<Mode>(prefillPrompt ? "prompt" : "project");
+  const [title, setTitle] = useState(prefillTitle ?? "");
+  const [projectId, setProjectId] = useState(prefillProjectId ?? "");
   const [businessContext, setBusinessContext] = useState("");
   const [provider, setProvider] = useState<BlueprintProviderName | "auto">(
     "auto",
@@ -81,7 +85,7 @@ export default function NewBlueprintPage() {
   const [canvas, setCanvas] = useState<CanvasValue>({ nodes: [], edges: [] });
   const [canvasNotes, setCanvasNotes] = useState("");
   // prompt
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(prefillPrompt ?? "");
 
   function buildRequest(): CreateBlueprintRequest | string {
     if (mode === "project" && !projectId) return "Escolha o projeto que será projetado.";

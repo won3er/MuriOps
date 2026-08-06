@@ -5,6 +5,7 @@ import type {
   UpgradeItemStatus,
   UpgradePlan,
   UpgradeProviderName,
+  UpgradeReadiness,
   UpgradeResult,
   UpgradeSummary,
 } from "@qa-ai/shared";
@@ -21,6 +22,7 @@ import { prisma } from "../infrastructure/database/prisma.js";
 import {
   MAX_MANIFESTS,
   scanGithubManifests,
+  type RepoReadinessSignals,
   type ScanResult,
 } from "../modules/upgrade/github-manifest-scanner.js";
 import {
@@ -307,6 +309,7 @@ async function generateFromScan(
           // genérico do manifesto — é o que torna o plano aplicável direto.
           manifestFile: manifest.path,
           detectionConfidence: "high",
+          repoSignals: scan.readinessSignals,
         });
 
         for (const item of parcial.items) {
@@ -359,6 +362,7 @@ async function generateFromScan(
       recommendedOrder: items.map((i) => i.id),
       items,
       scopeNotes,
+      readiness: computeRepoReadiness(scan.readinessSignals, piorRisco),
     };
 
     await prisma.upgradePlan.update({
@@ -393,6 +397,53 @@ function maiorRisco(
   b: UpgradeResult["overallRisk"],
 ): UpgradeResult["overallRisk"] {
   return ORDEM_RISCO.indexOf(b) > ORDEM_RISCO.indexOf(a) ? b : a;
+}
+
+/**
+ * Avaliação determinística de prontidão pra planos gerados via GitHub — feita
+ * em código, não pela IA, porque os sinais (teste/CI/lockfile) já vieram da
+ * árvore do repo e são fatos, não julgamento. Confiar na IA pra "concordar"
+ * entre vários manifestos analisados separadamente seria menos confiável do
+ * que só olhar o que o repo realmente tem.
+ *
+ * `ready = false` quando falta rede de segurança básica (sem teste, sem CI)
+ * ou quando o risco geral da atualização é "critical" — nesses casos a
+ * recomendação do produto é levar o plano pro Projetar antes de aplicar.
+ */
+function computeRepoReadiness(
+  signals: RepoReadinessSignals,
+  overallRisk: UpgradeResult["overallRisk"],
+): UpgradeResult["readiness"] {
+  const blockers: string[] = [];
+
+  if (!signals.hasTestDirectoryOrFiles) {
+    blockers.push(
+      "Nenhum diretório ou arquivo de teste foi encontrado no repositório — sem testes automatizados, não há como confirmar que a atualização não quebrou nada.",
+    );
+  }
+  if (!signals.hasCiConfig) {
+    blockers.push(
+      "Nenhuma configuração de CI (GitHub Actions, GitLab CI, CircleCI, etc.) foi encontrada — sem pipeline automatizado, cada atualização precisaria ser validada manualmente.",
+    );
+  }
+  if (!signals.hasLockfile) {
+    blockers.push(
+      "Nenhum lockfile de dependências foi encontrado — sem ele, a versão exata instalada em cada ambiente pode divergir do que está no manifesto.",
+    );
+  }
+  if (overallRisk === "critical") {
+    blockers.push(
+      "O risco geral desta atualização foi classificado como crítico — mudanças dessa magnitude exigem rede de segurança extra antes de aplicar.",
+    );
+  }
+
+  const ready = signals.hasTestDirectoryOrFiles && signals.hasCiConfig && overallRisk !== "critical";
+
+  const reasoning = ready
+    ? "O repositório tem testes automatizados e pipeline de CI configurados, e o risco geral da atualização não é crítico — há rede de segurança suficiente para aplicar e validar as mudanças com confiança."
+    : "Faltam sinais básicos de segurança para absorver esta atualização sem risco alto de quebra silenciosa. Recomendado levar este plano para o Projetar e desenhar a rede de segurança que falta (testes, CI, ambiente de staging) antes de aplicar as mudanças.";
+
+  return { ready, reasoning, blockers };
 }
 
 async function generate(

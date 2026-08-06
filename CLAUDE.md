@@ -5,6 +5,15 @@ SEO, acessibilidade, segurança, console/network — com IA (Claude/Gemini/OpenA
 interpretando os achados e gerando plano de correção aplicável, com a opção de
 aplicar de verdade na plataforma real do cliente ou automatizar o ciclo inteiro.
 
+## Convenção de sessão: sempre mandar o `cd` completo
+
+Sempre que eu (o agente) passar um comando pra ele rodar no terminal dele
+(`pnpm`, `git`, etc.), preceder com o `cd` completo em formato Windows, ex.:
+`cd "C:\Users\woner\Desktop\Atlas QA"`. Não presumir que ele já está na pasta
+certa ou com terminal aberto — isso já causou reclamação do usuário
+(06/08/2026: "vc sempre se esquece de mandar comando pra eu entrar nas
+pasta, como se eu já soubesse ou tivesse o cmd aberto").
+
 ## Stack
 
 - Monorepo pnpm: `apps/api` (Fastify + Prisma + Playwright), `apps/web` (Next.js 14
@@ -730,6 +739,57 @@ ainda não tinha propagado no Render/Vercel no momento do teste. Ação
 pendente: reconfirmar o fluxo depois que os dois deploys estiverem "Live".
 Se a queixa de navegação persistir depois disso, pedir ao usuário passos
 exatos de reprodução — não reproduzido nesta sessão.
+
+## Sessão 05-06/08/2026 (madrugada, autônoma) — Atualizar: avaliação de prontidão (#153)
+
+A pedido do usuário ("Continue codando sozinho a partir de agora"), implementado
+o item 8 da lista de pendências: avaliar se o projeto tem como absorver a
+atualização de dependências com segurança, e rotear pro Projetar quando não
+tiver. **Mesma ressalva de sempre: sandbox sem `bash` a sessão inteira — nada
+validado por `tsc`/build, só revisão manual.**
+
+- **Tipo novo compartilhado**: `UpgradeResult.readiness?: UpgradeReadiness`
+  (`{ ready, reasoning, blockers }`) em `packages/shared/src/types/upgrade.ts`.
+- **Fluxo GitHub (determinístico, não é a IA quem decide):**
+  `github-manifest-scanner.ts.scanGithubManifests()` já baixa a árvore inteira
+  do repo pra achar manifestos — `detectReadinessSignals()` reaproveita essa
+  mesma árvore (sem chamada de API extra) pra checar presença de diretório/
+  arquivo de teste, config de CI (`.github/workflows`, `.gitlab-ci.yml` etc.) e
+  lockfile. `upgrade.service.ts.computeRepoReadiness()` (perto de
+  `maiorRisco()`) transforma esses sinais + o `overallRisk` do plano num
+  veredito: `ready = false` se faltar teste OU CI OU se o risco geral for
+  `critical`, com `blockers` em português explicando cada lacuna. Decisão
+  deliberada de fazer isso em código, não pedir a IA pra "concordar" entre
+  vários manifestos analisados separadamente — sinais de repo são fato, não
+  julgamento.
+  Também disponível pra IA como contexto: `upgrade-prompt.ts` ganhou
+  `RepoReadinessSignals`/`repoSignals` no `UpgradeDesignInput` e instrução no
+  prompt (`sinaisDoRepositorio`), mas quem decide o `readiness` final do plano
+  consolidado é sempre `computeRepoReadiness()` no service, não a IA.
+- **Fluxo de colar manifesto (sem scan de GitHub):** sem sinais de repo
+  disponíveis, `readiness` fica ausente nesse caminho por enquanto — não dá
+  pra inferir teste/CI só do conteúdo de um manifesto colado com confiança
+  suficiente. Não implementado; se for fazer, teria que ser 100% opinião da
+  IA nesse caminho, com uma marcação clara de "estimado" na UI.
+- **Frontend** (`apps/web/src/app/(app)/atualizar/[id]/page.tsx`): card novo
+  logo abaixo do resumo — verde com `ShieldCheck` quando pronto, âmbar com
+  `AlertTriangle` quando não, listando os `blockers`. Quando não pronto, botão
+  **"Enviar para Projetar"** que monta um prompt em português com o motivo +
+  blockers e navega pra `/blueprints/new?prompt=...&title=...&projectId=...`.
+  `blueprints/new/page.tsx` ganhou suporte a pré-preencher a partir de query
+  params (`useSearchParams`) — modo `prompt` já vem selecionado, com o texto
+  do prompt, título e projeto prontos; usuário só confere e clica em gerar.
+  Nenhuma automação de rastreamento de tarefas foi criada (isso é o escopo do
+  #154, "Projeção" — ainda não iniciado); aqui é só o roteamento pontual de
+  um plano específico "não pronto" pra um novo blueprint de contexto.
+- **Pendente de validação:** rodar
+  `pnpm --filter @qa-ai/shared build && pnpm --filter @qa-ai/api exec tsc
+  --noEmit && pnpm --filter @qa-ai/web build` antes de subir — nada disso
+  rodou nesta sessão. Atenção especial a `useSearchParams` em
+  `blueprints/new/page.tsx`: componente já é `"use client"`, mas o Next.js às
+  vezes pede um `<Suspense>` ao redor de quem usa esse hook durante o build —
+  se o build reclamar disso, envolver o conteúdo da página num Suspense
+  boundary.
 
 ## Pendências conhecidas / próximos passos
 
