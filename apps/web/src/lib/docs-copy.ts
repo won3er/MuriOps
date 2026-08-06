@@ -126,7 +126,7 @@ export const DOCS_COPY = {
             [
               "Security Analysis",
               "available",
-              "Advanced checks for headers, HTTPS, CSP, TLS, DNS and unintended exposure.",
+              "Passive checks for headers, HTTPS, CSP, TLS, DNS and unintended exposure, plus detection of exposed secrets and credentials in the rendered HTML (API keys, tokens, passwords in attributes or scripts), masked before ever appearing in the report.",
             ],
             [
               "Design",
@@ -136,7 +136,7 @@ export const DOCS_COPY = {
             [
               "Update",
               "available",
-              "Dependency upgrade plan from package.json.",
+              "Dependency upgrade plan from a pasted manifest (npm, pip, Maven, Gradle, Go, NuGet, Composer, Cargo and others) or investigated directly on GitHub, with a repository readiness assessment (tests, CI, overall risk) — when not ready, routes to Design in one click.",
             ],
             [
               "Authorized active testing",
@@ -365,7 +365,7 @@ export const DOCS_COPY = {
             [
               "Análise de Segurança",
               "available",
-              "Verificações aprofundadas de headers, HTTPS, CSP, TLS, DNS e exposição indevida.",
+              "Verificações passivas de headers, HTTPS, CSP, TLS, DNS e exposição indevida, além de detecção de segredos e credenciais expostos no HTML renderizado (chaves de API, tokens, senhas em atributos ou scripts), mascarados antes de aparecer no relatório.",
             ],
             [
               "Projetar",
@@ -375,7 +375,7 @@ export const DOCS_COPY = {
             [
               "Atualizar",
               "available",
-              "Plano de atualização de dependências a partir de um package.json.",
+              "Plano de atualização de dependências a partir de um manifesto colado (npm, pip, Maven, Gradle, Go, NuGet, Composer, Cargo e outros) ou investigado direto no GitHub, com avaliação de prontidão do repositório (testes, CI, risco geral) — quando não está pronto, encaminha para o Projetar em um clique.",
             ],
             [
               "Teste Ativo Autorizado",
@@ -604,7 +604,7 @@ export const DOCS_COPY = {
             [
               "Análisis de Seguridad",
               "available",
-              "Verificaciones avanzadas de headers, HTTPS, CSP, TLS, DNS y exposición indebida.",
+              "Verificaciones pasivas de headers, HTTPS, CSP, TLS, DNS y exposición indebida, además de detección de secretos y credenciales expuestos en el HTML renderizado (claves de API, tokens, contraseñas en atributos o scripts), enmascarados antes de aparecer en el informe.",
             ],
             [
               "Diseñar",
@@ -614,7 +614,7 @@ export const DOCS_COPY = {
             [
               "Actualizar",
               "available",
-              "Plan de actualización de dependencias a partir de package.json.",
+              "Plan de actualización de dependencias a partir de un manifiesto pegado (npm, pip, Maven, Gradle, Go, NuGet, Composer, Cargo y otros) o investigado directamente en GitHub, con una evaluación de preparación del repositorio (pruebas, CI, riesgo general) — cuando no está listo, se enruta a Diseñar en un clic.",
             ],
             [
               "Prueba activa autorizada",
