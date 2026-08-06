@@ -91,6 +91,30 @@ export const LANDING_COPY = {
         ["Version comparison", "What was fixed, introduced or remains."],
       ],
     },
+    integrations: {
+      eyebrow: "Real integrations",
+      title: "Connects to the tools you already use",
+      description:
+        "Nothing here is decorative — every connection below exists in the product and does exactly what's described.",
+      items: [
+        [
+          "Google Drive",
+          "Read-only connection per organization. Guardian lists your folders and reads a document (Google Docs, Sheets, PDF, Excel, CSV/TXT/TSV/JSON) straight from Drive, no need to paste text manually — including for scheduled automatic re-audits.",
+        ],
+        [
+          "GitHub",
+          "Connect a repository (owner/repo/branch) to apply the remediation plan via direct push, or use it as a source for Security Analysis (CVE-flagged dependencies, insecure patterns) and Update (detects dependency manifests and generates an upgrade plan).",
+        ],
+        [
+          "Your development AI",
+          "The universal bridge generates a link and a token: paste it into Claude Code, Cursor, Windsurf, Codex or any dev AI — it reads the remediation plan via curl or MCP and marks items as done, no key from us required.",
+        ],
+        [
+          "Claude, OpenAI and Gemini",
+          "Each organization pastes its own API key in Settings. Used to interpret findings and generate remediation plans, architecture (Blueprint), upgrade plans (Update) and document audits (Guardian).",
+        ],
+      ],
+    },
     cta: {
       eyebrow: "Workspace access",
       title: "Start a quality baseline for a project",
@@ -184,6 +208,30 @@ export const LANDING_COPY = {
           "Varre um repositório conectado em busca de dependências com CVE conhecida e padrões de código inseguro, sem tocar no site em produção.",
         ],
         ["Comparação de versões", "O que foi corrigido, surgiu ou persiste."],
+      ],
+    },
+    integrations: {
+      eyebrow: "Integrações de verdade",
+      title: "Conecta com as ferramentas que você já usa",
+      description:
+        "Nada aqui é decorativo — cada conexão abaixo existe no produto e faz exatamente o que está descrito.",
+      items: [
+        [
+          "Google Drive",
+          "Conexão só leitura, por organização. O Guardian lista suas pastas e lê um documento (Google Docs, Sheets, PDF, Excel, CSV/TXT/TSV/JSON) direto do Drive, sem precisar colar o texto manualmente — inclusive para reauditoria automática agendada.",
+        ],
+        [
+          "GitHub",
+          "Conecta um repositório (owner/repo/branch) para aplicar o plano de correção via push direto no código, ou para servir de fonte da Análise de Segurança (dependências com CVE, padrões inseguros) e da Atualização (detecta manifestos de dependências e gera plano de upgrade).",
+        ],
+        [
+          "Sua IA de desenvolvimento",
+          "A ponte universal gera um link e um token: cole no Claude Code, Cursor, Windsurf, Codex ou qualquer IA de dev — ela lê o plano de correção via curl ou MCP e marca os itens como feitos, sem precisar de chave nossa.",
+        ],
+        [
+          "Claude, OpenAI e Gemini",
+          "Cada organização cola a própria chave de API em Configurações. Usadas para interpretar achados e gerar planos de correção, arquitetura (Projetar), planos de upgrade (Atualizar) e auditorias de documentos (Guardian).",
+        ],
       ],
     },
     cta: {
@@ -286,6 +334,30 @@ export const LANDING_COPY = {
           "Escanea un repositorio conectado en busca de dependencias con CVE conocida y patrones de código inseguro, sin tocar el sitio en producción.",
         ],
         ["Comparación de versiones", "Qué se corrigió, apareció o permanece."],
+      ],
+    },
+    integrations: {
+      eyebrow: "Integraciones reales",
+      title: "Conecta con las herramientas que ya usas",
+      description:
+        "Nada aquí es decorativo — cada conexión de abajo existe en el producto y hace exactamente lo que se describe.",
+      items: [
+        [
+          "Google Drive",
+          "Conexión de solo lectura por organización. Guardian lista tus carpetas y lee un documento (Google Docs, Sheets, PDF, Excel, CSV/TXT/TSV/JSON) directo desde Drive, sin necesidad de pegar el texto manualmente — incluida la reauditoría automática programada.",
+        ],
+        [
+          "GitHub",
+          "Conecta un repositorio (owner/repo/branch) para aplicar el plan de remediación mediante push directo, o para usarlo como fuente del Análisis de Seguridad (dependencias con CVE, patrones inseguros) y de Actualización (detecta manifiestos de dependencias y genera un plan de actualización).",
+        ],
+        [
+          "Tu IA de desarrollo",
+          "El puente universal genera un enlace y un token: pégalo en Claude Code, Cursor, Windsurf, Codex o cualquier IA de desarrollo — lee el plan de remediación vía curl o MCP y marca los elementos como hechos, sin necesitar una clave nuestra.",
+        ],
+        [
+          "Claude, OpenAI y Gemini",
+          "Cada organización pega su propia clave de API en Configuración. Se usan para interpretar hallazgos y generar planes de remediación, arquitectura (Blueprint), planes de actualización (Actualizar) y auditorías de documentos (Guardian).",
+        ],
       ],
     },
     cta: {

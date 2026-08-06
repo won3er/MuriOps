@@ -422,7 +422,7 @@ export function FeatureShowcase() {
       <div
         role="tablist"
         aria-label={copy.tabsAria}
-        className="mx-auto mt-5 flex max-w-3xl gap-1 overflow-x-auto rounded-xl border bg-card/90 p-1.5 shadow-sm backdrop-blur sm:justify-center sm:rounded-full"
+        className="mx-auto mt-5 flex max-w-4xl flex-wrap justify-center gap-2 rounded-2xl border bg-card/90 p-2 shadow-sm backdrop-blur"
       >
         {features.map((feature) => {
           const selected = feature.key === active;
@@ -441,7 +441,7 @@ export function FeatureShowcase() {
                 if (event.key === "ArrowLeft") selectByOffset(-1);
               }}
               className={cn(
-                "group relative flex min-w-max flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors sm:rounded-full",
+                "group relative flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-3 text-sm transition-colors",
                 selected
                   ? "bg-foreground font-medium text-background"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground",

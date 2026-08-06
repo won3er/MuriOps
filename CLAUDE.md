@@ -28,14 +28,21 @@ aplicar de verdade na plataforma real do cliente ou automatizar o ciclo inteiro.
   de uma vez. Sempre usar `git add <arquivos específicos>`, nunca `git add -A`/`.`,
   porque o working tree costuma ter mudanças de design em andamento (GPT, ver nota
   abaixo) que não devem ser commitadas por engano.
-- **Trabalho de design em paralelo (28/07/2026 em diante):** o usuário usa uma
+- **Trabalho de design em paralelo (28/07/2026 a 05/08/2026):** o usuário usava uma
   ferramenta baseada em GPT, separada deste agente, para editar a aparência geral do
-  app (cores, layout, componentes visuais, rebrand de logo, etc.). Esse trabalho pode
-  aparecer como mudanças não commitadas em `apps/web` a qualquer momento. Este agente
-  não deve editar, reverter, "corrigir" ou commitar essas mudanças — trabalha só em
-  funcionalidade/backend/operações. Se precisar mexer em algum arquivo de `apps/web`
-  por motivo funcional (não visual), commitar só esse arquivo específico, nunca em
-  lote com o resto do working tree.
+  app (cores, layout, componentes visuais, rebrand de logo, etc.). Esse trabalho podia
+  aparecer como mudanças não commitadas em `apps/web` a qualquer momento, e este agente
+  não editava/revertia/commitava essas mudanças — trabalhava só em
+  funcionalidade/backend/operações.
+  **05/08/2026, mudança: a assinatura do GPT do usuário acabou.** A partir de agora
+  este agente também assume trabalho de design geral/homepage quando pedido
+  explicitamente (não é mais um limite automático) — a regra de nunca mexer em
+  `apps/web` por motivo visual **não vale mais** enquanto essa ferramenta não for
+  retomada. Se o usuário voltar a usar uma ferramenta de design externa no futuro,
+  reinstaurar a cautela de commitar só arquivos específicos por motivo funcional.
+  Continua valendo, independente disso: sempre usar `git add <arquivos específicos>`,
+  nunca `git add -A`/`.`, porque pode haver mudanças em andamento no working tree que
+  não devem ser commitadas por engano.
 
 ## Estado atual (27/07/2026) — arquitetura das funcionalidades
 
@@ -663,6 +670,66 @@ sessões anteriores, por causa da migration + 3 dependências novas):**
 @qa-ai/shared build && pnpm --filter @qa-ai/api exec tsc --noEmit &&
 pnpm --filter @qa-ai/web build` → só então `git add` dos arquivos
 específicos (nunca `-A`) + commit + push.
+
+## Sessão 05/08/2026 (continuação) — Home: espaçamento, tabs e integrações (design, GPT indisponível)
+
+Depois de fechar #144-#147 e o usuário reportar uma dúvida sobre o picker do
+Google Drive (ver apuração abaixo), o usuário pediu 3 ajustes visuais na
+home que normalmente seriam trabalho da ferramenta baseada em GPT — mas
+avisou que **a assinatura do GPT acabou**, então pediu pra este agente
+assumir. Ver a nota atualizada na seção Stack: a regra de nunca mexer em
+`apps/web` por motivo visual não vale mais enquanto essa ferramenta não for
+retomada.
+
+1. **Grid "O que a análise cobre" sem espaço vazio na última linha.**
+   10 módulos num grid `lg:grid-cols-4` deixavam 2 espaços vazios na
+   3ª linha (8 preenchidos + 2 de 4). Trocado pra `lg:grid-cols-5` em
+   `apps/web/src/app/page.tsx` — 2 linhas de 5, sem sobra.
+2. **Barra de abas "Seis frentes, um só workspace" sem scroll horizontal.**
+   `apps/web/src/components/feature-showcase.tsx`, o `role="tablist"` da
+   `FeatureShowcase` usava `max-w-3xl` + `overflow-x-auto` + `flex-1`,
+   forçando os 6 botões numa linha só com scrollbar (o usuário reportou
+   nos prints que a barra "cortava" e exigia arrastar). Trocado pra
+   `flex-wrap` sem limite de largura apertado (`max-w-4xl`), sem
+   `overflow-x-auto`, com `whitespace-nowrap` em vez de `flex-1` — os
+   botões quebram linha em telas menores em vez de exigir scroll, e cada
+   um fica clicável por inteiro.
+3. **Nova seção "Integrações reais" na home**, inspirada no print do
+   drawio.com que o usuário mandou como referência ("Works where you
+   work"), mas com conteúdo 100% factual — só o que o produto realmente
+   conecta e faz (o usuário pediu explicitamente "só coloque o que
+   realmente faz e se conecta e pra que"). 4 cards, cada um com ícone
+   (lucide-react, sem logo de marca de terceiro — `HardDrive` pro Drive,
+   `Github` pro GitHub, `Terminal` pra IA de dev, `Bot` pros provedores de
+   IA, mesmo padrão monocromático já usado no resto do site):
+   - **Google Drive**: conexão só leitura por organização; Guardian lista
+     pastas e lê documentos direto do Drive.
+   - **GitHub**: adapter de Aplicação (push direto) + fonte de Análise de
+     Segurança e de Atualizar (scan de manifestos).
+   - **Sua IA de desenvolvimento**: a ponte universal (link + token) que
+     Claude Code/Cursor/Windsurf/Codex ou qualquer IA de dev usa via
+     curl/MCP — não é integração de API, é o mecanismo de ponte que já
+     existe no produto.
+   - **Claude, OpenAI e Gemini**: chave própria por organização em
+     Configurações, usada por Análise/Projetar/Atualizar/Guardian.
+   Copy nova em `apps/web/src/lib/public-copy.ts` (`integrations` em
+   `LANDING_COPY.en/pt/es`, mesmo padrão de `coverage`), renderizada em
+   `apps/web/src/app/page.tsx` logo após a seção "Módulos cobertos".
+   **Não validado por build/typecheck** — sandbox sem espaço em disco a
+   sessão inteira (mesmo problema recorrente). Revisado por leitura,
+   JSX conferido balanceado manualmente.
+
+**Apuração à parte, sem código gerado:** o usuário relatou não conseguir
+selecionar arquivo dentro de pasta no picker do Google Drive do Guardian
+("clico na pasta e ela é selecionada"). Testado ao vivo em produção neste
+mesmo período: a navegação de pasta funcionou normalmente (não reproduzido)
+e a seleção de arquivo PDF também disparou a chamada certa — só que a API
+ainda devolvia a mensagem de erro **antiga** ("não sabe ler PDF"), sinal de
+que o deploy do commit `603fd15` (que adiciona suporte a PDF/Excel, #146)
+ainda não tinha propagado no Render/Vercel no momento do teste. Ação
+pendente: reconfirmar o fluxo depois que os dois deploys estiverem "Live".
+Se a queixa de navegação persistir depois disso, pedir ao usuário passos
+exatos de reprodução — não reproduzido nesta sessão.
 
 ## Pendências conhecidas / próximos passos
 
