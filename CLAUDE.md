@@ -1030,6 +1030,152 @@ Também vale registrar: o Render free tier "dorme" com inatividade e demora ~50s
 acordar na primeira request (aviso visível no próprio dashboard) — isso por si só NÃO
 causa "Erro interno", só demora; o erro real sempre vinha do Prisma.
 
+## Sessão 06/08/2026 (noite) — Corte do pilar "Projetar"/Blueprint
+
+A pedido do usuário, depois de eu dar minha opinião honesta quando perguntado
+se a funcionalidade era útil: **não era.** Justificativa dada e aceita pelo
+usuário — diferente de todo o resto do produto (Análise, Atualizar, Guardian,
+Fluxos Críticos), que sempre parte de evidência real (crawl de site,
+documento de negócio real, manifesto real, execução real), o Blueprint
+gerava arquitetura a partir de uma descrição solta digitada pelo usuário —
+sem nenhum dado concreto por trás. Não havia registro de uso real da
+funcionalidade em nenhuma sessão anterior, e a conta de teste usada nesta
+sessão tinha zero blueprints criados. Usuário autorizou o corte completo e
+pediu que as duas coisas que dependiam dele (readiness do Atualizar e a
+Projeção) fossem ajustadas pra não depender de nada que sobrou, e que a
+copy do site (home, docs, guias) fosse atualizada em seguida. Trabalho feito
+sozinho depois do usuário ir dormir ("termine as tasks no progresso").
+**Mesma ressalva de sempre: sandbox sem `bash` — nada validado por
+`tsc`/build nesta sessão, só revisão manual comparando com os padrões do
+resto do projeto.**
+
+**O que foi cortado:**
+- `apps/api/src/application/blueprint.service.ts`,
+  `apps/api/src/presentation/routes/blueprint.routes.ts`,
+  `apps/api/src/infrastructure/ai/blueprint-prompt.ts`,
+  `apps/api/src/infrastructure/pdf/blueprint-report.ts` — esvaziados
+  (`export {}`), não apagados fisicamente (sandbox sem `rm`). Rode `git rm`
+  nos quatro quando confirmar que nada mais importa deles.
+- `packages/shared/src/types/blueprint.ts` — esvaziado pelo mesmo motivo;
+  removido do barrel `packages/shared/src/index.ts`.
+- Método `designBlueprint` removido da interface `AiProvider`
+  (`provider.ts`) e das 4 implementações (`claude-provider.ts`,
+  `openai-provider.ts`, `gemini-provider.ts`, `noop-provider.ts`).
+- Rota `blueprintRoutes` desregistrada de `app.ts`; `recoverStaleBlueprints`
+  removido de `main.ts`.
+- Frontend: `/blueprints`, `/blueprints/new` e `/blueprints/[id]` viraram
+  `redirect("/aplicacao")` (Next `redirect()`) em vez de apagados, pra não
+  quebrar links/favoritos antigos de quem já usava. Item de menu "Projetar"
+  removido de `layout.tsx`. `apps/web/src/components/blueprint/*`
+  (qa-radar, risk-matrix, test-pyramid, canvas-editor, gantt-chart,
+  mermaid-diagram) esvaziados — só eram usados pelas páginas de blueprint.
+  Hooks `useBlueprint*`/`api.*Blueprint*` removidos de `queries.ts`/`api.ts`.
+- Schema: model `Blueprint` removido do `schema.prisma`; relation
+  `Organization.blueprints` removida. O valor `BLUEPRINT` continua existindo
+  no enum `RemediationSourceType` do Postgres (não dá pra remover valor de
+  enum sem recriar o tipo — mesmo caso do `NUVEMSHOP` em `AdapterKind`,
+  documentado no item 7 de Pendências), mas nenhum código novo grava planos
+  com essa origem; `remediation.service.ts.loadSource()` agora recusa
+  explicitamente `sourceType: "blueprint"` com uma mensagem clara em vez de
+  tentar ler o model inexistente.
+- FeatureShowcase (home): a aba "Projetar" (posição 2 de 6) foi **trocada**
+  para "Monitoramento" (Fluxos Críticos), que ainda não tinha representação
+  ali — em vez de simplesmente remover a aba e ficar com uma tela quebrada
+  apontando pra rota redirecionada. Isso tecnicamente toca o componente
+  `feature-showcase.tsx`, que tinha uma exclusão permanente combinada com o
+  usuário ("nunca mexer nesse componente por motivo de design") — decisão
+  deliberada de que anunciar uma funcionalidade removida é pior do que essa
+  exclusão, já que a regra existia para não interferir no trabalho paralelo
+  do GPT (que não está mais ativo, ver seção Stack) e para preservar
+  intenção de design, não para manter conteúdo desatualizado. Copy de
+  `public-copy.ts` atualizada nos 3 locales (en/pt/es): `sideNav`, `features`
+  (label/eyebrow/heading/description/outcomes/route) e `PREVIEW_COPY`.
+
+**Como as duas dependências foram resolvidas (pedido explícito do usuário —
+"ajuste como recomendou as duas coisas que depende dele pra nenhuma
+depender"):**
+1. **Readiness do Atualizar** (`upgrade.service.ts.computeRepoReadiness`,
+   já existente) — antes, quando o repo não tinha teste/CI, o card de aviso
+   em `atualizar/[id]/page.tsx` tinha um botão "Enviar para Projetar" que
+   navegava pra `/blueprints/new` com um prompt pré-preenchido. Esse botão e
+   a função `sendToBlueprint` foram **removidos**; o card de aviso continua
+   mostrando o motivo e os blockers inline — só não tem mais destino externo
+   pra "enviar" (não fazia sentido criar um blueprint imaginário sobre o
+   motivo de não estar pronto).
+2. **Projeção** (decompor um plano em tarefas → Issues no GitHub) — migrada
+   de operar sobre `Blueprint.result.milestones` pra operar sobre
+   `RemediationPlan.result.items` (Análise ou Atualizar, que já têm achado
+   real por trás). Mudanças:
+   - Schema: `ProjectionTask.blueprintId` → `ProjectionTask.remediationPlanId`
+     (FK pra `RemediationPlan` em vez de `Blueprint`).
+   - `projection.service.ts`: `listByBlueprint`/`generateFromMilestones` →
+     `listByPlan`/`generateFromPlan`, mapeando `RemediationItem[]` (título,
+     severidade, arquivo, descrição, como aplicar) em vez de
+     `BlueprintMilestone[]`.
+   - Rotas: `/blueprints/:blueprintId/projection-tasks` →
+     `/remediation-plans/:remediationPlanId/projection-tasks`
+     (`projection.routes.ts`).
+   - Frontend: componente `ProjectionSection` movido de
+     `components/blueprint/projection-section.tsx` pra
+     `components/aplicacao/projection-section.tsx`, embutido em
+     `aplicacao/[id]/page.tsx` (aparece quando o plano tem `projectId`, do
+     mesmo jeito que antes só aparecia quando o blueprint tinha projeto
+     vinculado). Tipo compartilhado `packages/shared/src/types/projection.ts`
+     atualizado (`blueprintId` → `remediationPlanId`,
+     `GenerateProjectionTasksFromMilestonesRequest` →
+     `GenerateProjectionTasksFromPlanRequest`).
+
+**Copy atualizada** (docs-copy.ts, public-copy.ts, legal-copy.ts, robots.ts)
+nos 3 locales: removida a linha "Design"/"Projetar"/"Diseñar" da tabela de
+funcionalidades em `/docs/funcionalidades`; a descrição do item "Atualizar"
+não menciona mais "encaminha para Projetar em um clique" (agora: "avaliação
+de prontidão... mostrada direto na tela"); a descrição do item "Aplicação"
+ganhou menção à Projeção ("pode decompor um plano em tarefas rastreáveis no
+GitHub"); menções soltas a "blueprints" em textos de privacidade/termos
+(`legal-copy.ts`) e nas telas de criação de Aplicação (`public-copy.ts`)
+trocadas por "planos de correção"/"aplicações"; `robots.ts` trocou
+`/blueprints` por `/monitoramento` (que estava faltando) e adicionou
+`/guardian` (também estava faltando) na lista de rotas logadas não
+indexáveis.
+
+**Correção crítica (07/08/2026, antes do `db push`):** validei minha própria
+recomendação de dropar a tabela `Blueprint` rodando
+`SELECT count(*) FROM "Blueprint"` em produção (via script Node, já que
+`prisma db execute` não imprime resultado de `SELECT`) — voltou **6**, não
+zero. Eu tinha checado só a conta de teste (zero blueprints lá) e generalizei
+errado pra "sem uso registrado em produção". Corrigido: o model `Blueprint`
+**foi restaurado no `schema.prisma`** (bloco marcado "REMOVIDO — só
+retenção", logo antes do bloco de Aplicação) só pra preservar esses 6
+registros — nenhum código novo lê, escreve ou expõe isso na UI (rotas,
+service e páginas continuam removidos/redirecionados, ver acima), é
+model-só-pra-não-perder-dado. `Organization.blueprints` também foi
+restaurado como back-relation (senão o Prisma recusa validar o relacionamento
+unilateral).
+
+**Checklist de validação antes de subir isto:**
+```
+cd "C:\Users\woner\Desktop\Atlas QA"
+pnpm --filter @qa-ai/api exec prisma generate
+pnpm --filter @qa-ai/api exec prisma db push
+pnpm --filter @qa-ai/shared build
+pnpm --filter @qa-ai/api exec tsc --noEmit
+pnpm --filter @qa-ai/web build
+```
+Com o model restaurado, o `db push` **não** deve mais pedir pra dropar
+`Blueprint` — só a renomeação/recriação de `ProjectionTask.blueprintId` →
+`remediationPlanId` (como não há `ProjectionTask` real gravado ainda,
+funcionalidade nova ainda não usada em produção, aceitar como "novo campo" é
+seguro). Se o prompt do `db push` mencionar `Blueprint` de novo por algum
+motivo, **pare e não aceite** — avise antes de continuar. Depois do `db
+push`, `git add` só dos arquivos específicos (nunca `-A`) + commit + push.
+**Pendente, não fiz:** não exportei os 6 blueprints reais pra um JSON de
+referência antes de tirar a UI do ar — quem quer que os tenha criado não
+consegue mais vê-los no produto (a rota redireciona pra Aplicação), só
+seguem existindo no banco. Se algum desses registros for de valor pra
+alguém, valeria rodar uma consulta pra listar título/organização/data dos 6
+e decidir se vale a pena reexpor de alguma forma (nem que seja um link
+"exportar PDF" avulso) antes de considerar o assunto encerrado.
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —
@@ -1056,9 +1202,10 @@ causa "Erro interno", só demora; o erro real sempre vinha do Prisma.
    28/07/2026:* `apps/api/Dockerfile` já roda `pnpm exec prisma migrate
    deploy` no `CMD`, antes de `node dist/main.js`, toda vez que o container
    sobe — automatizado, sem ação necessária.
-4. **[Fase 3/4, adiado a pedido do usuário] Wix, Squarespace, Webnode** — ficaram
-   de fora dos adapters de plataforma (sem API pra aplicar mudança de verdade).
-   Só retomar quando o usuário pedir explicitamente ("me lembre depois").
+4. **[Encerrado 07/08/2026] Wix, Squarespace, Webnode** — nunca chegaram a ser
+   implementados como adapters (ficaram só citados aqui como possibilidade
+   adiada). Usuário confirmou que não quer essa linha de trabalho — não
+   considerar de novo a menos que ele peça explicitamente no futuro.
 5. **Sandbox sem `git push`** — em ambientes de agente sem credencial de push, use
    o upload manual pela interface web do GitHub (arquivo por arquivo/pasta) em
    `github.com/won3er/Elevate-QA/upload/main/<caminho>`. **28/07/2026, corrigido:**
