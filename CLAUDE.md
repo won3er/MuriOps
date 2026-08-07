@@ -1008,24 +1008,19 @@ produção: projeto de teste criado, fluxo com 1 passo (`NAVIGATE` para
 `https://example.com`) criado pela UI, "Rodar agora" executou o Playwright de
 verdade e gravou `Passou · 5.2s`.
 
-**Ainda não resolvido — ação necessária do usuário:** decidir e corrigir a divergência
-de configuração em definitivo. Duas opções, não fiz nenhuma das duas porque envolve
-decisão de produto/infra que não é minha:
-1. Se `nkwpfmzxqsveodxaqonx` foi um projeto Supabase de teste/dev criado em algum
-   momento e esquecido: apagar esse projeto no Supabase (ou pelo menos não usá-lo mais)
-   e atualizar `apps/api/.env` local para apontar pras mesmas credenciais de produção
-   (`eqtbvtpmbowllqzntnwa`) — assim local e produção nunca mais divergem, ao custo de
-   não ter um banco de dev separado.
-2. Se a intenção sempre foi ter bancos separados (dev local vs. produção, prática comum
-   e recomendável): manter os dois, mas **documentar isso claramente** e, a partir de
-   agora, sempre que alguém rodar `db push` numa sessão de agente, rodar duas vezes — uma
-   vez padrão (local/dev) e uma vez explicitamente contra produção (como fiz hoje, com
-   `set` sobrescrevendo as URLs) — ou configurar um script `db:push:prod` no
-   `package.json` que já usa as credenciais certas via uma variável de ambiente separada,
-   pra não depender de copiar/colar segredo toda vez.
-   **Se essa for a rota escolhida, a partir de agora todo checklist de validação deste
-   arquivo que manda rodar `db push` precisa deixar explícito que isso NÃO chega em
-   produção sozinho — precisa do passo extra.**
+**Resolvido (06/08/2026, mesma sessão):** usuário confirmou que `eqtbvtpmbowllqzntnwa`
+(o de produção) é o banco real — testado ao vivo com a conta `demo@qa-ai.local`, que
+tinha 4 projetos, 13 análises e histórico de dias, contra o `nkwpfmzxqsveodxaqonx` que
+só recebia o que rodava via terminal local. `apps/api/.env` foi atualizado para apontar
+`DATABASE_URL`/`DIRECT_URL` pras mesmas credenciais de produção
+(`postgres.eqtbvtpmbowllqzntnwa@aws-1-us-east-2.pooler.supabase.com:5432/postgres`,
+mesmo valor nas duas variáveis — produção usa conexão em modo sessão, não pgbouncer
+transaction). **A partir de agora local e produção usam o mesmo banco** — não existe
+mais banco de dev separado, então todo `db push` rodado localmente já reflete direto em
+produção (o que também significa: mais cuidado ao testar mudanças de schema
+destrutivas). `.env` não vai pro git (`.gitignore`), então essa mudança não aparece em
+nenhum commit — só documentando aqui pra próxima sessão saber que o `.env` local já
+está correto e não precisa mais do passo extra de `set DATABASE_URL=...` manual.
 
 **Nota técnica**: o Render free tier não tem Shell habilitado (feature paga, plano
 Starter+) — não dá pra rodar `prisma db push`/`migrate deploy` de dentro do próprio
