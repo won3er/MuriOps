@@ -23,7 +23,7 @@ export const LANDING_COPY = {
       {
         n: "01",
         title: "Choose the source",
-        desc: "Run a website analysis, generate a product blueprint, or inspect a dependency manifest.",
+        desc: "Run a website analysis or inspect a dependency manifest.",
       },
       {
         n: "02",
@@ -111,7 +111,7 @@ export const LANDING_COPY = {
         ],
         [
           "Claude, OpenAI and Gemini",
-          "Each organization pastes its own API key in Settings. Used to interpret findings and generate remediation plans, architecture (Blueprint), upgrade plans (Update) and document audits (Guardian).",
+          "Each organization pastes its own API key in Settings. Used to interpret findings and generate remediation plans, upgrade plans (Update) and document audits (Guardian).",
         ],
       ],
     },
@@ -146,7 +146,7 @@ export const LANDING_COPY = {
       {
         n: "01",
         title: "Escolha a origem",
-        desc: "Execute uma análise de site, gere um blueprint de produto ou investigue um manifesto de dependências.",
+        desc: "Execute uma análise de site ou investigue um manifesto de dependências.",
       },
       {
         n: "02",
@@ -265,7 +265,7 @@ export const LANDING_COPY = {
       {
         n: "01",
         title: "Elige el origen",
-        desc: "Ejecuta un análisis del sitio, genera un blueprint de producto o revisa un manifiesto de dependencias.",
+        desc: "Ejecuta un análisis del sitio o revisa un manifiesto de dependencias.",
       },
       {
         n: "02",
@@ -356,7 +356,7 @@ export const LANDING_COPY = {
         ],
         [
           "Claude, OpenAI y Gemini",
-          "Cada organización pega su propia clave de API en Configuración. Se usan para interpretar hallazgos y generar planes de remediación, arquitectura (Blueprint), planes de actualización (Actualizar) y auditorías de documentos (Guardian).",
+          "Cada organización pega su propia clave de API en Configuración. Se usan para interpretar hallazgos y generar planes de remediación, planes de actualización (Actualizar) y auditorías de documentos (Guardian).",
         ],
       ],
     },
@@ -381,7 +381,7 @@ export const FEATURE_COPY = {
       "Overview",
       "Projects",
       "Analyses",
-      "Plan",
+      "Monitoring",
       "Applications",
       "Orchestrations",
       "Updates",
@@ -404,13 +404,13 @@ export const FEATURE_COPY = {
       },
       {
         key: "projetar",
-        label: "Plan",
-        eyebrow: "Planning",
-        heading: "Build quality into the project before implementation",
+        label: "Monitoring",
+        eyebrow: "Continuous monitoring",
+        heading: "Catch a broken journey before your customer does",
         description:
-          "Describe the product and generate a technical foundation with architecture, testing strategy, risks, quality gates and roadmap.",
-        outcomes: ["Architecture and stack", "Risk matrix", "Testing strategy"],
-        route: "Design / Blueprint",
+          "Critical Flows run a scripted sequence of steps (login, checkout, lead form) against your live site on a schedule, simulating a real user, and alert you by email the moment a step breaks.",
+        outcomes: ["Scheduled runs", "Failure screenshot", "Email alerts"],
+        route: "Monitoring / Critical Flows",
       },
       {
         key: "aplicar",
@@ -418,7 +418,7 @@ export const FEATURE_COPY = {
         eyebrow: "Execution",
         heading: "Turn recommendations into traceable work",
         description:
-          "Analyses, blueprints and upgrades become contextual, prioritized checklists for human execution or your development tool.",
+          "Analyses and upgrades become contextual, prioritized checklists for human execution or your development tool.",
         outcomes: [
           "Prioritized checklist",
           "PDF and universal bridge",
@@ -479,7 +479,7 @@ export const FEATURE_COPY = {
       "Visão geral",
       "Projetos",
       "Análises",
-      "Projetar",
+      "Monitoramento",
       "Aplicações",
       "Orquestrações",
       "Atualizações",
@@ -502,17 +502,17 @@ export const FEATURE_COPY = {
       },
       {
         key: "projetar",
-        label: "Projetar",
-        eyebrow: "Planejamento",
-        heading: "Leve qualidade para o projeto antes da implementação",
+        label: "Monitoramento",
+        eyebrow: "Monitoramento contínuo",
+        heading: "Pegue uma jornada quebrada antes do seu cliente",
         description:
-          "Descreva o produto e gere uma base técnica com arquitetura, estratégia de testes, riscos, quality gates e roadmap.",
+          "Fluxos Críticos rodam uma sequência de passos (login, checkout, formulário de lead) contra o site real, num horário programado, simulando um usuário de verdade, e avisam por e-mail no instante em que um passo quebra.",
         outcomes: [
-          "Arquitetura e stack",
-          "Matriz de riscos",
-          "Estratégia de testes",
+          "Execução agendada",
+          "Screenshot da falha",
+          "Alerta por e-mail",
         ],
-        route: "Projetar / Blueprint",
+        route: "Monitoramento / Fluxos Críticos",
       },
       {
         key: "aplicar",
@@ -520,7 +520,7 @@ export const FEATURE_COPY = {
         eyebrow: "Execução",
         heading: "Converta recomendações em trabalho rastreável",
         description:
-          "Análises, blueprints e upgrades viram checklists com contexto, prioridade e instruções para execução humana ou assistida.",
+          "Análises e upgrades viram checklists com contexto, prioridade e instruções para execução humana ou assistida.",
         outcomes: [
           "Checklist priorizado",
           "PDF e ponte universal",
@@ -581,7 +581,7 @@ export const FEATURE_COPY = {
       "Vista general",
       "Proyectos",
       "Análisis",
-      "Planificar",
+      "Monitoreo",
       "Aplicaciones",
       "Orquestaciones",
       "Actualizaciones",
@@ -604,17 +604,13 @@ export const FEATURE_COPY = {
       },
       {
         key: "projetar",
-        label: "Diseñar",
-        eyebrow: "Planificación",
-        heading: "Integra la calidad antes de la implementación",
+        label: "Monitoreo",
+        eyebrow: "Monitoreo continuo",
+        heading: "Detecta un flujo roto antes que tu cliente",
         description:
-          "Describe el producto y genera una base técnica con arquitectura, estrategia de pruebas, riesgos, quality gates y roadmap.",
-        outcomes: [
-          "Arquitectura y stack",
-          "Matriz de riesgos",
-          "Estrategia de pruebas",
-        ],
-        route: "Diseñar / Blueprint",
+          "Los Flujos Críticos ejecutan una secuencia de pasos (login, checkout, formulario de contacto) contra tu sitio real, en un horario programado, simulando un usuario real, y te avisan por correo en el instante en que un paso falla.",
+        outcomes: ["Ejecución programada", "Captura del fallo", "Alerta por correo"],
+        route: "Monitoreo / Flujos Críticos",
       },
       {
         key: "aplicar",
@@ -622,7 +618,7 @@ export const FEATURE_COPY = {
         eyebrow: "Ejecución",
         heading: "Convierte recomendaciones en trabajo rastreable",
         description:
-          "Análisis, blueprints y upgrades se convierten en checklists con contexto, prioridad e instrucciones para ejecución humana o asistida.",
+          "Análisis y upgrades se convierten en checklists con contexto, prioridad e instrucciones para ejecución humana o asistida.",
         outcomes: [
           "Checklist priorizado",
           "PDF y puente universal",
@@ -690,14 +686,14 @@ export const PREVIEW_COPY = {
       ],
     },
     projetar: {
-      title: "Product blueprint",
-      badge: "AI generated",
-      metric: "6",
-      metricLabel: "quality gates",
+      title: "Critical flow run",
+      badge: "Scheduled",
+      metric: "3/3",
+      metricLabel: "steps passed",
       rows: [
-        ["Architecture", "Defined", "Next.js + Fastify"],
-        ["Testing strategy", "Ready", "4 layers"],
-        ["Risks", "Prioritized", "8 mapped"],
+        ["Login", "Passed", "1.2s"],
+        ["Add to cart", "Passed", "0.8s"],
+        ["Checkout", "Passed", "2.1s"],
       ],
     },
     aplicar: {
@@ -758,14 +754,14 @@ export const PREVIEW_COPY = {
       ],
     },
     projetar: {
-      title: "Blueprint do produto",
-      badge: "Gerado pela IA",
-      metric: "6",
-      metricLabel: "quality gates",
+      title: "Execução do fluxo crítico",
+      badge: "Agendado",
+      metric: "3/3",
+      metricLabel: "passos ok",
       rows: [
-        ["Arquitetura", "Definida", "Next.js + Fastify"],
-        ["Estratégia de testes", "Pronta", "4 camadas"],
-        ["Riscos", "Priorizados", "8 mapeados"],
+        ["Login", "Passou", "1.2s"],
+        ["Adicionar ao carrinho", "Passou", "0.8s"],
+        ["Checkout", "Passou", "2.1s"],
       ],
     },
     aplicar: {
@@ -826,14 +822,14 @@ export const PREVIEW_COPY = {
       ],
     },
     projetar: {
-      title: "Blueprint del producto",
-      badge: "Generado por IA",
-      metric: "6",
-      metricLabel: "quality gates",
+      title: "Ejecución del flujo crítico",
+      badge: "Programado",
+      metric: "3/3",
+      metricLabel: "pasos ok",
       rows: [
-        ["Arquitectura", "Definida", "Next.js + Fastify"],
-        ["Estrategia de pruebas", "Lista", "4 capas"],
-        ["Riesgos", "Priorizados", "8 mapeados"],
+        ["Login", "Aprobado", "1.2s"],
+        ["Agregar al carrito", "Aprobado", "0.8s"],
+        ["Checkout", "Aprobado", "2.1s"],
       ],
     },
     aplicar: {

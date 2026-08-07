@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ProjectionSection } from "@/components/aplicacao/projection-section";
 import { QueryErrorState } from "@/components/query-error-state";
 import { api } from "@/lib/api";
 import {
@@ -161,11 +162,10 @@ export default function RemediationPlanDetailPage() {
   }
 
   const backHref =
-    plan.sourceType === "blueprint" && !plan.projectId
-      ? `/blueprints/${plan.sourceId}`
-      : plan.sourceType === "upgrade"
-        ? `/atualizar/${plan.sourceId}`
-        : "/aplicacao";
+    plan.sourceType === "upgrade" ? `/atualizar/${plan.sourceId}` : "/aplicacao";
+  // "blueprint" só existe em planos antigos (pilar removido em 06/08/2026,
+  // ver CLAUDE.md) — mantido aqui só pra esses registros continuarem
+  // mostrando o texto certo.
   const isProjectBuild = plan.sourceType === "blueprint";
 
   return (
@@ -420,6 +420,14 @@ export default function RemediationPlanDetailPage() {
                 </Card>
               ))}
             </div>
+          )}
+
+          {plan.projectId && (
+            <ProjectionSection
+              remediationPlanId={plan.id}
+              hasItems={sortedItems.length > 0}
+              hasProject={!!plan.projectId}
+            />
           )}
         </>
       )}

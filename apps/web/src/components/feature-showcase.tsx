@@ -1,8 +1,8 @@
 "use client";
 
 import {
+  Activity,
   ArrowRight,
-  DraftingCompass,
   LayoutDashboard,
   RefreshCw,
   ScanSearch,
@@ -27,7 +27,7 @@ const FEATURE_VISUALS = [
   {
     key: "projetar",
     number: "02",
-    icon: DraftingCompass,
+    icon: Activity,
     accent: "from-[#1f6feb]/45 via-[#6366f1]/20 to-[#2ea043]/24",
     glow: "bg-[#2f81f7]/20",
   },
@@ -124,11 +124,11 @@ function AnalysisPreview({ preview }: { preview: PreviewData }) {
   );
 }
 
-function BlueprintPreview({ preview }: { preview: PreviewData }) {
+function MonitoringPreview({ preview }: { preview: PreviewData }) {
   return (
     <div className="grid gap-3 lg:grid-cols-[0.8fr_1.2fr]">
       <div className="rounded-lg border border-white/10 bg-white/[0.025] p-4">
-        <p className="text-[10px] uppercase tracking-[0.13em] text-[#8b949e]">Quality gates</p>
+        <p className="text-[10px] uppercase tracking-[0.13em] text-[#8b949e]">Critical flow</p>
         <p className="mt-2 font-mono text-3xl font-semibold text-white">{preview.metric}</p>
         <p className="mt-1 text-[10px] text-[#8b949e]">{preview.metricLabel}</p>
         <div className="mt-5 space-y-2">
@@ -294,7 +294,7 @@ function ProductPreview({ feature }: { feature: FeatureKey }) {
 
         <div className="mt-5">
           {feature === "analisar" && <AnalysisPreview preview={preview} />}
-          {feature === "projetar" && <BlueprintPreview preview={preview} />}
+          {feature === "projetar" && <MonitoringPreview preview={preview} />}
           {feature === "aplicar" && <ApplicationPreview preview={preview} channels={uiCopy.channels} />}
           {feature === "automatizar" && <OrchestrationPreview preview={preview} hint={uiCopy.orchestrationHint} />}
           {feature === "guardian" && <GuardianPreview preview={preview} />}

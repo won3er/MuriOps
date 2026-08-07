@@ -1,17 +1,9 @@
 import type {
-  BlueprintResult,
   GuardianResult,
   RemediationResult,
   UpgradeResult,
 } from "@qa-ai/shared";
 import { env } from "../../config/env.js";
-import {
-  BLUEPRINT_SYSTEM_PROMPT,
-  buildBlueprintUserPrompt,
-  normalizeBlueprint,
-  parseBlueprintJson,
-  type BlueprintDesignInput,
-} from "./blueprint-prompt.js";
 import {
   buildGuardianUserPrompt,
   GUARDIAN_SYSTEM_PROMPT,
@@ -160,14 +152,6 @@ export class GeminiProvider implements AiProvider {
   async enrichAnalysis(input: AiAnalysisInput): Promise<AiAnalysisResult> {
     const text = await this.generate(SYSTEM_PROMPT, buildUserPrompt(input));
     return normalizeAiResult(parseAiJson(text));
-  }
-
-  async designBlueprint(input: BlueprintDesignInput): Promise<BlueprintResult> {
-    const text = await this.generate(
-      BLUEPRINT_SYSTEM_PROMPT,
-      buildBlueprintUserPrompt(input),
-    );
-    return normalizeBlueprint(parseBlueprintJson(text));
   }
 
   async buildRemediationPlan(

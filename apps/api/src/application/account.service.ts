@@ -168,21 +168,6 @@ export const accountService = {
             },
           },
         },
-        blueprints: {
-          select: {
-            id: true,
-            projectId: true,
-            title: true,
-            mode: true,
-            provider: true,
-            status: true,
-            input: true,
-            result: true,
-            error: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
         remediationPlans: {
           select: {
             id: true,
@@ -313,10 +298,6 @@ export const accountService = {
       if (!successor) throw new AccountError("Não foi possível transferir os registros", 409);
       await prisma.$transaction([
         prisma.project.updateMany({
-          where: { organizationId, createdById: user.id },
-          data: { createdById: successor.id },
-        }),
-        prisma.blueprint.updateMany({
           where: { organizationId, createdById: user.id },
           data: { createdById: successor.id },
         }),

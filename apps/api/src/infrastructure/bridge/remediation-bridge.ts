@@ -18,6 +18,9 @@ export function buildRemediationBridgeMarkdown(
   const items = plan.result?.items ?? [];
   const base = apiBaseUrl.replace(/\/+$/, "");
   const applyUrl = `${base}/apply/${plan.apiToken}`;
+  // "blueprint" só existe em planos antigos (pilar removido em 06/08/2026,
+  // ver CLAUDE.md) — mantido aqui só pra esses registros continuarem
+  // renderizando a ponte corretamente.
   const isProjectBuild = plan.sourceType === "blueprint";
 
   const header = [

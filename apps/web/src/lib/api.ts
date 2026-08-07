@@ -5,10 +5,6 @@ import type {
   AnalysisDetail,
   AnalysisSummary,
   AuthSession,
-  Blueprint,
-  BlueprintProviderName,
-  BlueprintSummary,
-  CreateBlueprintRequest,
   CreateGuardianRulesetRequest,
   CreateGuardianRunRequest,
   CreateGuardianScheduleRequest,
@@ -324,49 +320,16 @@ export const api = {
     URL.revokeObjectURL(url);
   },
 
-  // ---- blueprints (pilar Projetar) ----
-  listBlueprints: () => request<BlueprintSummary[]>("/blueprints"),
-  createBlueprint: (body: CreateBlueprintRequest) =>
-    request<Blueprint>("/blueprints", {
+  // ---- projeção (tarefas rastreáveis a partir de um plano de Aplicação) ----
+  listProjectionTasks: (remediationPlanId: string) =>
+    request<ProjectionTask[]>(`/remediation-plans/${remediationPlanId}/projection-tasks`),
+  createProjectionTask: (remediationPlanId: string, body: { title: string; description: string }) =>
+    request<ProjectionTask>(`/remediation-plans/${remediationPlanId}/projection-tasks`, {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  getBlueprint: (id: string) => request<Blueprint>(`/blueprints/${id}`),
-  regenerateBlueprint: (id: string, provider?: BlueprintProviderName) =>
-    request<Blueprint>(`/blueprints/${id}/regenerate`, {
-      method: "POST",
-      body: JSON.stringify({ provider }),
-    }),
-  deleteBlueprint: (id: string) =>
-    request<void>(`/blueprints/${id}`, { method: "DELETE" }),
-  /** Baixa o relatório em PDF do blueprint. */
-  downloadBlueprintPdf: async (id: string, title: string) => {
-    const token = getToken();
-    const res = await fetch(`${BASE}/blueprints/${id}/report.pdf`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-    if (!res.ok) throw new ApiError("Falha ao gerar PDF", res.status);
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `blueprint-${title.toLowerCase().replace(/\s+/g, "-").slice(0, 40)}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  },
-
-  // ---- projeção (tarefas rastreáveis a partir de um blueprint) ----
-  listProjectionTasks: (blueprintId: string) =>
-    request<ProjectionTask[]>(`/blueprints/${blueprintId}/projection-tasks`),
-  createProjectionTask: (blueprintId: string, body: { title: string; description: string }) =>
-    request<ProjectionTask>(`/blueprints/${blueprintId}/projection-tasks`, {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
-  generateProjectionTasks: (blueprintId: string, createIssuesNow: boolean) =>
-    request<ProjectionTask[]>(`/blueprints/${blueprintId}/projection-tasks/generate`, {
+  generateProjectionTasks: (remediationPlanId: string, createIssuesNow: boolean) =>
+    request<ProjectionTask[]>(`/remediation-plans/${remediationPlanId}/projection-tasks/generate`, {
       method: "POST",
       body: JSON.stringify({ createIssuesNow }),
     }),

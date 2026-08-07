@@ -1,11 +1,9 @@
 import type {
-  BlueprintResult,
   GuardianResult,
   RemediationResult,
   UpgradeResult,
 } from "@qa-ai/shared";
 import { extractDependencies } from "../../modules/upgrade/manifest-detector.js";
-import type { BlueprintDesignInput } from "./blueprint-prompt.js";
 import type { GuardianCheckInput } from "./guardian-prompt.js";
 import type {
   AiAnalysisInput,
@@ -46,134 +44,6 @@ export class NoopProvider implements AiProvider {
           "Verifique o comportamento descrito no problema",
         ],
       })),
-    };
-  }
-
-  /**
-   * Blueprint determinístico sem IA — plano-base genérico porém coerente,
-   * para o pilar Projetar funcionar mesmo sem chave configurada.
-   */
-  async designBlueprint(input: BlueprintDesignInput): Promise<BlueprintResult> {
-    const t = input.title || "Projeto";
-    return {
-      summary:
-        `Plano-base gerado sem IA para "${t}". Configure um provider (Claude, OpenAI ou Gemini) ` +
-        `em Configurações ou selecione um na criação para obter um blueprint sênior e específico.`,
-      objectives: {
-        goal: `Entregar ${t} com qualidade embutida desde o início.`,
-        scope: input.description.slice(0, 400),
-        outOfScope: "A definir com stakeholders.",
-        successCriteria: [
-          "Cobertura de testes ≥ 80% no core",
-          "Pipeline CI/CD verde",
-          "Sem bugs críticos abertos no release",
-        ],
-      },
-      personas: ["Usuário final", "Administrador"],
-      techStack: [
-        {
-          category: "Frontend",
-          choice: "React + TypeScript",
-          rationale: "Ecossistema maduro, tipagem forte, ampla contratação.",
-          alternatives: ["Vue", "Svelte"],
-        },
-        {
-          category: "Backend",
-          choice: "Node.js + Fastify",
-          rationale: "Alto throughput, tipável, integra bem com o frontend TS.",
-          alternatives: ["NestJS", "Go"],
-        },
-        {
-          category: "Banco",
-          choice: "PostgreSQL",
-          rationale: "Relacional robusto, transacional, JSONB quando preciso.",
-          alternatives: ["MySQL", "MongoDB"],
-        },
-        {
-          category: "Testes",
-          choice: "Vitest + Playwright",
-          rationale: "Unit rápido + E2E confiável cobrindo a pirâmide.",
-          alternatives: ["Jest", "Cypress"],
-        },
-      ],
-      architectureMermaid:
-        "flowchart TD\n  U[Usuário] --> FE[Frontend]\n  FE --> API[API Backend]\n  API --> DB[(PostgreSQL)]\n  API --> CACHE[(Redis)]",
-      userFlowMermaid:
-        "sequenceDiagram\n  participant U as Usuário\n  participant FE as Frontend\n  participant API as API\n  U->>FE: Acessa o app\n  FE->>API: Requisição\n  API-->>FE: Resposta\n  FE-->>U: Renderiza",
-      testStrategy: {
-        pyramid: { unit: 70, integration: 20, e2e: 10 },
-        approaches: ["TDD no core", "BDD para fluxos críticos"],
-        tooling: ["Vitest", "Playwright", "k6"],
-        environments: ["local", "staging", "produção"],
-      },
-      testCases: [
-        {
-          id: "TC-01",
-          title: "Fluxo principal do usuário",
-          type: "e2e",
-          priority: "P0",
-          given: "Usuário na página inicial",
-          when: "Executa a ação principal",
-          then: "Recebe o resultado esperado sem erro",
-        },
-      ],
-      riskMatrix: [
-        {
-          risk: "Escopo mal definido",
-          category: "negócio",
-          likelihood: 3,
-          impact: 4,
-          mitigation: "Refinar requisitos e critérios de aceite antes de codar.",
-        },
-      ],
-      milestones: [
-        {
-          name: "MVP",
-          durationWeeks: 4,
-          deliverables: ["Fluxo principal", "Auth", "CI/CD"],
-          qaFocus: "Testes unitários do core e smoke E2E.",
-        },
-      ],
-      qualityGates: [
-        {
-          stage: "Pull Request",
-          criteria: ["Lint ok", "Testes verdes", "Review aprovado"],
-          metric: "cobertura de linhas",
-          threshold: "≥ 80%",
-        },
-      ],
-      qaMaturityRadar: [
-        { dimension: "Automação de Testes", score: 60 },
-        { dimension: "CI/CD", score: 65 },
-        { dimension: "Cobertura", score: 55 },
-        { dimension: "Observabilidade", score: 45 },
-        { dimension: "Segurança", score: 50 },
-        { dimension: "Processo", score: 55 },
-      ],
-      nfrs: [
-        {
-          category: "Performance",
-          requirement: "Tempo de resposta da API",
-          target: "p95 < 300ms",
-        },
-        {
-          category: "Segurança",
-          requirement: "Headers e autenticação",
-          target: "OWASP Top 10 mitigado",
-        },
-      ],
-      metrics: [
-        {
-          name: "Lead time",
-          target: "< 2 dias",
-          why: "Fluxo de entrega saudável.",
-        },
-        {
-          name: "Change failure rate",
-          target: "< 15%",
-          why: "Qualidade dos deploys.",
-        },
-      ],
     };
   }
 
@@ -257,10 +127,10 @@ export class NoopProvider implements AiProvider {
   }
 
   /**
-   * Guardian exige IA de verdade (gate em guardian.service.ts, mesmo padrão
-   * do Blueprint) — julgamento de risco sobre documento de negócio sem IA
-   * não tem valor de auditoria nenhum. Este método só existe pra satisfazer
-   * a interface; na prática nunca é chamado (o service bloqueia antes).
+   * Guardian exige IA de verdade (gate em guardian.service.ts) — julgamento
+   * de risco sobre documento de negócio sem IA não tem valor de auditoria
+   * nenhum. Este método só existe pra satisfazer a interface; na prática
+   * nunca é chamado (o service bloqueia antes).
    */
   async runGuardianCheck(input: GuardianCheckInput): Promise<GuardianResult> {
     return {

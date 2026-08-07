@@ -81,7 +81,7 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
     return analysisService.listByProject(req.user.organizationId, id);
   });
 
-  // Aplicações (pilar Aplicação) geradas a partir de análises/blueprints deste projeto.
+  // Aplicações (pilar Aplicação) geradas a partir de análises deste projeto.
   app.get("/projects/:id/remediation-plans", async (req) => {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     return remediationService.list(req.user.organizationId, id);

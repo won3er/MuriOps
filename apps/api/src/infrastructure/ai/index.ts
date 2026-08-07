@@ -37,7 +37,7 @@ export function createAiProvider(override?: AiOverride | null): AiProvider {
 /**
  * Resolve um provider para um nome ESCOLHIDO no request (pilar Projetar).
  * Só usa a chave da organização, e só se for do mesmo provider pedido —
- * sem chave própria configurada, cai no noop (blueprint determinístico).
+ * sem chave própria configurada, cai no noop (resultado determinístico).
  */
 export function createAiProviderFor(
   name: AiProviderName,

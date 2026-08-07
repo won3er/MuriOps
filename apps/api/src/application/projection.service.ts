@@ -1,4 +1,4 @@
-import type { ProjectionTask } from "@qa-ai/shared";
+import type { ProjectionTask, RemediationResult } from "@qa-ai/shared";
 import { decryptSecret } from "../infrastructure/crypto/secret-box.js";
 import { prisma } from "../infrastructure/database/prisma.js";
 import { NotFoundError } from "./analysis.service.js";
@@ -10,72 +10,77 @@ export class NoGithubConnectionError extends Error {
 }
 
 /**
- * Projeção — terceira função de Projetar: decompõe o roadmap de um Blueprint
- * em tarefas rastreáveis (`ProjectionTask`), cada uma virando uma Issue no
- * GitHub. Sincroniza por polling (ver `syncAllPending`, chamado de main.ts) —
- * quando a Issue fecha no GitHub, a tarefa vira DONE aqui sozinha, sem o
- * usuário precisar marcar nada manualmente.
+ * Projeção — decompõe os itens de um plano de Aplicação (RemediationPlan,
+ * vindo de Análise ou Atualizar) em tarefas rastreáveis (`ProjectionTask`),
+ * cada uma virando uma Issue no GitHub. Sincroniza por polling (ver
+ * `syncAllPending`, chamado de main.ts) — quando a Issue fecha no GitHub, a
+ * tarefa vira DONE aqui sozinha, sem o usuário precisar marcar nada
+ * manualmente.
+ *
+ * [06/08/2026] Antes operava sobre marcos de um Blueprint (arquitetura
+ * gerada a partir de descrição solta, sem evidência real). Passou a operar
+ * sobre os itens de um RemediationPlan de verdade — ver CLAUDE.md.
  */
 export const projectionService = {
-  async listByBlueprint(
+  async listByPlan(
     organizationId: string,
-    blueprintId: string,
+    remediationPlanId: string,
   ): Promise<ProjectionTask[]> {
-    const blueprint = await prisma.blueprint.findFirst({
-      where: { id: blueprintId, organizationId },
+    const plan = await prisma.remediationPlan.findFirst({
+      where: { id: remediationPlanId, organizationId },
       select: { id: true },
     });
-    if (!blueprint) throw new NotFoundError("Blueprint não encontrado");
+    if (!plan) throw new NotFoundError("Aplicação não encontrada");
 
     const rows = await prisma.projectionTask.findMany({
-      where: { blueprintId },
+      where: { remediationPlanId },
       orderBy: { order: "asc" },
     });
     return rows.map(toDto);
   },
 
   /**
-   * Gera tarefas a partir dos marcos (`milestones`) do resultado do
-   * blueprint — sem nova chamada de IA, só mapeamento determinístico. Se o
-   * blueprint não tiver marcos (ainda não gerado, ou resultado antigo sem
-   * esse campo), recusa com uma mensagem clara em vez de criar vazio.
+   * Gera tarefas a partir dos itens do resultado do plano de Aplicação —
+   * sem nova chamada de IA, só mapeamento determinístico. Se o plano ainda
+   * não tiver resultado (não gerado, ou falhou), recusa com uma mensagem
+   * clara em vez de criar vazio.
    */
-  async generateFromMilestones(
+  async generateFromPlan(
     organizationId: string,
     userId: string,
-    blueprintId: string,
+    remediationPlanId: string,
     createIssuesNow: boolean,
   ): Promise<ProjectionTask[]> {
-    const blueprint = await prisma.blueprint.findFirst({
-      where: { id: blueprintId, organizationId },
+    const plan = await prisma.remediationPlan.findFirst({
+      where: { id: remediationPlanId, organizationId },
     });
-    if (!blueprint) throw new NotFoundError("Blueprint não encontrado");
-    if (!blueprint.projectId) {
+    if (!plan) throw new NotFoundError("Aplicação não encontrada");
+    if (!plan.projectId) {
       throw new NotFoundError(
-        "Este blueprint não está vinculado a um projeto — a Projeção precisa de um projeto para criar as tarefas.",
+        "Esta Aplicação não está vinculada a um projeto — a Projeção precisa de um projeto para criar as tarefas.",
       );
     }
-    const result = blueprint.result as { milestones?: { name: string; deliverables: string[]; qaFocus: string }[] } | null;
-    const milestones = result?.milestones ?? [];
-    if (milestones.length === 0) {
+    const result = plan.result as unknown as RemediationResult | null;
+    const items = result?.items ?? [];
+    if (items.length === 0) {
       throw new NotFoundError(
-        "Este blueprint não tem marcos (milestones) para transformar em tarefas.",
+        "Este plano de Aplicação não tem itens para transformar em tarefas.",
       );
     }
 
     const created = await prisma.$transaction(
-      milestones.map((m, index) =>
+      items.map((item, index) =>
         prisma.projectionTask.create({
           data: {
-            blueprintId,
-            projectId: blueprint.projectId!,
+            remediationPlanId,
+            projectId: plan.projectId!,
             organizationId,
-            title: m.name,
+            title: item.title,
             description: [
-              m.qaFocus ? `Foco de QA: ${m.qaFocus}` : "",
-              m.deliverables.length > 0
-                ? `Entregáveis:\n${m.deliverables.map((d) => `- ${d}`).join("\n")}`
-                : "",
+              `Severidade: ${item.severity}`,
+              item.filePath ? `Arquivo: ${item.filePath}` : "",
+              item.description,
+              item.howTo ? `Como aplicar:\n${item.howTo}` : "",
             ]
               .filter(Boolean)
               .join("\n\n"),
@@ -93,7 +98,7 @@ export const projectionService = {
         });
       }
       const refreshed = await prisma.projectionTask.findMany({
-        where: { blueprintId },
+        where: { remediationPlanId },
         orderBy: { order: "asc" },
       });
       return refreshed.map(toDto);
@@ -105,24 +110,24 @@ export const projectionService = {
   async createTask(
     organizationId: string,
     userId: string,
-    blueprintId: string,
+    remediationPlanId: string,
     input: { title: string; description: string },
   ): Promise<ProjectionTask> {
-    const blueprint = await prisma.blueprint.findFirst({
-      where: { id: blueprintId, organizationId },
+    const plan = await prisma.remediationPlan.findFirst({
+      where: { id: remediationPlanId, organizationId },
       select: { id: true, projectId: true },
     });
-    if (!blueprint) throw new NotFoundError("Blueprint não encontrado");
-    if (!blueprint.projectId) {
+    if (!plan) throw new NotFoundError("Aplicação não encontrada");
+    if (!plan.projectId) {
       throw new NotFoundError(
-        "Este blueprint não está vinculado a um projeto — a Projeção precisa de um projeto para criar tarefas.",
+        "Esta Aplicação não está vinculada a um projeto — a Projeção precisa de um projeto para criar tarefas.",
       );
     }
-    const count = await prisma.projectionTask.count({ where: { blueprintId } });
+    const count = await prisma.projectionTask.count({ where: { remediationPlanId } });
     const row = await prisma.projectionTask.create({
       data: {
-        blueprintId,
-        projectId: blueprint.projectId,
+        remediationPlanId,
+        projectId: plan.projectId,
         organizationId,
         title: input.title,
         description: input.description,
@@ -196,7 +201,7 @@ async function createIssueForTask(taskId: string): Promise<void> {
       },
       body: JSON.stringify({
         title: task.title,
-        body: `${task.description}\n\n---\n_Criada automaticamente pelo MuriOps a partir de um Blueprint (Projeção). Feche esta issue para marcar a tarefa como concluída no MuriOps._`,
+        body: `${task.description}\n\n---\n_Criada automaticamente pelo MuriOps a partir de um plano de Aplicação (Projeção). Feche esta issue para marcar a tarefa como concluída no MuriOps._`,
         labels: ["muriops-projecao"],
       }),
     });
@@ -266,7 +271,7 @@ async function syncTask(taskId: string): Promise<void> {
 
 function toDto(row: {
   id: string;
-  blueprintId: string;
+  remediationPlanId: string;
   projectId: string;
   title: string;
   description: string;
@@ -281,7 +286,7 @@ function toDto(row: {
 }): ProjectionTask {
   return {
     id: row.id,
-    blueprintId: row.blueprintId,
+    remediationPlanId: row.remediationPlanId,
     projectId: row.projectId,
     title: row.title,
     description: row.description,

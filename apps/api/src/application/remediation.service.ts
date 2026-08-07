@@ -25,9 +25,8 @@ import { NotFoundError } from "./analysis.service.js";
 export const remediationService = {
   /**
    * Cria a Aplicação em `PENDING` e dispara a geração em background — a
-   * resposta HTTP volta na hora, o front acompanha por polling (mesmo padrão
-   * do Blueprint). A origem (Análise ou Blueprint) já precisa existir e ter
-   * um resultado pronto.
+   * resposta HTTP volta na hora, o front acompanha por polling. A origem
+   * (Análise ou Projeto) já precisa existir e ter um resultado pronto.
    */
   async create(
     organizationId: string,
@@ -54,12 +53,7 @@ export const remediationService = {
         organizationId,
         projectId: source.projectId,
         createdById: userId,
-        sourceType:
-          input.sourceType === "analysis"
-            ? "ANALYSIS"
-            : input.sourceType === "blueprint"
-              ? "BLUEPRINT"
-              : "PROJECT",
+        sourceType: input.sourceType === "analysis" ? "ANALYSIS" : "PROJECT",
         sourceId: input.sourceId,
         scope: input.sourceType === "project" ? (input.scope ?? "full") : null,
         title: source.title,
@@ -376,13 +370,22 @@ const SCOPE_LABEL: Record<RemediationScope, string> = {
   full: "Projeto completo",
 };
 
-/** Carrega a origem (Análise, Blueprint ou Projeto) e serializa em texto pra IA. */
+/** Carrega a origem (Análise ou Projeto) e serializa em texto pra IA. */
 async function loadSource(
   organizationId: string,
   sourceType: "analysis" | "blueprint" | "project",
   sourceId: string,
   scope?: RemediationScope,
 ): Promise<RemediationSource> {
+  if (sourceType === "blueprint") {
+    // [06/08/2026] Pilar Blueprint removido — ver CLAUDE.md. Sem novos
+    // planos com essa origem; se algum request antigo ainda mandar
+    // "blueprint" (não deveria mais, o frontend não oferece essa opção),
+    // recusa com uma mensagem clara em vez de tentar ler um model inexistente.
+    throw new NotFoundError(
+      "A origem 'blueprint' não está mais disponível — o pilar Projetar/Blueprint foi removido.",
+    );
+  }
   if (sourceType === "analysis") {
     const analysis = await prisma.analysis.findFirst({
       where: { id: sourceId, project: { organizationId } },
@@ -455,44 +458,7 @@ async function loadSource(
     };
   }
 
-  const blueprint = await prisma.blueprint.findFirst({
-    where: { id: sourceId, organizationId },
-  });
-  if (!blueprint) throw new NotFoundError("Blueprint não encontrado");
-  if (blueprint.status !== "READY" || !blueprint.result)
-    throw new NotFoundError("O blueprint ainda não foi gerado — aguarde para gerar a Aplicação");
-
-  const r = blueprint.result as unknown as {
-    summary?: string;
-    objectives?: { goal?: string; scope?: string };
-    techStack?: { category?: string; choice?: string; rationale?: string }[];
-    milestones?: { name?: string; deliverables?: string[]; qaFocus?: string }[];
-    qualityGates?: { stage?: string; criteria?: string[] }[];
-    riskMatrix?: { risk?: string; mitigation?: string }[];
-  };
-  const parts = [
-    `Resumo do plano: ${r.summary ?? ""}`,
-    r.objectives?.goal ? `Meta: ${r.objectives.goal}` : "",
-    r.techStack?.length
-      ? `Stack: ${r.techStack.map((t) => `${t.category}: ${t.choice} (${t.rationale ?? ""})`).join("; ")}`
-      : "",
-    r.milestones?.length
-      ? `Marcos: ${r.milestones.map((m) => `${m.name} — ${(m.deliverables ?? []).join(", ")}`).join(" | ")}`
-      : "",
-    r.qualityGates?.length
-      ? `Quality gates: ${r.qualityGates.map((g) => `${g.stage}: ${(g.criteria ?? []).join(", ")}`).join(" | ")}`
-      : "",
-    r.riskMatrix?.length
-      ? `Riscos: ${r.riskMatrix.map((k) => `${k.risk} → ${k.mitigation}`).join(" | ")}`
-      : "",
-  ].filter(Boolean);
-
-  return {
-    title: `Aplicação — ${blueprint.title}`,
-    projectId: blueprint.projectId,
-    siteUrl: null,
-    context: parts.join("\n"),
-  };
+  throw new NotFoundError("Origem inválida.");
 }
 
 /** Provider efetivo: o pedido no request, ou o configurado na org, ou 'claude'. */

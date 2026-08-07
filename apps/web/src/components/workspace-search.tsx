@@ -1,8 +1,8 @@
 "use client";
 
 import {
+  Activity,
   ArrowUpCircle,
-  DraftingCompass,
   FileSearch,
   FolderKanban,
   GitBranch,
@@ -22,8 +22,8 @@ const SEARCH_ITEMS = [
   { title: "Visão geral", description: "Painel e indicadores do workspace", href: "/dashboard", icon: LayoutDashboard, terms: "inicio início dashboard visão geral métricas" },
   { title: "Projetos", description: "Cadastre e gerencie projetos", href: "/projects", icon: FolderKanban, terms: "projeto sites cadastrar" },
   { title: "Análises", description: "Análise QA padrão e Análise de Segurança", href: "/analyses", icon: FileSearch, terms: "analisar análise qa segurança crawler relatório" },
-  { title: "Projetar", description: "Arquitetura, quality gates e cronograma", href: "/blueprints", icon: DraftingCompass, terms: "projetar blueprint cronograma arquitetura roadmap" },
   { title: "Aplicações", description: "Planos de remediação e conexões", href: "/aplicacao", icon: Wrench, terms: "aplicar aplicação plano remediação checklist" },
+  { title: "Monitoramento", description: "Fluxos críticos e monitoramento sintético", href: "/monitoramento", icon: Activity, terms: "monitoramento fluxos críticos criticos flow synthetic" },
   { title: "Conexões GitHub e MCP", description: "Configure repositórios, token e servidor MCP", href: "/aplicacao?view=connections", icon: Github, terms: "github mcp token repositório repositorio integração conexão api" },
   { title: "Orquestrações", description: "Acompanhe execuções e quality gates", href: "/orquestracao", icon: GitBranch, terms: "orquestração orquestracao execução automação automatizar supervisionado autônomo" },
   { title: "Atualizações", description: "Investigue dependências do projeto", href: "/atualizar", icon: ArrowUpCircle, terms: "atualizar dependência dependencias package manifest github" },

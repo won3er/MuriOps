@@ -1,11 +1,6 @@
 /** Contratos de request/response da API HTTP. */
 
 import type {
-  BlueprintInputPayload,
-  BlueprintMode,
-  BlueprintProviderName,
-} from "../types/blueprint.js";
-import type {
   RemediationItemStatus,
   RemediationProviderName,
   RemediationScope,
@@ -74,25 +69,11 @@ export interface ApiError {
   message: string;
 }
 
-// ---------- Blueprint (pilar Projetar) ----------
-
-export interface CreateBlueprintRequest {
-  title: string;
-  /** Modo de entrada e payload correspondente (discriminado por `mode`). */
-  input: BlueprintInputPayload;
-  /** IA escolhida por request. Ausente = provider configurado da organização. */
-  provider?: BlueprintProviderName;
-  /** Vínculo opcional a um projeto existente. */
-  projectId?: string;
-}
-
-export type { BlueprintMode };
-
 // ---------- Aplicação (RemediationPlan) ----------
 
 export interface CreateRemediationPlanRequest {
   sourceType: RemediationSourceType;
-  /** id da Análise, do Blueprint ou do Projeto de origem. */
+  /** id da Análise ou do Projeto de origem. */
   sourceId: string;
   /** Obrigatório quando sourceType === "project": qa | security | full. */
   scope?: RemediationScope;

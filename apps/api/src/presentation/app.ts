@@ -9,7 +9,6 @@ import { authPlugin } from "./plugins/auth.plugin.js";
 import { analysisRoutes } from "./routes/analysis.routes.js";
 import { authRoutes } from "./routes/auth.routes.js";
 import { accountRoutes } from "./routes/account.routes.js";
-import { blueprintRoutes } from "./routes/blueprint.routes.js";
 import { projectionRoutes } from "./routes/projection.routes.js";
 import { criticalFlowRoutes } from "./routes/critical-flow.routes.js";
 import { dashboardRoutes } from "./routes/dashboard.routes.js";
@@ -114,7 +113,6 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(evidenceRoutes);
   await app.register(projectRoutes);
   await app.register(analysisRoutes);
-  await app.register(blueprintRoutes);
   await app.register(projectionRoutes);
   await app.register(criticalFlowRoutes);
   await app.register(remediationRoutes);

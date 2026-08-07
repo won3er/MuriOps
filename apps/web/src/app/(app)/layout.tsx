@@ -5,7 +5,6 @@ import {
   ArrowUpCircle,
   Boxes,
   CircleHelp,
-  DraftingCompass,
   FileSearch,
   FolderKanban,
   GitBranch,
@@ -37,7 +36,6 @@ const NAV_GROUPS = [
     label: "Ciclo de qualidade",
     items: [
       { href: "/analyses", label: "Análises", icon: FileSearch },
-      { href: "/blueprints", label: "Projetar", icon: DraftingCompass },
       { href: "/aplicacao", label: "Aplicações", icon: Wrench },
       { href: "/orquestracao", label: "Orquestrações", icon: GitBranch },
       { href: "/atualizar", label: "Atualizações", icon: ArrowUpCircle },

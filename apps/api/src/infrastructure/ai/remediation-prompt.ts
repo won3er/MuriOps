@@ -1,6 +1,6 @@
 import type { RemediationItem, RemediationResult } from "@qa-ai/shared";
 
-/** Entrada normalizada entregue à IA — o service serializa a origem (análise ou blueprint) nisto. */
+/** Entrada normalizada entregue à IA — o service serializa a origem (análise ou projeto) nisto. */
 export interface RemediationDesignInput {
   title: string;
   siteUrl: string | null;

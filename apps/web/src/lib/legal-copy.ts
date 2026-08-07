@@ -16,7 +16,7 @@ export const LEGAL_COPY = {
         {
           title: "2. How the service works",
           paragraphs: [
-            "MuriOps combines crawling, browser automation and technical checks to produce scores, findings and evidence. When you configure your own key, AI providers may interpret this data and generate summaries, blueprints and plans.",
+            "MuriOps combines crawling, browser automation and technical checks to produce scores, findings and evidence. When you configure your own key, AI providers may interpret this data and generate summaries and remediation plans.",
             "Automated results may contain false positives, omissions or recommendations that do not fit your environment. Human review remains necessary before any production change.",
           ],
         },
@@ -84,7 +84,7 @@ export const LEGAL_COPY = {
           title: "5. Sharing and retention",
           paragraphs: [
             "We do not sell personal data. Data may be processed by essential hosting, database, authentication and user-selected provider services only as needed to deliver the product.",
-            "Projects, analyses and blueprints can be deleted in their respective areas. An authenticated user can download an account data copy or permanently delete the account under Settings. Some records may be retained only when required by law, to exercise legal rights or to prevent fraud and abuse.",
+            "Projects, analyses and applications can be deleted in their respective areas. An authenticated user can download an account data copy or permanently delete the account under Settings. Some records may be retained only when required by law, to exercise legal rights or to prevent fraud and abuse.",
           ],
         },
         {
@@ -118,7 +118,7 @@ export const LEGAL_COPY = {
         {
           title: "2. Como o serviço funciona",
           paragraphs: [
-            "O MuriOps combina crawler, automação de navegador e verificações técnicas para produzir scores, achados e evidências. Quando uma chave própria é configurada, provedores de IA podem interpretar esses dados e gerar resumos, blueprints e planos.",
+            "O MuriOps combina crawler, automação de navegador e verificações técnicas para produzir scores, achados e evidências. Quando uma chave própria é configurada, provedores de IA podem interpretar esses dados e gerar resumos e planos de correção.",
             "Resultados automatizados podem conter falsos positivos, omissões ou recomendações inadequadas ao seu ambiente. A revisão humana continua necessária antes de qualquer alteração em produção.",
           ],
         },
@@ -186,7 +186,7 @@ export const LEGAL_COPY = {
           title: "5. Compartilhamento e retenção",
           paragraphs: [
             "Não vendemos dados pessoais. Dados podem ser processados por serviços essenciais de hospedagem, banco, autenticação e provedores escolhidos por você, na medida necessária para entregar o produto.",
-            "Projetos, análises e blueprints podem ser apagados nas áreas correspondentes. A pessoa autenticada pode baixar uma cópia dos dados da conta ou excluir a conta permanentemente em Configurações. Alguns registros poderão ser conservados somente quando a lei exigir, para o exercício regular de direitos ou para prevenção a fraude e abuso.",
+            "Projetos, análises e aplicações podem ser apagados nas áreas correspondentes. A pessoa autenticada pode baixar uma cópia dos dados da conta ou excluir a conta permanentemente em Configurações. Alguns registros poderão ser conservados somente quando a lei exigir, para o exercício regular de direitos ou para prevenção a fraude e abuso.",
           ],
         },
         {
@@ -220,7 +220,7 @@ export const LEGAL_COPY = {
         {
           title: "2. Cómo funciona el servicio",
           paragraphs: [
-            "MuriOps combina crawling, automatización del navegador y verificaciones técnicas para producir puntuaciones, hallazgos y evidencias. Al configurar tu propia clave, proveedores de IA pueden interpretar estos datos y generar resúmenes, blueprints y planes.",
+            "MuriOps combina crawling, automatización del navegador y verificaciones técnicas para producir puntuaciones, hallazgos y evidencias. Al configurar tu propia clave, proveedores de IA pueden interpretar estos datos y generar resúmenes y planes de corrección.",
             "Los resultados automatizados pueden contener falsos positivos, omisiones o recomendaciones inadecuadas para tu entorno. La revisión humana sigue siendo necesaria antes de cualquier cambio en producción.",
           ],
         },
@@ -288,7 +288,7 @@ export const LEGAL_COPY = {
           title: "5. Compartición y retención",
           paragraphs: [
             "No vendemos datos personales. Los datos pueden ser procesados por servicios esenciales de alojamiento, base de datos, autenticación y proveedores elegidos por ti, solo en la medida necesaria para entregar el producto.",
-            "Los proyectos, análisis y blueprints pueden eliminarse en sus áreas correspondientes. La persona autenticada puede descargar una copia de los datos de la cuenta o eliminarla permanentemente en Configuración. Algunos registros podrán conservarse solo cuando la ley lo exija, para ejercer derechos legales o prevenir fraude y abuso.",
+            "Los proyectos, análisis y aplicaciones pueden eliminarse en sus áreas correspondientes. La persona autenticada puede descargar una copia de los datos de la cuenta o eliminarla permanentemente en Configuración. Algunos registros podrán conservarse solo cuando la ley lo exija, para ejercer derechos legales o prevenir fraude y abuso.",
           ],
         },
         {

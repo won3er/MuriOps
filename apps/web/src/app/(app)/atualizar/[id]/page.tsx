@@ -12,7 +12,6 @@ import {
   Download,
   FileCode2,
   Loader2,
-  Network,
   PackageSearch,
   ShieldCheck,
   Trash2,
@@ -126,28 +125,6 @@ export default function UpgradePlanDetailPage() {
       { sourceType: "upgrade", sourceId: plan.id },
       { onSuccess: (rp) => router.push(`/aplicacao/${rp.id}`) },
     );
-  }
-
-  /** Leva um plano "não pronto" pro Projetar já com o contexto preenchido. */
-  function sendToBlueprint() {
-    if (!plan?.result?.readiness) return;
-    const { reasoning, blockers } = plan.result.readiness;
-    const promptText = [
-      `O plano de atualização "${plan.title}" foi avaliado como NÃO PRONTO para aplicar com segurança.`,
-      "",
-      `Avaliação: ${reasoning}`,
-      "",
-      "O que falta resolver antes de atualizar as dependências:",
-      ...blockers.map((b) => `- ${b}`),
-      "",
-      "Desenhe um plano para colocar este projeto em condições de receber a atualização com segurança (testes, CI, ambiente de staging conforme aplicável).",
-    ].join("\n");
-    const params = new URLSearchParams({
-      prompt: promptText,
-      title: `Prontidão para atualizar — ${plan.title}`,
-    });
-    if (plan.projectId) params.set("projectId", plan.projectId);
-    router.push(`/blueprints/new?${params.toString()}`);
   }
 
   /** Copia o pacote pra colar direto no chat da IA (Claude Code, Windsurf...). */
@@ -419,18 +396,6 @@ export default function UpgradePlanDetailPage() {
                     )}
                   </div>
                 </div>
-                {!plan.result.readiness.ready && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0"
-                    onClick={sendToBlueprint}
-                    title="Leva este contexto para Projetar, para desenhar a rede de segurança que falta"
-                  >
-                    <Network className="h-3.5 w-3.5" />
-                    Enviar para Projetar
-                  </Button>
-                )}
               </CardContent>
             </Card>
           )}

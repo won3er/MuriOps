@@ -1,18 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type {
-  BlueprintResult,
   GuardianResult,
   RemediationResult,
   UpgradeResult,
 } from "@qa-ai/shared";
 import { env } from "../../config/env.js";
-import {
-  BLUEPRINT_SYSTEM_PROMPT,
-  buildBlueprintUserPrompt,
-  normalizeBlueprint,
-  parseBlueprintJson,
-  type BlueprintDesignInput,
-} from "./blueprint-prompt.js";
 import {
   buildGuardianUserPrompt,
   GUARDIAN_SYSTEM_PROMPT,
@@ -76,31 +68,6 @@ export class ClaudeProvider implements AiProvider {
     return normalizeAiResult(parseAiJson(text));
   }
 
-  async designBlueprint(input: BlueprintDesignInput): Promise<BlueprintResult> {
-    const response = (await this.client.beta.messages.create({
-      model: env.CLAUDE_MODEL,
-      max_tokens: 16000,
-      stream: false,
-      betas: ["server-side-fallback-2026-06-01"],
-      fallbacks: [{ model: env.CLAUDE_FALLBACK_MODEL }],
-      output_config: { effort: "high" },
-      system: BLUEPRINT_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildBlueprintUserPrompt(input) }],
-    } as Parameters<
-      typeof this.client.beta.messages.create
-    >[0])) as Anthropic.Beta.Messages.BetaMessage;
-
-    if ((response.stop_reason as string) === "refusal") {
-      throw new Error("A IA recusou a requisição (classificador de segurança).");
-    }
-
-    const text = response.content
-      .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("\n");
-
-    return normalizeBlueprint(parseBlueprintJson(text));
-  }
 
   async buildRemediationPlan(
     input: RemediationDesignInput,

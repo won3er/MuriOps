@@ -1,4 +1,3 @@
-import { recoverStaleBlueprints } from "./application/blueprint.service.js";
 import { criticalFlowService } from "./application/critical-flow.service.js";
 import { guardianScheduleService } from "./application/guardian-schedule.service.js";
 import { recoverStaleGuardianRuns } from "./application/guardian.service.js";
@@ -12,10 +11,9 @@ import { buildApp } from "./presentation/app.js";
 
 async function main(): Promise<void> {
   const app = await buildApp();
-  // Sem fila persistente: análises/blueprints/aplicações/execuções presas por um restart viram FAILED
+  // Sem fila persistente: análises/aplicações/execuções presas por um restart viram FAILED
   // (exceto execuções esperando aprovação humana ou webhook — essas sobrevivem intactas).
   await recoverStaleAnalyses();
-  await recoverStaleBlueprints();
   await recoverStaleRemediationPlans();
   await recoverStaleUpgradePlans();
   await recoverStaleGuardianRuns();
@@ -38,10 +36,10 @@ async function main(): Promise<void> {
     .runDueSchedules()
     .catch((err) => app.log.error({ err }, "Falha ao rodar agendamentos do Guardian (boot)"));
 
-  // Sync da Projeção (Projetar → tarefas com Issue no GitHub): sem webhook
-  // dedicado ainda, então um polling de 10min verifica se alguma issue foi
-  // fechada no GitHub e marca a tarefa como DONE aqui. Falha isolada por
-  // tarefa não derruba o processo nem afeta as demais.
+  // Sync da Projeção (plano de Aplicação → tarefas com Issue no GitHub): sem
+  // webhook dedicado ainda, então um polling de 10min verifica se alguma
+  // issue foi fechada no GitHub e marca a tarefa como DONE aqui. Falha
+  // isolada por tarefa não derruba o processo nem afeta as demais.
   const PROJECTION_SYNC_CHECK_MS = 10 * 60 * 1000;
   setInterval(() => {
     projectionService

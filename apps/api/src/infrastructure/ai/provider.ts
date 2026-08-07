@@ -1,12 +1,10 @@
 import type {
   AnalysisCategory,
-  BlueprintResult,
   GuardianResult,
   RemediationResult,
   Severity,
   UpgradeResult,
 } from "@qa-ai/shared";
-import type { BlueprintDesignInput } from "./blueprint-prompt.js";
 import type { GuardianCheckInput } from "./guardian-prompt.js";
 import type { RemediationDesignInput } from "./remediation-prompt.js";
 import type { UpgradeDesignInput } from "./upgrade-prompt.js";
@@ -57,13 +55,8 @@ export interface AiProvider {
   readonly name: string;
   enrichAnalysis(input: AiAnalysisInput): Promise<AiAnalysisResult>;
   /**
-   * Projeta um plano de desenvolvimento com QA embutido (pilar Projetar).
-   * Recebe a descrição do projeto e devolve o blueprint estruturado.
-   */
-  designBlueprint(input: BlueprintDesignInput): Promise<BlueprintResult>;
-  /**
-   * Transforma achados de uma análise (ou o plano de um blueprint) num plano
-   * de aplicação concreto — o checklist do pilar Aplicação.
+   * Transforma achados de uma análise num plano de aplicação concreto — o
+   * checklist do pilar Aplicação.
    */
   buildRemediationPlan(input: RemediationDesignInput): Promise<RemediationResult>;
   /**

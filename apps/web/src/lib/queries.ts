@@ -2,10 +2,6 @@
 
 import type {
   AutonomyLevel,
-  Blueprint,
-  BlueprintProviderName,
-  BlueprintSummary,
-  CreateBlueprintRequest,
   CreateGuardianRulesetRequest,
   CreateGuardianRunRequest,
   CreateGuardianScheduleRequest,
@@ -35,9 +31,7 @@ import { api } from "./api";
 
 /** Chaves de cache centralizadas — evita strings soltas e erros de digitação. */
 export const qk = {
-  blueprints: ["blueprints"] as const,
-  blueprint: (id: string) => ["blueprint", id] as const,
-  projectionTasks: (blueprintId: string) => ["projection-tasks", blueprintId] as const,
+  projectionTasks: (remediationPlanId: string) => ["projection-tasks", remediationPlanId] as const,
   projects: ["projects"] as const,
   dashboard: ["dashboard"] as const,
   remediationPlan: (id: string) => ["remediation-plan", id] as const,
@@ -80,120 +74,49 @@ const ACTIVE_RUN_STATUSES = new Set([
   "REANALYZING",
 ]);
 
-// ---------- Blueprints ----------
-
-export function useBlueprints() {
-  return useQuery({ queryKey: qk.blueprints, queryFn: api.listBlueprints });
-}
-
-/**
- * Detalhe do blueprint. Enquanto está PENDING, faz polling a cada 2.5s até
- * virar READY/FAILED — é assim que a geração assíncrona aparece pronta na tela.
- */
-export function useBlueprint(id: string) {
-  return useQuery({
-    queryKey: qk.blueprint(id),
-    queryFn: () => api.getBlueprint(id),
-    refetchInterval: (query) =>
-      query.state.data?.status === "PENDING" ? 2500 : false,
-  });
-}
-
-export function useCreateBlueprint() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body: CreateBlueprintRequest) => api.createBlueprint(body),
-    onSuccess: (bp) => {
-      qc.setQueryData<Blueprint>(qk.blueprint(bp.id), bp);
-      qc.invalidateQueries({ queryKey: qk.blueprints });
-    },
-    onError: (err) =>
-      toast.error(
-        err instanceof Error ? err.message : "Falha ao gerar blueprint",
-      ),
-  });
-}
-
-export function useRegenerateBlueprint(id: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (provider?: BlueprintProviderName) =>
-      api.regenerateBlueprint(id, provider),
-    onSuccess: (bp) => {
-      qc.setQueryData<Blueprint>(qk.blueprint(id), bp);
-      qc.invalidateQueries({ queryKey: qk.blueprints });
-      toast.message("Regerando o plano com a IA…");
-    },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao regerar"),
-  });
-}
-
-export function useDeleteBlueprint() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => api.deleteBlueprint(id),
-    // Optimistic: some da lista na hora; restaura se falhar.
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: qk.blueprints });
-      const prev = qc.getQueryData<BlueprintSummary[]>(qk.blueprints);
-      qc.setQueryData<BlueprintSummary[]>(qk.blueprints, (old) =>
-        (old ?? []).filter((b) => b.id !== id),
-      );
-      return { prev };
-    },
-    onError: (_err, _id, ctx) => {
-      if (ctx?.prev) qc.setQueryData(qk.blueprints, ctx.prev);
-      toast.error("Falha ao apagar blueprint");
-    },
-    onSuccess: () => toast.success("Blueprint apagado"),
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.blueprints }),
-  });
-}
-
-// ---------- Projeção (tarefas rastreáveis a partir de um blueprint) ----------
+// ---------- Projeção (tarefas rastreáveis a partir de um plano de Aplicação) ----------
 
 /** Lista de tarefas de Projeção — polling leve enquanto houver alguma IN_PROGRESS aguardando sync com o GitHub. */
-export function useProjectionTasks(blueprintId: string) {
+export function useProjectionTasks(remediationPlanId: string) {
   return useQuery({
-    queryKey: qk.projectionTasks(blueprintId),
-    queryFn: () => api.listProjectionTasks(blueprintId),
-    enabled: !!blueprintId,
+    queryKey: qk.projectionTasks(remediationPlanId),
+    queryFn: () => api.listProjectionTasks(remediationPlanId),
+    enabled: !!remediationPlanId,
     refetchInterval: (query) =>
       (query.state.data ?? []).some((t) => t.status === "IN_PROGRESS") ? 15_000 : false,
   });
 }
 
-export function useGenerateProjectionTasks(blueprintId: string) {
+export function useGenerateProjectionTasks(remediationPlanId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (createIssuesNow: boolean) =>
-      api.generateProjectionTasks(blueprintId, createIssuesNow),
+      api.generateProjectionTasks(remediationPlanId, createIssuesNow),
     onSuccess: (tasks) => {
-      qc.setQueryData<ProjectionTask[]>(qk.projectionTasks(blueprintId), tasks);
-      toast.success("Tarefas de Projeção geradas a partir dos marcos");
+      qc.setQueryData<ProjectionTask[]>(qk.projectionTasks(remediationPlanId), tasks);
+      toast.success("Tarefas de Projeção geradas a partir do plano");
     },
     onError: (err) =>
       toast.error(err instanceof Error ? err.message : "Falha ao gerar tarefas"),
   });
 }
 
-export function useCreateProjectionTask(blueprintId: string) {
+export function useCreateProjectionTask(remediationPlanId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { title: string; description: string }) =>
-      api.createProjectionTask(blueprintId, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.projectionTasks(blueprintId) }),
+      api.createProjectionTask(remediationPlanId, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.projectionTasks(remediationPlanId) }),
     onError: (err) => toast.error(err instanceof Error ? err.message : "Falha ao criar tarefa"),
   });
 }
 
-export function useCreateProjectionIssue(blueprintId: string) {
+export function useCreateProjectionIssue(remediationPlanId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (taskId: string) => api.createProjectionIssue(taskId),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.projectionTasks(blueprintId) });
+      qc.invalidateQueries({ queryKey: qk.projectionTasks(remediationPlanId) });
       toast.success("Issue criada no GitHub");
     },
     onError: (err) =>
@@ -201,11 +124,11 @@ export function useCreateProjectionIssue(blueprintId: string) {
   });
 }
 
-export function useDeleteProjectionTask(blueprintId: string) {
+export function useDeleteProjectionTask(remediationPlanId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (taskId: string) => api.deleteProjectionTask(taskId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.projectionTasks(blueprintId) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.projectionTasks(remediationPlanId) }),
     onError: (err) => toast.error(err instanceof Error ? err.message : "Falha ao apagar tarefa"),
   });
 }

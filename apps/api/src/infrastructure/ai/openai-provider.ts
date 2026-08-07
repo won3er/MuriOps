@@ -1,18 +1,10 @@
 import OpenAI from "openai";
 import type {
-  BlueprintResult,
   GuardianResult,
   RemediationResult,
   UpgradeResult,
 } from "@qa-ai/shared";
 import { env } from "../../config/env.js";
-import {
-  BLUEPRINT_SYSTEM_PROMPT,
-  buildBlueprintUserPrompt,
-  normalizeBlueprint,
-  parseBlueprintJson,
-  type BlueprintDesignInput,
-} from "./blueprint-prompt.js";
 import {
   buildGuardianUserPrompt,
   GUARDIAN_SYSTEM_PROMPT,
@@ -58,20 +50,6 @@ export class OpenAiProvider implements AiProvider {
 
     const text = completion.choices[0]?.message?.content ?? "{}";
     return normalizeAiResult(parseAiJson(text));
-  }
-
-  async designBlueprint(input: BlueprintDesignInput): Promise<BlueprintResult> {
-    const completion = await this.client.chat.completions.create({
-      model: env.OPENAI_MODEL,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: BLUEPRINT_SYSTEM_PROMPT },
-        { role: "user", content: buildBlueprintUserPrompt(input) },
-      ],
-    });
-
-    const text = completion.choices[0]?.message?.content ?? "{}";
-    return normalizeBlueprint(parseBlueprintJson(text));
   }
 
   async buildRemediationPlan(

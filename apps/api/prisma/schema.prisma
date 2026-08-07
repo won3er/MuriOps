@@ -272,41 +272,48 @@ model Evidence {
   @@index([issueId])
 }
 
-// ---------- Blueprint (pilar Projetar) ----------
-
+// ---------- Blueprint (pilar Projetar, REMOVIDO 06/08/2026 — só retenção) ----------
+// Model mantido SÓ pra não apagar dados reais: em 07/08/2026, ao validar o
+// corte antes do `db push`, `SELECT count(*) FROM "Blueprint"` em produção
+// voltou 6 — ou seja, havia uso real que eu não tinha checado (só olhei a
+// conta de teste, que tinha zero). Nenhum código novo lê, escreve ou expõe
+// isto na UI (rotas, service e páginas já removidos/redirecionados — ver
+// CLAUDE.md, sessão "Corte do pilar Projetar/Blueprint"). Se um dia for
+// seguro apagar de vez, primeiro exportar os 6 registros (título + result
+// em JSON) pra referência, depois `git rm` este bloco e rodar `db push` de
+// novo — só então a tabela cai.
 model Blueprint {
   id             String   @id @default(cuid())
   organizationId String
-  // Vínculo opcional a um projeto existente.
   projectId      String?
   createdById    String
   title          String
-  // form | canvas | prompt
   mode           String
-  // provider de IA usado (claude | openai | gemini | noop)
   provider       String
-  // PENDING | READY | FAILED
   status         String   @default("PENDING")
-  // Entrada bruta conforme o modo (BlueprintInputPayload).
   input          Json
-  // Saída estruturada da IA (BlueprintResult).
   result         Json?
   error          String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  projectionTasks ProjectionTask[]
 
   @@index([organizationId])
   @@index([projectId])
 }
 
 // ---------- Aplicação (RemediationPlan) ----------
-// Transforma os achados de uma Análise (Issues) ou de um Blueprint num plano
-// de ação concreto — o que mudar, onde, e como — para o usuário aplicar de
-// verdade no projeto. Fase 1: aplicação manual (checklist); a IA não altera
-// o código do usuário, só instrui.
+// Transforma os achados de uma Análise (Issues) num plano de ação concreto —
+// o que mudar, onde, e como — para o usuário aplicar de verdade no projeto.
+// Fase 1: aplicação manual (checklist); a IA não altera o código do usuário,
+// só instrui.
+// [06/08/2026] Removido o pilar "Projetar"/Blueprint (gerava arquitetura a
+// partir de uma descrição solta, sem evidência real como o resto do
+// produto — decisão de produto, ver CLAUDE.md). O valor BLUEPRINT do enum
+// abaixo continua existindo no Postgres (não dá pra remover valor de enum
+// sem recriar o tipo), mas não é mais gravado por nenhum código novo —
+// mesmo caso do NUVEMSHOP em AdapterKind.
 
 enum RemediationSourceType {
   ANALYSIS
@@ -328,8 +335,7 @@ enum RemediationStatus {
 model RemediationPlan {
   id             String                @id @default(cuid())
   organizationId String
-  // Vínculo ao projeto quando a origem tem um (Análise sempre tem; Blueprint
-  // às vezes não está associado a nenhum projeto ainda).
+  // Vínculo ao projeto quando a origem tem um (Análise sempre tem).
   projectId      String?
   createdById    String
   sourceType     RemediationSourceType
@@ -351,6 +357,7 @@ model RemediationPlan {
   updatedAt      DateTime              @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projectionTasks ProjectionTask[]
 
   @@index([organizationId])
   @@index([projectId])
@@ -570,7 +577,7 @@ enum ProjectionTaskStatus {
 
 model ProjectionTask {
   id             String               @id @default(cuid())
-  blueprintId    String
+  remediationPlanId String
   projectId      String
   organizationId String
   title          String
@@ -587,10 +594,10 @@ model ProjectionTask {
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 
-  blueprint Blueprint @relation(fields: [blueprintId], references: [id], onDelete: Cascade)
+  remediationPlan RemediationPlan @relation(fields: [remediationPlanId], references: [id], onDelete: Cascade)
   project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  @@index([blueprintId])
+  @@index([remediationPlanId])
   @@index([projectId])
   @@index([organizationId])
   @@index([status])

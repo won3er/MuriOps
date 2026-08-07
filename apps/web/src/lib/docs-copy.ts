@@ -37,7 +37,7 @@ export const DOCS_COPY = {
       ],
       beforeTitle: "Before you begin",
       beforeText:
-        "The crawler works without an AI key. For AI interpretations, blueprints and generated plans, configure your own key in Settings. Without it, the system uses deterministic responses and does not call an external provider.",
+        "The crawler works without an AI key. For AI interpretations and generated plans, configure your own key in Settings. Without it, the system uses deterministic responses and does not call an external provider.",
     },
     guide: {
       title: "User guide",
@@ -129,14 +129,9 @@ export const DOCS_COPY = {
               "Passive checks for headers, HTTPS, CSP, TLS, DNS and unintended exposure, plus detection of exposed secrets and credentials in the rendered HTML (API keys, tokens, passwords in attributes or scripts), masked before ever appearing in the report.",
             ],
             [
-              "Design",
-              "available",
-              "Blueprint with architecture, stack, risks, testing strategy, quality gates and roadmap.",
-            ],
-            [
               "Update",
               "available",
-              "Dependency upgrade plan from a pasted manifest (npm, pip, Maven, Gradle, Go, NuGet, Composer, Cargo and others) or investigated directly on GitHub, with a repository readiness assessment (tests, CI, overall risk) — when not ready, routes to Design in one click.",
+              "Dependency upgrade plan from a pasted manifest (npm, pip, Maven, Gradle, Go, NuGet, Composer, Cargo and others) or investigated directly on GitHub, with a repository readiness assessment (tests, CI, overall risk) shown inline when the project isn't ready to receive it safely.",
             ],
             [
               "Authorized active testing",
@@ -176,7 +171,7 @@ export const DOCS_COPY = {
             [
               "Application",
               "available",
-              "Turns analyses, blueprints and upgrades into remediation checklists.",
+              "Turns analyses and upgrades into remediation checklists, and can break a plan into trackable GitHub issues (Projection).",
             ],
             [
               "PDF and universal bridge",
@@ -296,7 +291,7 @@ export const DOCS_COPY = {
       ],
       beforeTitle: "Antes de começar",
       beforeText:
-        "O crawler funciona sem uma chave de IA. Para interpretações, blueprints e planos gerados por IA, configure sua própria chave em Configurações. Sem ela, o sistema usa respostas determinísticas e não chama um provedor externo.",
+        "O crawler funciona sem uma chave de IA. Para interpretações e planos gerados por IA, configure sua própria chave em Configurações. Sem ela, o sistema usa respostas determinísticas e não chama um provedor externo.",
     },
     guide: {
       title: "Guia de uso",
@@ -389,14 +384,9 @@ export const DOCS_COPY = {
               "Verificações passivas de headers, HTTPS, CSP, TLS, DNS e exposição indevida, além de detecção de segredos e credenciais expostos no HTML renderizado (chaves de API, tokens, senhas em atributos ou scripts), mascarados antes de aparecer no relatório.",
             ],
             [
-              "Projetar",
-              "available",
-              "Blueprint com arquitetura, stack, riscos, estratégia de testes, quality gates e roadmap.",
-            ],
-            [
               "Atualizar",
               "available",
-              "Plano de atualização de dependências a partir de um manifesto colado (npm, pip, Maven, Gradle, Go, NuGet, Composer, Cargo e outros) ou investigado direto no GitHub, com avaliação de prontidão do repositório (testes, CI, risco geral) — quando não está pronto, encaminha para o Projetar em um clique.",
+              "Plano de atualização de dependências a partir de um manifesto colado (npm, pip, Maven, Gradle, Go, NuGet, Composer, Cargo e outros) ou investigado direto no GitHub, com avaliação de prontidão do repositório (testes, CI, risco geral) mostrada direto na tela quando o projeto ainda não está pronto para receber a atualização com segurança.",
             ],
             [
               "Teste Ativo Autorizado",
@@ -436,7 +426,7 @@ export const DOCS_COPY = {
             [
               "Aplicação",
               "available",
-              "Transforma análises, blueprints e upgrades em checklists de remediação.",
+              "Transforma análises e upgrades em checklists de remediação, e pode decompor um plano em tarefas rastreáveis no GitHub (Projeção).",
             ],
             [
               "PDF e ponte universal",
@@ -556,7 +546,7 @@ export const DOCS_COPY = {
       ],
       beforeTitle: "Antes de empezar",
       beforeText:
-        "El crawler funciona sin una clave de IA. Para interpretaciones, blueprints y planes generados por IA, configura tu propia clave en Ajustes. Sin ella, el sistema usa respuestas deterministas y no llama a un proveedor externo.",
+        "El crawler funciona sin una clave de IA. Para interpretaciones y planes generados por IA, configura tu propia clave en Ajustes. Sin ella, el sistema usa respuestas deterministas y no llama a un proveedor externo.",
     },
     guide: {
       title: "Guía de uso",
@@ -649,14 +639,9 @@ export const DOCS_COPY = {
               "Verificaciones pasivas de headers, HTTPS, CSP, TLS, DNS y exposición indebida, además de detección de secretos y credenciales expuestos en el HTML renderizado (claves de API, tokens, contraseñas en atributos o scripts), enmascarados antes de aparecer en el informe.",
             ],
             [
-              "Diseñar",
-              "available",
-              "Blueprint con arquitectura, stack, riesgos, estrategia de pruebas, quality gates y roadmap.",
-            ],
-            [
               "Actualizar",
               "available",
-              "Plan de actualización de dependencias a partir de un manifiesto pegado (npm, pip, Maven, Gradle, Go, NuGet, Composer, Cargo y otros) o investigado directamente en GitHub, con una evaluación de preparación del repositorio (pruebas, CI, riesgo general) — cuando no está listo, se enruta a Diseñar en un clic.",
+              "Plan de actualización de dependencias a partir de un manifiesto pegado (npm, pip, Maven, Gradle, Go, NuGet, Composer, Cargo y otros) o investigado directamente en GitHub, con una evaluación de preparación del repositorio (pruebas, CI, riesgo general) mostrada directo en pantalla cuando el proyecto todavía no está listo para recibir la actualización con seguridad.",
             ],
             [
               "Prueba activa autorizada",
@@ -696,7 +681,7 @@ export const DOCS_COPY = {
             [
               "Aplicación",
               "available",
-              "Convierte análisis, blueprints y upgrades en checklists de remediación.",
+              "Convierte análisis y upgrades en checklists de remediación, y puede descomponer un plan en tareas rastreables en GitHub (Proyección).",
             ],
             [
               "PDF y puente universal",

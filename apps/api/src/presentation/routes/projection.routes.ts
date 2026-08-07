@@ -13,17 +13,19 @@ const generateSchema = z.object({
 });
 
 /**
- * Projeção — tarefas rastreáveis geradas a partir de um Blueprint, com sync
- * pra GitHub. Rotas aninhadas em /blueprints/:blueprintId/projection-tasks
- * porque toda tarefa pertence a exatamente um blueprint.
+ * Projeção — tarefas rastreáveis geradas a partir de um plano de Aplicação
+ * (RemediationPlan, vindo de Análise ou Atualizar), com sync pra GitHub.
+ * Rotas aninhadas em /remediation-plans/:remediationPlanId/projection-tasks
+ * porque toda tarefa pertence a exatamente um plano.
+ * [06/08/2026] Antes vivia sob /blueprints/:blueprintId — ver CLAUDE.md.
  */
 export async function projectionRoutes(app: FastifyInstance): Promise<void> {
   app.addHook("onRequest", app.authenticate);
 
-  app.get("/blueprints/:blueprintId/projection-tasks", async (req, reply) => {
-    const { blueprintId } = z.object({ blueprintId: z.string() }).parse(req.params);
+  app.get("/remediation-plans/:remediationPlanId/projection-tasks", async (req, reply) => {
+    const { remediationPlanId } = z.object({ remediationPlanId: z.string() }).parse(req.params);
     try {
-      return await projectionService.listByBlueprint(req.user.organizationId, blueprintId);
+      return await projectionService.listByPlan(req.user.organizationId, remediationPlanId);
     } catch (err) {
       if (err instanceof NotFoundError)
         return reply.status(404).send({ statusCode: 404, error: "NotFound", message: err.message });
@@ -31,14 +33,14 @@ export async function projectionRoutes(app: FastifyInstance): Promise<void> {
     }
   });
 
-  app.post("/blueprints/:blueprintId/projection-tasks", async (req, reply) => {
-    const { blueprintId } = z.object({ blueprintId: z.string() }).parse(req.params);
+  app.post("/remediation-plans/:remediationPlanId/projection-tasks", async (req, reply) => {
+    const { remediationPlanId } = z.object({ remediationPlanId: z.string() }).parse(req.params);
     const body = createTaskSchema.parse(req.body);
     try {
       const task = await projectionService.createTask(
         req.user.organizationId,
         req.user.sub,
-        blueprintId,
+        remediationPlanId,
         body,
       );
       return reply.status(201).send(task);
@@ -49,15 +51,15 @@ export async function projectionRoutes(app: FastifyInstance): Promise<void> {
     }
   });
 
-  // Gera tarefas a partir dos marcos (milestones) do blueprint já gerado.
-  app.post("/blueprints/:blueprintId/projection-tasks/generate", async (req, reply) => {
-    const { blueprintId } = z.object({ blueprintId: z.string() }).parse(req.params);
+  // Gera tarefas a partir dos itens do plano de Aplicação já gerado.
+  app.post("/remediation-plans/:remediationPlanId/projection-tasks/generate", async (req, reply) => {
+    const { remediationPlanId } = z.object({ remediationPlanId: z.string() }).parse(req.params);
     const body = generateSchema.parse(req.body ?? {});
     try {
-      const tasks = await projectionService.generateFromMilestones(
+      const tasks = await projectionService.generateFromPlan(
         req.user.organizationId,
         req.user.sub,
-        blueprintId,
+        remediationPlanId,
         body.createIssuesNow,
       );
       return reply.status(201).send(tasks);
