@@ -966,6 +966,75 @@ Depois `git add` dos arquivos específicos (nunca `-A`):
 `apps/web/src/app/(app)/layout.tsx`,
 `apps/web/src/lib/docs-copy.ts`.
 
+## Sessão 06/08/2026 (continuação) — Descoberta grave: `.env` local aponta pro Supabase errado
+
+Depois de subir o Fluxos Críticos, login (e-mail/senha E Google) quebrou em produção com
+"Erro interno. Tente novamente em instantes." Investigado direto no navegador (Vercel →
+deploy `954304f` "Ready", Render → `Deploy live`, ambos sem erro de build) e depois nos
+logs de runtime do Render (`dashboard.render.com/.../logs`), onde apareceu o erro real:
+
+```
+PrismaClientKnownRequestError: Invalid prisma.user.findFirst() invocation:
+The column Organization.emailProvider does not exist in the current database.
+at async Object.loginWithGoogle (auth.service.js:88:20)
+```
+
+**Causa raiz: `apps/api/.env` (usado por todo `pnpm exec prisma db push` rodado no
+terminal do usuário, hoje e em sessões passadas) aponta pro projeto Supabase
+`nkwpfmzxqsveodxaqonx`. A API em produção no Render usa `DATABASE_URL`/`DIRECT_URL`
+apontando pro projeto `eqtbvtpmbowllqzntnwa` — um banco Postgres COMPLETAMENTE
+DIFERENTE.** São dois projetos Supabase distintos, não o mesmo banco visto de dois jeitos.
+Isso significa que **todo `db push` já rodado neste projeto (desde a sessão do Guardian
+schedule/e-mail em 05/08, passando por Google Drive, Projeção, e o Fluxos Críticos de
+hoje) só sincronizou o banco `nkwpfmzxqsveodxaqonx` — o banco de produção real
+(`eqtbvtpmbowllqzntnwa`) nunca recebeu essas mudanças de schema.** O `Organization.
+emailProvider` (que já existia no `schema.prisma` há dias) só quebrou o login agora
+porque o Prisma Client regenerado no deploy de hoje passou a tentar selecionar essa
+coluna numa query de auth que sempre busca `User` + `Organization` juntos — antes disso
+o cliente antigo simplesmente não sabia que essa coluna deveria existir, então não
+tentava lê-la.
+
+**Corrigido nesta sessão:** rodado `pnpm exec prisma db push` sobrescrevendo
+`DATABASE_URL`/`DIRECT_URL` via `set` no terminal (só para aquela janela, sem alterar o
+`.env`) com as credenciais reais de produção (copiadas de
+`dashboard.render.com/web/srv-d9h4t04m0tmc73brc24g/env`, campos `DATABASE_URL`/
+`DIRECT_URL`, ambas idênticas — pooler Supabase em modo sessão, porta 5432, host
+`aws-1-us-east-2.pooler.supabase.com`, usuário `postgres.eqtbvtpmbowllqzntnwa`). O push
+aceitou remover o valor órfão `NUVEMSHOP` do enum `AdapterKind` (inofensivo, documentado
+no item 7 de Pendências) e sincronizou tudo: `emailProvider` e demais colunas antigas
+faltantes, `ProjectionTask`, `CriticalFlow`/`FlowRun`. Login voltou a funcionar
+(testado ao vivo com e-mail/senha) e o Fluxos Críticos foi validado ponta a ponta em
+produção: projeto de teste criado, fluxo com 1 passo (`NAVIGATE` para
+`https://example.com`) criado pela UI, "Rodar agora" executou o Playwright de
+verdade e gravou `Passou · 5.2s`.
+
+**Ainda não resolvido — ação necessária do usuário:** decidir e corrigir a divergência
+de configuração em definitivo. Duas opções, não fiz nenhuma das duas porque envolve
+decisão de produto/infra que não é minha:
+1. Se `nkwpfmzxqsveodxaqonx` foi um projeto Supabase de teste/dev criado em algum
+   momento e esquecido: apagar esse projeto no Supabase (ou pelo menos não usá-lo mais)
+   e atualizar `apps/api/.env` local para apontar pras mesmas credenciais de produção
+   (`eqtbvtpmbowllqzntnwa`) — assim local e produção nunca mais divergem, ao custo de
+   não ter um banco de dev separado.
+2. Se a intenção sempre foi ter bancos separados (dev local vs. produção, prática comum
+   e recomendável): manter os dois, mas **documentar isso claramente** e, a partir de
+   agora, sempre que alguém rodar `db push` numa sessão de agente, rodar duas vezes — uma
+   vez padrão (local/dev) e uma vez explicitamente contra produção (como fiz hoje, com
+   `set` sobrescrevendo as URLs) — ou configurar um script `db:push:prod` no
+   `package.json` que já usa as credenciais certas via uma variável de ambiente separada,
+   pra não depender de copiar/colar segredo toda vez.
+   **Se essa for a rota escolhida, a partir de agora todo checklist de validação deste
+   arquivo que manda rodar `db push` precisa deixar explícito que isso NÃO chega em
+   produção sozinho — precisa do passo extra.**
+
+**Nota técnica**: o Render free tier não tem Shell habilitado (feature paga, plano
+Starter+) — não dá pra rodar `prisma db push`/`migrate deploy` de dentro do próprio
+serviço em produção; a única forma viável hoje é rodar do terminal local apontando pras
+credenciais de produção copiadas do dashboard do Render, como feito nesta sessão.
+Também vale registrar: o Render free tier "dorme" com inatividade e demora ~50s+ pra
+acordar na primeira request (aviso visível no próprio dashboard) — isso por si só NÃO
+causa "Erro interno", só demora; o erro real sempre vinha do Prisma.
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —
