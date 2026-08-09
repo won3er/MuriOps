@@ -133,10 +133,13 @@ function AplicacaoPageInner() {
       <Card>
         <CardContent className="space-y-5 py-6">
           <div>
-            <h2 className="text-sm font-semibold">
-              Criar aplicação a partir de um projeto
-            </h2>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+              <h2 className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                Criar aplicação a partir de um projeto
+              </h2>
+            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">
               Escolha quais análises concluídas devem compor o novo plano.
             </p>
           </div>
@@ -175,29 +178,34 @@ function AplicacaoPageInner() {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-2.5 sm:grid-cols-3">
             {SCOPES.map((s) => (
               <button
                 key={s.value}
                 type="button"
                 onClick={() => setScope(s.value)}
                 className={cn(
-                  "rounded-lg border p-4 text-left transition-colors",
+                  "rounded-md border p-4 text-left transition-colors hover:border-foreground/30",
                   scope === s.value
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-primary/40",
+                    ? "border-primary bg-primary/[0.04]"
+                    : "border-border",
                 )}
               >
-                <s.icon
-                  className={cn(
-                    "mb-2 h-5 w-5",
-                    scope === s.value
-                      ? "text-primary"
-                      : "text-muted-foreground",
+                <div className="flex items-center justify-between">
+                  <s.icon
+                    className={cn(
+                      "h-4 w-4",
+                      scope === s.value
+                        ? "text-primary"
+                        : "text-muted-foreground",
+                    )}
+                  />
+                  {scope === s.value && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
                   )}
-                />
-                <p className="text-sm font-medium">{s.label}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
+                </div>
+                <p className="mt-2.5 text-sm font-medium">{s.label}</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
                   {s.description}
                 </p>
               </button>
@@ -232,10 +240,10 @@ function AplicacaoPageInner() {
             <button
               type="button"
               onClick={() => setConnectionsOpen((v) => !v)}
-              className="flex w-full items-center gap-2 rounded-md border px-3 py-2.5 text-sm transition-colors hover:bg-accent"
+              className="flex w-full items-center gap-2.5 rounded-md border px-3 py-2.5 text-sm transition-colors hover:border-foreground/30"
             >
               <Plug className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">
+              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
                 Conexões e integrações deste projeto
               </span>
               <ChevronDown
