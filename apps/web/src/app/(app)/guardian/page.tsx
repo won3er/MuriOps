@@ -242,7 +242,10 @@ export default function GuardianPage() {
         <CardContent className="space-y-4 py-6">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold">Regras de negócio</h2>
+              <h2 className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+                Regras de negócio
+              </h2>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 Opcional — sem regras, a IA ainda audita usando julgamento geral de auditor (números que não fecham, datas erradas, campos vazios...).
               </p>
@@ -313,7 +316,10 @@ export default function GuardianPage() {
                 <HardDrive className="h-4 w-4" />
               </span>
               <div>
-                <h2 className="text-sm font-semibold">Google Drive</h2>
+                <h2 className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+                  Google Drive
+                </h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {driveStatus?.connected
                     ? `Conectado${driveStatus.email ? ` como ${driveStatus.email}` : ""} — escolha um documento de uma pasta.`
@@ -427,7 +433,10 @@ export default function GuardianPage() {
               <ShieldCheck className="h-4 w-4" />
             </span>
             <div>
-              <h2 className="text-sm font-semibold">Nova auditoria</h2>
+              <h2 className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+              Nova auditoria
+            </h2>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 Cole o conteúdo do documento (exporte a planilha como CSV/texto, ou cole o texto do contrato/formulário).
               </p>
@@ -650,7 +659,10 @@ function GuardianScheduleSection({
       <CardContent className="space-y-4 py-6">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold">Agendamento automático</h2>
+            <h2 className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+              Agendamento automático
+            </h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
               Reaudita um arquivo do Google Drive todo dia, no horário
               escolhido, e envia o resumo por e-mail (se configurado em
