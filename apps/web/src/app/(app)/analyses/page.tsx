@@ -109,12 +109,12 @@ function AnalysesHub() {
         description="Execute verificações, acompanhe o processamento e compare a evolução dos projetos."
       />
 
-      <section className="rounded-lg border bg-card">
-        <div className="border-b px-5 py-4">
-          <h2 className="text-sm font-semibold">Nova análise</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Selecione o projeto e escolha o escopo adequado.
-          </p>
+      <section className="rounded-md border bg-card">
+        <div className="flex items-center gap-2 border-b px-5 py-3.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+          <h2 className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+            Nova análise
+          </h2>
         </div>
         <div className="grid gap-5 p-5 lg:grid-cols-[minmax(220px,1fr)_minmax(0,2fr)]">
           <div>
@@ -159,9 +159,9 @@ function AnalysesHub() {
           </div>
           <div>
             {projectId && !connectionsLoading && !connectionsError && !hasRepoConnection ? (
-              <div className="flex flex-col items-start gap-3 rounded-md border border-dashed p-6 text-center sm:items-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full border bg-muted">
-                  <Link2 className="h-5 w-5 text-muted-foreground" />
+              <div className="flex flex-col items-start gap-3 rounded-md border p-6 text-center sm:items-center">
+                <div className="flex h-9 w-9 items-center justify-center rounded-md border bg-muted">
+                  <Link2 className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="sm:text-center">
                   <p className="text-sm font-semibold">
@@ -190,18 +190,23 @@ function AnalysesHub() {
                 </div>
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
               <button
                 type="button"
                 onClick={() => setSelectedType("qa")}
                 disabled={!projectId}
                 aria-pressed={selectedType === "qa"}
                 className={cn(
-                  "group flex gap-3 rounded-md border p-4 text-left hover:border-primary/50 hover:bg-accent/30 disabled:pointer-events-none disabled:opacity-50",
-                  selectedType === "qa" && "border-primary bg-primary/[0.06]",
+                  "group relative flex flex-col gap-2.5 rounded-md border p-4 text-left transition-colors hover:border-foreground/30 disabled:pointer-events-none disabled:opacity-40",
+                  selectedType === "qa"
+                    ? "border-primary bg-primary/[0.04]"
+                    : "border-border",
                 )}
               >
-                <Play className="h-5 w-5 text-primary" />
+                <div className="flex items-center justify-between">
+                  <Play className="h-4 w-4 text-primary" />
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">QA</span>
+                </div>
                 <span>
                   <strong className="block text-sm font-medium">
                     Análise QA padrão
@@ -217,12 +222,16 @@ function AnalysesHub() {
                 disabled={!projectId}
                 aria-pressed={selectedType === "security"}
                 className={cn(
-                  "group flex gap-3 rounded-md border p-4 text-left hover:border-primary/50 hover:bg-accent/30 disabled:pointer-events-none disabled:opacity-50",
-                  selectedType === "security" &&
-                    "border-amber-400 bg-amber-500/[0.06]",
+                  "group relative flex flex-col gap-2.5 rounded-md border p-4 text-left transition-colors hover:border-foreground/30 disabled:pointer-events-none disabled:opacity-40",
+                  selectedType === "security"
+                    ? "border-amber-400 bg-amber-500/[0.04]"
+                    : "border-border",
                 )}
               >
-                <ShieldAlert className="h-5 w-5 text-amber-400" />
+                <div className="flex items-center justify-between">
+                  <ShieldAlert className="h-4 w-4 text-amber-400" />
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">SEC</span>
+                </div>
                 <span>
                   <strong className="block text-sm font-medium">
                     Análise de Segurança
@@ -243,12 +252,16 @@ function AnalysesHub() {
                     : undefined
                 }
                 className={cn(
-                  "group flex gap-3 rounded-md border p-4 text-left hover:border-primary/50 hover:bg-accent/30 disabled:pointer-events-none disabled:opacity-50",
-                  selectedType === "active" &&
-                    "border-rose-400 bg-rose-500/[0.06]",
+                  "group relative flex flex-col gap-2.5 rounded-md border p-4 text-left transition-colors hover:border-foreground/30 disabled:pointer-events-none disabled:opacity-40",
+                  selectedType === "active"
+                    ? "border-rose-400 bg-rose-500/[0.04]"
+                    : "border-border",
                 )}
               >
-                <Swords className="h-5 w-5 text-rose-400" />
+                <div className="flex items-center justify-between">
+                  <Swords className="h-4 w-4 text-rose-400" />
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">PEN</span>
+                </div>
                 <span>
                   <strong className="block text-sm font-medium">
                     Teste Ativo Autorizado
@@ -256,7 +269,7 @@ function AnalysesHub() {
                   <span className="mt-1 block text-xs leading-5 text-muted-foreground">
                     {projectId && !selectedProject?.activeTestingConsent
                       ? "Requer consentimento — habilite na página do projeto."
-                      : "Rate-limit, enumeração de usuário e payloads de detecção."}
+                      : "Rate-limit, enumeração de usuário e payloads de SQLi/XSS/SSRF/XXE."}
                   </span>
                 </span>
               </button>
@@ -266,19 +279,23 @@ function AnalysesHub() {
                 disabled={!projectId}
                 aria-pressed={selectedType === "source"}
                 className={cn(
-                  "group flex gap-3 rounded-md border p-4 text-left hover:border-primary/50 hover:bg-accent/30 disabled:pointer-events-none disabled:opacity-50",
-                  selectedType === "source" &&
-                    "border-sky-400 bg-sky-500/[0.06]",
+                  "group relative flex flex-col gap-2.5 rounded-md border p-4 text-left transition-colors hover:border-foreground/30 disabled:pointer-events-none disabled:opacity-40",
+                  selectedType === "source"
+                    ? "border-sky-400 bg-sky-500/[0.04]"
+                    : "border-border",
                 )}
               >
-                <Github className="h-5 w-5 text-sky-400" />
+                <div className="flex items-center justify-between">
+                  <Github className="h-4 w-4 text-sky-400" />
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">SRC</span>
+                </div>
                 <span>
                   <strong className="block text-sm font-medium">
-                    Segurança via GitHub
+                    Segurança via GitHub/GitLab
                   </strong>
                   <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                    Segredos commitados, dependências com CVE e código
-                    inseguro. Exige conexão GitHub em Aplicação.
+                    Segredos commitados, dependências com CVE, Dockerfile
+                    inseguro e código inseguro.
                   </span>
                 </span>
               </button>
