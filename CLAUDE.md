@@ -1448,6 +1448,59 @@ antes de qualquer linha de código.
 
 Fontes: [Strix Review 2026](https://appsecsanta.com/strix), [Strix — Autonomous Security for the AI Era](https://www.strix.ai/), [AI Penetration Testing — Strix](https://www.strix.ai/ai-penetration-testing)
 
+## Sessão 09/08/2026 — Redesign objetivo inspirado no Strix (telas internas do app)
+
+Depois de eu ter interpretado errado o pedido inicial (tinha mexido só na
+copy da home, o usuário corrigiu: **"o designer semelhante ao strix é
+dentro, não fora, dentro nas funcionalidades"**), apliquei o redesign nas
+telas internas de verdade — Análises, Aplicação, Guardian e Monitoramento.
+Padrão visual consistente em todas: título de seção vira label mono
+minúsculo (`font-mono text-[11px] uppercase tracking-[0.14em]`) com um dot
+colorido (`bg-primary`) na frente, em vez de `<h2 className="text-sm
+font-semibold">` genérico; cards de seleção (tipo de análise, escopo de
+aplicação) ganharam tag mono no canto e borda nítida no estado selecionado
+em vez de fundo colorido suave — visual mais "terminal/objetivo", igual ao
+que já era usado nos mockups de marketing (`feature-showcase.tsx`), agora
+replicado nas telas reais.
+
+1. **Bug real encontrado e corrigido nesta sessão** (não é do redesign, é
+   pré-existente): `Button` do projeto (`components/ui/button.tsx`) não
+   suporta a prop `asChild` (sem Radix Slot) — eu tinha usado `<Button
+   asChild><Link>...</Link></Button>` no card de gate de `/analyses`, o que
+   quebrou o `next build` em produção (só descoberto porque o usuário rodou
+   o build antes do commit, como sempre pedido). Corrigido exportando
+   `buttonVariants` do componente e trocando por `<Link
+   className={buttonVariants(...)}>` — padrão que deve ser seguido daqui pra
+   frente sempre que precisar de um link com aparência de botão.
+2. **`/analyses`**: header "Nova análise" com dot+mono; os 4 cards de tipo
+   de análise ganharam tag mono (QA/SEC/PEN/SRC) e borda nítida no
+   selecionado; texto do card "Segurança via GitHub" atualizado pra
+   "GitHub/GitLab" + menção a Dockerfile; card de gate de conexão com borda
+   sólida fina em vez de tracejada.
+3. **`/aplicacao`**: header "Criar aplicação a partir de um projeto" e botão
+   de "Conexões e integrações" no mesmo padrão; os 3 cards de escopo
+   ganharam dot indicator no selecionado em vez de fundo colorido forte.
+4. **`/guardian`**: os 4 headers de seção (Regras de negócio, Google Drive,
+   Nova auditoria, Agendamento automático) padronizados.
+5. **`/monitoramento`**: os 2 headers de seção (Selecione o projeto, Fluxos
+   deste projeto) padronizados.
+6. **`/orquestracao`**: checado — não usa esse padrão de header
+   (`text-sm font-semibold`), então não foi tocado. Se o usuário quiser o
+   mesmo tratamento lá, precisa de um olhar específico na estrutura da
+   página (não é o mesmo componente reaproveitado).
+
+**Commits desta sessão** (todos com build local confirmado pelo usuário
+antes do push): `ccddc77` (gate GitHub/GitLab + segurança,
+2 arquivos — o resto já estava commitado de sessão anterior), `c9464fb`
+(fix Button asChild + redesign Análises), `558290d` (redesign Aplicação),
+`6de594b` (redesign Guardian), `6391db2` (redesign Monitoramento).
+
+**Não fiz**: redesign de `/orquestracao`, `/projects`, `/atualizar`,
+`/settings` — parei nas 4 telas mais centrais pro pentest/QA que o usuário
+pediu. Se quiser expandir pra essas, é o mesmo padrão (`buttonVariants`
+onde precisar de link-como-botão, header dot+mono, cards com tag/dot em vez
+de fundo colorido) aplicado tela por tela.
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —
