@@ -15,7 +15,7 @@ import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { QueryErrorState } from "@/components/query-error-state";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { useAdapterConnections, useProjects } from "@/lib/queries";
 import { cn } from "@/lib/utils";
@@ -175,16 +175,18 @@ function AnalysesHub() {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/aplicacao?projectId=${projectId}`}>
-                      <Github className="h-3.5 w-3.5" /> Conectar GitHub
-                    </Link>
-                  </Button>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/aplicacao?projectId=${projectId}`}>
-                      <GitBranch className="h-3.5 w-3.5" /> Conectar GitLab
-                    </Link>
-                  </Button>
+                  <Link
+                    href={`/aplicacao?projectId=${projectId}`}
+                    className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
+                  >
+                    <Github className="h-3.5 w-3.5" /> Conectar GitHub
+                  </Link>
+                  <Link
+                    href={`/aplicacao?projectId=${projectId}`}
+                    className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
+                  >
+                    <GitBranch className="h-3.5 w-3.5" /> Conectar GitLab
+                  </Link>
                 </div>
               </div>
             ) : (
