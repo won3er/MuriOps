@@ -263,6 +263,23 @@ export class ActiveSecurityTestAnalyzer implements SiteAnalyzer {
             `xss-reflection:${form.action}`,
           );
         }
+
+        // Se o marcador de eco do payload de command injection aparecer na
+        // resposta sem o resto do payload (ex.: "qa-probe; echo
+        // qa-probe-marker" virou execução real do echo), é sinal forte de
+        // que a entrada chegou a um shell sem sanitização.
+        if (
+          payload.label === "command-injection-marker" &&
+          res.text.includes("qa-probe-marker") &&
+          !res.text.includes(payload.value)
+        ) {
+          add(
+            "Teste ativo — Possível execução de comando (Command Injection)",
+            `Ao enviar um payload de detecção de command injection para o formulário em ${form.action}, o marcador de eco ("qa-probe-marker") apareceu na resposta separado do restante do payload enviado — indício de que a entrada chegou a um shell e foi executada, não apenas devolvida como texto. Confirme manualmente com cautela e nunca monte comandos de shell concatenando entrada do usuário; use execFile/spawn com argumentos em array.`,
+            Severity.CRITICAL,
+            `command-injection-hint:${form.action}`,
+          );
+        }
       }
     }
   }

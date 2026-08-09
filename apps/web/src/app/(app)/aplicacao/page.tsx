@@ -13,6 +13,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { GithubConnectionPanel } from "@/components/github-connection-panel";
+import { GitlabConnectionPanel } from "@/components/gitlab-connection-panel";
 import { McpConnectionPanel } from "@/components/mcp-connection-panel";
 import { PageHeader } from "@/components/page-header";
 import { QueryErrorState } from "@/components/query-error-state";
@@ -249,11 +250,14 @@ function AplicacaoPageInner() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <McpConnectionPanel projectId={projectId} />
                   <GithubConnectionPanel projectId={projectId} />
+                  <GitlabConnectionPanel projectId={projectId} />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  GitHub registra o plano em uma pull request. MCP disponibiliza
-                  o contexto para a sua ferramenta de desenvolvimento executar e
-                  sincronizar cada etapa.
+                  GitHub e GitLab registram o plano em uma pull/merge request.
+                  MCP disponibiliza o contexto para a sua ferramenta de
+                  desenvolvimento executar e sincronizar cada etapa. Conectar
+                  GitHub ou GitLab também é obrigatório para rodar qualquer
+                  análise neste projeto.
                 </p>
               </div>
             )}

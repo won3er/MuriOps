@@ -511,6 +511,9 @@ enum AdapterKind {
   MANUAL_BRIDGE
   MCP
   GITHUB
+  // Adicionado em 07/08/2026: mesma lógica do GITHUB (OAuth, apply via
+  // Issue/MR), pra cobrir projetos hospedados no GitLab.
+  GITLAB
   // Adapters push que aplicam de verdade na plataforma do site (Fase 4).
   // Valores legados, mantidos no schema porque enums PostgreSQL não permitem
   // remoção simples. A migration de remoção apaga todas as conexões desses tipos.

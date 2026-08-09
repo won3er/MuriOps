@@ -1,8 +1,9 @@
 "use client";
 
 import {
-  FileSearch,
+  GitBranch,
   Github,
+  Link2,
   Loader2,
   Play,
   ShieldAlert,
@@ -16,7 +17,7 @@ import { PageHeader } from "@/components/page-header";
 import { QueryErrorState } from "@/components/query-error-state";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
-import { useProjects } from "@/lib/queries";
+import { useAdapterConnections, useProjects } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 export default function AnalysesHubPage() {
@@ -57,6 +58,14 @@ function AnalysesHub() {
   }, [searchParams]);
 
   const selectedProject = projects.find((p) => p.id === projectId);
+  const {
+    data: connections = [],
+    isLoading: connectionsLoading,
+    isError: connectionsError,
+  } = useAdapterConnections(projectId);
+  const hasRepoConnection = connections.some(
+    (c) => c.kind === "GITHUB" || c.kind === "GITLAB",
+  );
 
   // Trocar de projeto pode invalidar o tipo escolhido (ex.: Teste Ativo
   // exige consentimento por projeto) — mais seguro pedir pra escolher de novo.
@@ -66,7 +75,7 @@ function AnalysesHub() {
   }
 
   async function startSelected() {
-    if (!projectId || !selectedType) return;
+    if (!projectId || !selectedType || !hasRepoConnection) return;
     setStarting(true);
     try {
       const categories =
@@ -149,7 +158,37 @@ function AnalysesHub() {
             )}
           </div>
           <div>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {projectId && !connectionsLoading && !connectionsError && !hasRepoConnection ? (
+              <div className="flex flex-col items-start gap-3 rounded-md border border-dashed p-6 text-center sm:items-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border bg-muted">
+                  <Link2 className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="sm:text-center">
+                  <p className="text-sm font-semibold">
+                    Conecte um repositório para continuar
+                  </p>
+                  <p className="mt-1 max-w-md text-xs leading-5 text-muted-foreground">
+                    Nenhuma análise roda sem o projeto ter GitHub ou GitLab
+                    conectado — inclusive a Análise QA padrão. Isso garante que
+                    todo achado tenha um repositório real por trás para
+                    aplicar a correção.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/aplicacao?projectId=${projectId}`}>
+                      <Github className="h-3.5 w-3.5" /> Conectar GitHub
+                    </Link>
+                  </Button>
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/aplicacao?projectId=${projectId}`}>
+                      <GitBranch className="h-3.5 w-3.5" /> Conectar GitLab
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <button
                 type="button"
                 onClick={() => setSelectedType("qa")}
@@ -241,12 +280,15 @@ function AnalysesHub() {
                   </span>
                 </span>
               </button>
-            </div>
+              </div>
+            )}
 
             <div className="mt-4 flex items-center gap-3">
               <Button
                 onClick={() => void startSelected()}
-                disabled={!projectId || !selectedType || starting}
+                disabled={
+                  !projectId || !selectedType || starting || !hasRepoConnection
+                }
               >
                 {starting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

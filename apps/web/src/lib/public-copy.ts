@@ -85,8 +85,8 @@ export const LANDING_COPY = {
           "Opt-in only: rate-limit checks, user-enumeration signals and a curated set of detection payloads (SQLi/XSS/path traversal), with a circuit breaker. Requires explicit consent recorded per project.",
         ],
         [
-          "Security scan via GitHub",
-          "Scans a connected repository for known-vulnerable dependencies (CVEs) and insecure code patterns, without touching the live site.",
+          "Security scan via GitHub or GitLab",
+          "Scans a connected repository for known-vulnerable dependencies (CVEs), insecure code patterns, committed secrets and Dockerfile misconfigurations, without touching the live site. Connecting a repository is required to run any analysis.",
         ],
         ["Version comparison", "What was fixed, introduced or remains."],
       ],
@@ -102,8 +102,8 @@ export const LANDING_COPY = {
           "Read-only connection per organization. Guardian lists your folders and reads a document (Google Docs, Sheets, PDF, Excel, CSV/TXT/TSV/JSON) straight from Drive, no need to paste text manually — including for scheduled automatic re-audits.",
         ],
         [
-          "GitHub",
-          "Connect a repository (owner/repo/branch) to apply the remediation plan via direct push, or use it as a source for Security Analysis (CVE-flagged dependencies, insecure patterns) and Update (detects dependency manifests and generates an upgrade plan).",
+          "GitHub or GitLab",
+          "Connect a repository (via personal access token) to apply the remediation plan through a pull/merge request, or use it as a source for Security Analysis (CVE-flagged dependencies, insecure patterns, secrets, Dockerfile checks) and Update (detects dependency manifests and generates an upgrade plan). Connecting one of the two is required before running any analysis.",
         ],
         [
           "Your development AI",
@@ -204,8 +204,8 @@ export const LANDING_COPY = {
           "Opt-in: checagem de rate-limit, indícios de enumeração de usuário e um conjunto curado de payloads de detecção (SQLi/XSS/path traversal), com circuit breaker. Exige consentimento explícito registrado no projeto.",
         ],
         [
-          "Análise de segurança via GitHub",
-          "Varre um repositório conectado em busca de dependências com CVE conhecida e padrões de código inseguro, sem tocar no site em produção.",
+          "Análise de segurança via GitHub ou GitLab",
+          "Varre um repositório conectado em busca de dependências com CVE conhecida, padrões de código inseguro, segredos commitados e configurações inseguras de Dockerfile, sem tocar no site em produção. Conectar um repositório é obrigatório para rodar qualquer análise.",
         ],
         ["Comparação de versões", "O que foi corrigido, surgiu ou persiste."],
       ],
@@ -221,8 +221,8 @@ export const LANDING_COPY = {
           "Conexão só leitura, por organização. O Guardian lista suas pastas e lê um documento (Google Docs, Sheets, PDF, Excel, CSV/TXT/TSV/JSON) direto do Drive, sem precisar colar o texto manualmente — inclusive para reauditoria automática agendada.",
         ],
         [
-          "GitHub",
-          "Conecta um repositório (owner/repo/branch) para aplicar o plano de correção via push direto no código, ou para servir de fonte da Análise de Segurança (dependências com CVE, padrões inseguros) e da Atualização (detecta manifestos de dependências e gera plano de upgrade).",
+          "GitHub ou GitLab",
+          "Conecta um repositório (via token de acesso pessoal) para aplicar o plano de correção via pull/merge request, ou para servir de fonte da Análise de Segurança (dependências com CVE, padrões inseguros, segredos, checagens de Dockerfile) e da Atualização (detecta manifestos de dependências e gera plano de upgrade). Conectar um dos dois é obrigatório antes de rodar qualquer análise.",
         ],
         [
           "Sua IA de desenvolvimento",
@@ -330,8 +330,8 @@ export const LANDING_COPY = {
           "Opt-in: verificación de rate-limit, señales de enumeración de usuarios y un conjunto curado de payloads de detección (SQLi/XSS/path traversal), con circuit breaker. Requiere consentimiento explícito registrado en el proyecto.",
         ],
         [
-          "Análisis de seguridad vía GitHub",
-          "Escanea un repositorio conectado en busca de dependencias con CVE conocida y patrones de código inseguro, sin tocar el sitio en producción.",
+          "Análisis de seguridad vía GitHub o GitLab",
+          "Escanea un repositorio conectado en busca de dependencias con CVE conocida, patrones de código inseguro, secretos confirmados en el código y configuraciones inseguras de Dockerfile, sin tocar el sitio en producción. Conectar un repositorio es obligatorio para ejecutar cualquier análisis.",
         ],
         ["Comparación de versiones", "Qué se corrigió, apareció o permanece."],
       ],
@@ -347,8 +347,8 @@ export const LANDING_COPY = {
           "Conexión de solo lectura por organización. Guardian lista tus carpetas y lee un documento (Google Docs, Sheets, PDF, Excel, CSV/TXT/TSV/JSON) directo desde Drive, sin necesidad de pegar el texto manualmente — incluida la reauditoría automática programada.",
         ],
         [
-          "GitHub",
-          "Conecta un repositorio (owner/repo/branch) para aplicar el plan de remediación mediante push directo, o para usarlo como fuente del Análisis de Seguridad (dependencias con CVE, patrones inseguros) y de Actualización (detecta manifiestos de dependencias y genera un plan de actualización).",
+          "GitHub o GitLab",
+          "Conecta un repositorio (vía token de acceso personal) para aplicar el plan de remediación mediante pull/merge request, o para usarlo como fuente del Análisis de Seguridad (dependencias con CVE, patrones inseguros, secretos, verificaciones de Dockerfile) y de Actualización (detecta manifiestos de dependencias y genera un plan de actualización). Conectar uno de los dos es obligatorio antes de ejecutar cualquier análisis.",
         ],
         [
           "Tu IA de desarrollo",

@@ -3,6 +3,8 @@ export const SECRET_PATHS = [
   ".env",
   ".env.local",
   ".env.production",
+  ".env.dev",
+  ".env.staging",
   ".git/config",
   ".git/HEAD",
   ".aws/credentials",
@@ -13,6 +15,16 @@ export const SECRET_PATHS = [
   "credentials.json",
   "secrets.json",
   "appsettings.json",
+  "appsettings.Development.json",
+  "config.yaml",
+  "config.yml",
+  "docker-compose.yml",
+  ".npmrc",
+  ".dockercfg",
+  ".htpasswd",
+  "firebase-adminsdk.json",
+  "service-account.json",
+  "gcp-key.json",
 ];
 
 export const BACKUP_PATHS = [
@@ -28,6 +40,11 @@ export const BACKUP_PATHS = [
   "error.log",
   "debug.log",
   "npm-debug.log",
+  "backup.rar",
+  "db.sqlite3",
+  "database.db",
+  ".DS_Store",
+  "web.config.bak",
 ];
 
 export const API_DOCS_PATHS = [
@@ -36,11 +53,38 @@ export const API_DOCS_PATHS = [
   "api-docs",
   "openapi.json",
   "graphql",
+  "graphiql",
+  "v1/swagger.json",
+  "api/swagger.json",
+  ".well-known/openapi.json",
 ];
 
-export const ADMIN_PATHS = ["phpmyadmin", "adminer.php", "wp-admin"];
+export const ADMIN_PATHS = [
+  "phpmyadmin",
+  "adminer.php",
+  "wp-admin",
+  "admin",
+  "administrator",
+  "django-admin",
+  "grafana",
+  "kibana",
+  "actuator",
+  "actuator/health",
+  "console",
+  "_profiler",
+];
 
-export const DIR_LISTING_PATHS = ["images/", "uploads/", "assets/", "files/", "static/"];
+export const DIR_LISTING_PATHS = [
+  "images/",
+  "uploads/",
+  "assets/",
+  "files/",
+  "static/",
+  "backup/",
+  "backups/",
+  "media/",
+  "tmp/",
+];
 
 /**
  * Bibliotecas JS com CVEs conhecidas abaixo da versão indicada (curadoria
@@ -88,6 +132,20 @@ export const VULNERABLE_JS_LIBS: {
     versionProp: "Tooltip.VERSION",
     belowVersion: "4.3.1",
     cve: "CVE-2019-8331 (XSS via opção data-template/data-content de tooltip/popover)",
+  },
+  {
+    name: "Vue",
+    globalCheck: "Vue",
+    versionProp: "version",
+    belowVersion: "2.6.14",
+    cve: "CVE-2021-30469 (XSS via renderização de template não sanitizado em SSR)",
+  },
+  {
+    name: "Handlebars",
+    globalCheck: "Handlebars",
+    versionProp: "VERSION",
+    belowVersion: "4.7.7",
+    cve: "CVE-2021-23383 (poluição de protótipo via template compilado)",
   },
 ];
 

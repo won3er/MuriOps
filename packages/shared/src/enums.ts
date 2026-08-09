@@ -148,6 +148,7 @@ export const AdapterKind = {
   MANUAL_BRIDGE: "MANUAL_BRIDGE",
   MCP: "MCP",
   GITHUB: "GITHUB",
+  GITLAB: "GITLAB",
 } as const;
 export type AdapterKind = (typeof AdapterKind)[keyof typeof AdapterKind];
 

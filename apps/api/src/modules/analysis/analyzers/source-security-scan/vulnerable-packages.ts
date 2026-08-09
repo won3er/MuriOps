@@ -119,6 +119,64 @@ export const KNOWN_VULNERABLE_PACKAGES: KnownVulnerablePackage[] = [
     cve: "CVE-2024-28219",
     note: "Buffer overflow no processamento de imagem.",
   },
+  {
+    ecosystem: "npm",
+    name: "vite",
+    belowVersion: "5.4.12",
+    cve: "CVE-2025-30208",
+    note: "Bypass de restrição de arquivo no servidor de dev — expõe arquivos fora da raiz do projeto.",
+  },
+  {
+    ecosystem: "npm",
+    name: "ws",
+    belowVersion: "8.17.1",
+    cve: "CVE-2024-37890",
+    note: "Negação de serviço via requisição de handshake malformada.",
+  },
+  {
+    ecosystem: "npm",
+    name: "semver",
+    belowVersion: "7.5.2",
+    cve: "CVE-2022-25883",
+    note: "ReDoS (negação de serviço) no parser de versão.",
+  },
+  // ---- pip (continuação) ----
+  {
+    ecosystem: "pip",
+    name: "urllib3",
+    belowVersion: "2.2.2",
+    cve: "CVE-2024-37891",
+    note: "Vazamento de credenciais de proxy em redirecionamento cross-origin.",
+  },
+  {
+    ecosystem: "pip",
+    name: "cryptography",
+    belowVersion: "42.0.4",
+    cve: "CVE-2024-26130",
+    note: "NULL pointer dereference (DoS) ao processar certos PKCS#12.",
+  },
+  {
+    ecosystem: "pip",
+    name: "jinja2",
+    belowVersion: "3.1.5",
+    cve: "CVE-2024-56201",
+    note: "Sandbox escape possibilitando execução de código via template malicioso.",
+  },
+  // ---- ruby (gemfile) ----
+  {
+    ecosystem: "bundler",
+    name: "rails",
+    belowVersion: "7.0.8.4",
+    cve: "CVE-2024-26146",
+    note: "ReDoS em Range header do ActionDispatch.",
+  },
+  {
+    ecosystem: "bundler",
+    name: "nokogiri",
+    belowVersion: "1.16.5",
+    cve: "CVE-2024-34459",
+    note: "Uso de libxml2 vulnerável vendorizado — múltiplos CVEs de parsing XML.",
+  },
   // ---- outros ecossistemas comuns ----
   {
     ecosystem: "composer",
@@ -128,11 +186,32 @@ export const KNOWN_VULNERABLE_PACKAGES: KnownVulnerablePackage[] = [
     note: "Vazamento de header de autorização em redirecionamento cross-domain.",
   },
   {
+    ecosystem: "composer",
+    name: "laravel/framework",
+    belowVersion: "10.48.29",
+    cve: "CVE-2024-52301",
+    note: "Bypass de proteção de argumento via variável de ambiente X-Forwarded.",
+  },
+  {
     ecosystem: "maven",
     name: "org.apache.logging.log4j:log4j-core",
     belowVersion: "2.17.1",
     cve: "CVE-2021-44228 (Log4Shell)",
     note: "Execução remota de código via JNDI lookup — uma das vulnerabilidades mais críticas já divulgadas.",
+  },
+  {
+    ecosystem: "maven",
+    name: "org.springframework:spring-core",
+    belowVersion: "5.3.39",
+    cve: "CVE-2024-38820",
+    note: "Bypass de restrição de padrão de path em determinadas condições de comparação.",
+  },
+  {
+    ecosystem: "go",
+    name: "golang.org/x/net",
+    belowVersion: "0.23.0",
+    cve: "CVE-2023-45288",
+    note: "Consumo excessivo de memória ao decodificar HTTP/2 HPACK malformado (DoS).",
   },
 ];
 

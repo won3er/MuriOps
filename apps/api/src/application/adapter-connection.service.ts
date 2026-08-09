@@ -8,6 +8,10 @@ export class InvalidGithubConnectionError extends Error {
   readonly statusCode = 400;
 }
 
+export class InvalidGitlabConnectionError extends Error {
+  readonly statusCode = 400;
+}
+
 /**
  * Gerencia `AdapterConnection` — MCP (Fase 1, pull) e GitHub (Fase 2, push).
  * O adapter de ponte manual não precisa de conexão própria (usa o `apiToken`
@@ -166,6 +170,66 @@ export const adapterConnectionService = {
     return { ...toDto(row), maskedToken };
   },
 
+  /**
+   * Cria ou atualiza a conexão GitLab do projeto — mesmo padrão do GitHub
+   * (Personal/Project Access Token colado pelo usuário, não OAuth: não exige
+   * criar nenhum App externo, funciona imediatamente). `projectPath` é o
+   * "namespace/repo" do GitLab (ex.: `meugrupo/meu-projeto`).
+   */
+  async upsertGitlabConnection(
+    organizationId: string,
+    projectId: string,
+    userId: string,
+    input: { projectPath: string; token: string },
+  ): Promise<AdapterConnection> {
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, organizationId },
+      select: { id: true },
+    });
+    if (!project) throw new NotFoundError("Projeto não encontrado");
+
+    await validateGitlabRepository(input);
+
+    const existing = await prisma.adapterConnection.findUnique({
+      where: { projectId_kind: { projectId, kind: "GITLAB" } },
+    });
+
+    const data = {
+      projectId,
+      organizationId,
+      kind: "GITLAB" as const,
+      capabilities: ["ANALYZE", "APPLY", "OBSERVE"] as ("ANALYZE" | "APPLY" | "OBSERVE")[],
+      mode: "push",
+      config: { projectPath: input.projectPath },
+      credentialEncrypted: encryptSecret(input.token),
+      createdById: userId,
+    };
+
+    const row = existing
+      ? await prisma.adapterConnection.update({ where: { id: existing.id }, data })
+      : await prisma.adapterConnection.create({ data });
+
+    return toDto(row);
+  },
+
+  /** Conexão GitLab com o token mascarado — pra exibir na tela sem reexibir o valor real. */
+  async getGitlabConnectionMasked(
+    organizationId: string,
+    projectId: string,
+  ): Promise<(AdapterConnection & { maskedToken: string | null }) | null> {
+    const row = await prisma.adapterConnection.findFirst({
+      where: { projectId, organizationId, kind: "GITLAB" },
+    });
+    if (!row) return null;
+    let maskedToken: string | null = null;
+    try {
+      maskedToken = row.credentialEncrypted ? maskSecret(decryptSecret(row.credentialEncrypted)) : null;
+    } catch {
+      maskedToken = "••••";
+    }
+    return { ...toDto(row), maskedToken };
+  },
+
 };
 
 /**
@@ -212,6 +276,52 @@ async function validateGithubRepository(input: {
     if (error instanceof InvalidGithubConnectionError) throw error;
     throw new InvalidGithubConnectionError(
       "Não foi possível validar a conexão com o GitHub agora. Confira sua rede e tente novamente.",
+    );
+  }
+}
+
+/**
+ * Confere o acesso ao repositório GitLab antes de persistir a credencial —
+ * mesma filosofia de `validateGithubRepository`. GitLab identifica o
+ * repositório pelo "projectPath" (namespace/repo), que precisa ser
+ * URL-encoded como um único segmento pra API v4.
+ */
+async function validateGitlabRepository(input: {
+  projectPath: string;
+  token: string;
+}): Promise<void> {
+  const encodedPath = encodeURIComponent(input.projectPath.trim());
+  try {
+    const response = await fetch(
+      `https://gitlab.com/api/v4/projects/${encodedPath}`,
+      {
+        headers: { "PRIVATE-TOKEN": input.token },
+        signal: AbortSignal.timeout(10_000),
+      },
+    );
+    if (response.ok) return;
+    if (response.status === 401) {
+      throw new InvalidGitlabConnectionError(
+        "O token do GitLab foi recusado. Gere um token novo (Settings → Access Tokens) e tente novamente.",
+      );
+    }
+    if (response.status === 403) {
+      throw new InvalidGitlabConnectionError(
+        "O GitLab recusou o acesso. Confira se o token tem o escopo 'api' e permissão nesse projeto.",
+      );
+    }
+    if (response.status === 404) {
+      throw new InvalidGitlabConnectionError(
+        "Não foi possível acessar este projeto. Confira o caminho (namespace/repo) e se o token tem acesso a projetos privados.",
+      );
+    }
+    throw new InvalidGitlabConnectionError(
+      `O GitLab não confirmou a conexão agora (status ${response.status}). Tente novamente em instantes.`,
+    );
+  } catch (error) {
+    if (error instanceof InvalidGitlabConnectionError) throw error;
+    throw new InvalidGitlabConnectionError(
+      "Não foi possível validar a conexão com o GitLab agora. Confira sua rede e tente novamente.",
     );
   }
 }

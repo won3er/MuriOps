@@ -221,6 +221,21 @@ export const api = {
       { method: "POST", body: JSON.stringify(body) },
     ),
 
+  // ---- adapter GitLab (mesmo padrão push do GitHub) ----
+  getGitlabConnection: (projectId: string) =>
+    request<
+      | (AdapterConnection & { maskedToken: string | null })
+      | { configured: false }
+    >(`/projects/${projectId}/gitlab-connection`),
+  connectGitlab: (
+    projectId: string,
+    body: { projectPath: string; token: string },
+  ) =>
+    request<AdapterConnection>(`/projects/${projectId}/gitlab-connection`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
   // ---- conexões do projeto (seletor de adapter na Orquestração) ----
   listAdapterConnections: (projectId: string) =>
     request<AdapterConnection[]>(`/projects/${projectId}/adapter-connections`),

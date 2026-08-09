@@ -1,6 +1,7 @@
 import type { Adapter } from "@qa-ai/shared";
 import { decryptSecret } from "../crypto/secret-box.js";
 import { GithubAdapter } from "./github/github-adapter.js";
+import { GitlabAdapter } from "./gitlab/gitlab-adapter.js";
 import { ManualBridgeAdapter } from "./manual-bridge.adapter.js";
 
 /**
@@ -43,6 +44,16 @@ export function createAdapterFor(connection: AdapterConnectionRow): Adapter {
         decryptSecret(connection.credentialEncrypted),
         config.owner,
         config.repo,
+      );
+    }
+    case "GITLAB": {
+      const config = connection.config as { projectPath?: string } | null;
+      if (!connection.credentialEncrypted || !config?.projectPath) {
+        throw new Error("Conexão GITLAB incompleta (token ou projectPath ausente).");
+      }
+      return new GitlabAdapter(
+        decryptSecret(connection.credentialEncrypted),
+        config.projectPath,
       );
     }
     default:

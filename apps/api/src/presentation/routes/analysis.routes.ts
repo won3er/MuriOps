@@ -6,6 +6,7 @@ import {
   ConsentRequiredError,
   GithubConnectionRequiredError,
   NotFoundError,
+  RepoConnectionRequiredError,
 } from "../../application/analysis.service.js";
 import { prisma } from "../../infrastructure/database/prisma.js";
 import { generateAnalysisReportPdf } from "../../infrastructure/pdf/report.js";
@@ -51,6 +52,10 @@ export async function analysisRoutes(app: FastifyInstance): Promise<void> {
         return reply
           .status(400)
           .send({ statusCode: 400, error: "GithubConnectionRequired", message: err.message });
+      if (err instanceof RepoConnectionRequiredError)
+        return reply
+          .status(400)
+          .send({ statusCode: 400, error: "RepoConnectionRequired", message: err.message });
       throw err;
     }
   };

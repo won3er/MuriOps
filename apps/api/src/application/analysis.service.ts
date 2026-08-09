@@ -46,6 +46,17 @@ export class GithubConnectionRequiredError extends Error {
   readonly statusCode = 400;
 }
 
+/**
+ * [07/08/2026] Gate novo, decisão de produto do usuário: nenhuma análise —
+ * nem a QA padrão — roda mais sem o projeto ter GitHub ou GitLab conectado.
+ * Antes só categorias específicas (SOURCE_SECURITY_SCAN) exigiam isso; agora
+ * é ponto de entrada único pra qualquer `start()`. Verificado aqui (não só
+ * na UI) porque é o único lugar que nenhuma chamada de API consegue burlar.
+ */
+export class RepoConnectionRequiredError extends Error {
+  readonly statusCode = 400;
+}
+
 export const analysisService = {
   /**
    * Hub "Análise": todas as análises da organização, de qualquer projeto,
@@ -87,6 +98,19 @@ export const analysisService = {
     );
 
     const categories = normalizeCategories(input.categories);
+
+    // Gate de verdade do requisito "sem repo conectado, sem análise": vale
+    // pra qualquer categoria, inclusive QA padrão. Reaproveita as mesmas
+    // conexões de Aplicação (GITHUB/GITLAB) — não pede nada novo do usuário.
+    const repoConnection = await prisma.adapterConnection.findFirst({
+      where: { projectId, organizationId, kind: { in: ["GITHUB", "GITLAB"] } },
+      select: { id: true },
+    });
+    if (!repoConnection) {
+      throw new RepoConnectionRequiredError(
+        "Conecte o GitHub ou o GitLab deste projeto antes de rodar qualquer análise. Vá em Aplicação → Conexões e integrações para conectar.",
+      );
+    }
 
     // Gate de verdade do Teste Ativo Autorizado: mesmo que a categoria seja
     // pedida explicitamente no request, ela só roda se o projeto tiver o

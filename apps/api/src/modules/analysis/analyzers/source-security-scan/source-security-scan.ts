@@ -8,6 +8,7 @@ import {
 import { issue } from "../helpers.js";
 import { looksLikePlaceholder, SECRET_PATTERNS } from "./secret-patterns.js";
 import { INSECURE_PATTERNS } from "./insecure-patterns.js";
+import { DOCKERFILE_PATTERNS, isDockerfilePath } from "./dockerfile-patterns.js";
 import {
   compareSemverLike,
   KNOWN_VULNERABLE_PACKAGES,
@@ -211,6 +212,9 @@ export async function runSourceSecurityScan(
 
       scanForSecrets(entry.path, content, secretHits);
       scanForInsecurePatterns(entry.path, content, insecureHits);
+      if (isDockerfilePath(entry.path)) {
+        scanDockerfile(entry.path, content, insecureHits);
+      }
 
       if (MANIFEST_FILE_NAMES.has(fileName.toLowerCase())) {
         const detection = detectManifest(content, fileName);
@@ -289,8 +293,10 @@ function isIgnoredPath(path: string): boolean {
 
 function hasScannableExtension(path: string): boolean {
   const lower = path.toLowerCase();
-  return CODE_EXTENSIONS.some((ext) => lower.endsWith(ext)) || MANIFEST_FILE_NAMES.has(
-    lower.split("/").pop() ?? "",
+  return (
+    CODE_EXTENSIONS.some((ext) => lower.endsWith(ext)) ||
+    MANIFEST_FILE_NAMES.has(lower.split("/").pop() ?? "") ||
+    isDockerfilePath(path)
   );
 }
 
@@ -335,6 +341,32 @@ function scanForSecrets(
     } else {
       hits.set(pattern.id, { count: real.length, sampleFile: path });
     }
+  }
+}
+
+function scanDockerfile(
+  path: string,
+  content: string,
+  out: DetectedIssue[],
+): void {
+  for (const pattern of DOCKERFILE_PATTERNS) {
+    if (!pattern.test(content)) continue;
+    out.push(
+      issue({
+        title: `Dockerfile inseguro — ${pattern.label}`,
+        description: `${pattern.description} Encontrado em ${path}.`,
+        category: AnalysisCategory.SOURCE_SECURITY_SCAN,
+        severity:
+          pattern.severity === "CRITICAL"
+            ? Severity.CRITICAL
+            : pattern.severity === "HIGH"
+              ? Severity.HIGH
+              : pattern.severity === "MEDIUM"
+                ? Severity.MEDIUM
+                : Severity.LOW,
+        fingerprintExtra: [`dockerfile:${pattern.id}:${path}`],
+      }),
+    );
   }
 }
 

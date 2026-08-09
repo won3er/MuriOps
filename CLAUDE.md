@@ -1176,6 +1176,214 @@ alguém, valeria rodar uma consulta pra listar título/organização/data dos 6
 e decidir se vale a pena reexpor de alguma forma (nem que seja um link
 "exportar PDF" avulso) antes de considerar o assunto encerrado.
 
+## Sessão 07-08/08/2026 — Gate obrigatório GitHub/GitLab + inspiração Strix
+
+A pedido do usuário (mandou 3 prints do strix.ai): nenhuma análise roda mais
+sem o projeto ter GitHub ou GitLab conectado, sem exceção (confirmado via
+AskUserQuestion: "todas as análises, sem exceção"); GitLab configurado por
+este agente (autorização explícita: "vc deve configurar, eu dou permissão
+pra vc fazer"); inspiração de design do Strix registrada para trabalho futuro
+de redesign; pentest/segurança deveria se aproximar do que o Strix faz, no
+que for viável sem infraestrutura nova. **Mesma ressalva de sempre: sandbox
+sem `bash` a sessão inteira — nada validado por `tsc`/build, só revisão
+manual.**
+
+1. **GitLab como segundo adapter push**, mesmo padrão do GitHub (token
+   pessoal colado, não OAuth — decisão deliberada pra não precisar criar App
+   OAuth novo): `GITLAB` adicionado ao enum `AdapterKind`
+   (`packages/shared/src/enums.ts` + `schema.prisma`); `GitlabAdapter`
+   (`apps/api/src/infrastructure/adapters/gitlab/gitlab-adapter.ts`) espelha
+   `GithubAdapter` usando a API v4 do GitLab (`PRIVATE-TOKEN` header em vez de
+   `Authorization: Bearer`), abre **Merge Request** em vez de Pull Request,
+   nunca faz merge sozinho — mesmo checkpoint de aprovação humana do GitHub;
+   `createAdapterFor()` (`adapters/index.ts`) resolve pelo `config.projectPath`
+   (`namespace/repo` do GitLab, equivalente ao `owner`/`repo` do GitHub).
+   `adapter-connection.service.ts`: `upsertGitlabConnection`/
+   `getGitlabConnectionMasked`/`validateGitlabRepository` (valida contra
+   `GET /projects/:id` da API do GitLab antes de salvar, mesma ideia do
+   `validateGithubRepository`). Rotas `POST`/`GET
+   /projects/:id/gitlab-connection` em `project.routes.ts`.
+2. **Gate obrigatório** (`analysis.service.ts`): `RepoConnectionRequiredError`
+   (400) — primeira checagem dentro de `start()`, antes de qualquer outra
+   coisa, aplicada a **todas** as categorias (inclusive Análise QA padrão,
+   que antes não dependia de nenhuma conexão). Consulta
+   `prisma.adapterConnection.findFirst({ kind: { in: ["GITHUB", "GITLAB"] } })`
+   pro projeto — se não achar nenhuma, recusa antes de enfileirar.
+   `analysis.routes.ts` mapeia pra 400 `{ error: "RepoConnectionRequired" }`.
+3. **Frontend:**
+   - `GitlabConnectionPanel` (`components/gitlab-connection-panel.tsx`) —
+     espelha `GithubConnectionPanel`, campos `projectPath`/`token` em vez de
+     `owner`/`repo`/`token`, sem o card de webhook (GitLab não tem webhook
+     configurado ainda, só o adapter push). Renderizado ao lado do
+     `GithubConnectionPanel` em `/aplicacao` → "Conexões e integrações".
+   - `useGitlabConnection`/`useConnectGitlab` (`lib/queries.ts`) e
+     `getGitlabConnection`/`connectGitlab` (`lib/api.ts`) — mesmo padrão dos
+     hooks do GitHub, invalidam `qk.adapterConnections` no sucesso pra tela
+     de Análises refletir a conexão nova sem precisar recarregar.
+   - **Tela de bloqueio em `/analyses`** (inspirada no "Connect your
+     repositories" do Strix): se o projeto selecionado não tem conexão
+     GITHUB/GITLAB (`useAdapterConnections`), o seletor de tipo de análise é
+     substituído por um card centralizado explicando o motivo + dois botões
+     ("Conectar GitHub"/"Conectar GitLab") que levam pra `/aplicacao` com o
+     projeto pré-selecionado via query param. Botão "Iniciar análise" também
+     fica desabilitado nesse estado como segunda trava (a de verdade
+     continua sendo o gate do backend).
+4. **Padrões de segurança novos inspirados no escopo de SAST/secrets do
+   Strix**, adicionados ao Análise de Segurança via GitHub
+   (`SOURCE_SECURITY_SCAN`), sem infraestrutura nova — só mais heurísticas
+   textuais no mesmo formato já existente:
+   - `insecure-patterns.ts`: TLS com verificação desabilitada
+     (`rejectUnauthorized: false`/`NODE_TLS_REJECT_UNAUTHORIZED=0`), hash
+     fraco (MD5/SHA1) perto de variável de senha, `Math.random()` usado pra
+     token/segredo, path traversal em `fs.readFile`/`writeFile` com caminho
+     concatenado, desserialização insegura (`node-serialize`/`unserialize`).
+   - `secret-patterns.ts`: token do GitLab (`glpat-`), chave da OpenAI
+     (`sk-...`), chave da Anthropic (`sk-ant-`), chave da Twilio, chave do
+     SendGrid, token do npm.
+   **Não fiz:** nenhuma varredura de infraestrutura como código (Strix cobre
+   Terraform/K8s manifests) — exigiria parser específico, não é heurística
+   textual simples; nenhum "PR security review" automático em push
+   (webhook + IA rodando por evento) — o produto já tem
+   `SOURCE_SECURITY_SCAN` sob demanda, rodar automaticamente a cada push
+   exigiria um webhook novo + fila, escopo maior; nenhum scan de
+   infraestrutura viva (nmap-like) — foge do escopo de "análise de site" que
+   o produto tem hoje.
+5. **Redesign visual inspirado no Strix** (Task #21) — **não iniciado nesta
+   sessão**, deliberadamente adiado: exige decisões de design (cores, layout
+   dos cards, tipografia) tela por tela, melhor feito numa sessão dedicada
+   com o usuário podendo comentar cada tela, não em bloco autônomo sem
+   supervisão.
+6. **Testes ponta a ponta em produção do gate + GitLab** (Task #23) — **não
+   executado nesta sessão**: exigiria conectar um repositório GitLab real de
+   teste (token de verdade), e não havia um disponível/autorizado
+   explicitamente nesta sessão além do que já foi feito. Fica como validação
+   pendente antes de considerar o gate 100% confiável em produção.
+
+**Checklist de validação antes de subir isto:**
+```
+cd "C:\Users\woner\Desktop\Atlas QA"
+pnpm --filter @qa-ai/api exec prisma generate
+pnpm --filter @qa-ai/api exec prisma db push
+pnpm --filter @qa-ai/shared build
+pnpm --filter @qa-ai/api exec tsc --noEmit
+pnpm --filter @qa-ai/web build
+```
+Schema novo: só o valor `GITLAB` adicionado ao enum `AdapterKind` — aditivo,
+sem risco de perda de dado. **Atenção:** depois de subir isto, TODA análise
+(inclusive QA padrão) para de funcionar em qualquer projeto sem GitHub/GitLab
+conectado — inclusive projetos antigos já em uso. Avisar isso é importante:
+não é um bug se análises pararem de rodar depois do deploy, é o gate novo
+funcionando como pedido. Depois do `db push`, `git add` só dos arquivos
+específicos (nunca `-A`):
+`apps/api/prisma/schema.prisma`,
+`packages/shared/src/enums.ts`,
+`apps/api/src/infrastructure/adapters/gitlab/gitlab-adapter.ts`,
+`apps/api/src/infrastructure/adapters/index.ts`,
+`apps/api/src/application/adapter-connection.service.ts`,
+`apps/api/src/application/analysis.service.ts`,
+`apps/api/src/presentation/routes/analysis.routes.ts`,
+`apps/api/src/presentation/routes/project.routes.ts`,
+`apps/api/src/modules/analysis/analyzers/source-security-scan/insecure-patterns.ts`,
+`apps/api/src/modules/analysis/analyzers/source-security-scan/secret-patterns.ts`,
+`apps/web/src/components/gitlab-connection-panel.tsx`,
+`apps/web/src/app/(app)/aplicacao/page.tsx`,
+`apps/web/src/app/(app)/analyses/page.tsx`,
+`apps/web/src/lib/api.ts`,
+`apps/web/src/lib/queries.ts`.
+
+## Sessão 08/08/2026 (continuação, mesmo dia) — Mais cobertura de segurança inspirada no Strix
+
+Continuação direta da sessão anterior, sem pausa (pedido explícito do
+usuário de seguir trabalhando "sem parar"). Três adições de baixo risco ao
+que já existia, todas heurística textual/payload de detecção — nenhuma
+infraestrutura nova:
+
+1. **Dockerfile/IaC leve** (`source-security-scan/dockerfile-patterns.ts`,
+   novo) — 6 checagens: container rodando como root (sem `USER`), imagem
+   base com tag `latest`, `ADD` de URL remota, segredo literal em
+   `ENV`/`ARG`, instalação via `curl|sh` sem verificação, porta
+   administrativa exposta (22/3389). Reconhece `Dockerfile` pelo nome do
+   arquivo (`isDockerfilePath`), não por extensão — wireado em
+   `source-security-scan.ts` (`hasScannableExtension` + `scanDockerfile`).
+2. **Mais dependências com CVE conhecida** (`vulnerable-packages.ts`): vite,
+   ws, semver (npm); urllib3, cryptography, jinja2 (pip); rails, nokogiri
+   (bundler — corrigido de um `"gem"` inválido pro ecosystem real usado pelo
+   `manifest-detector.ts`); laravel/framework (composer); spring-core
+   (maven); golang.org/x/net (go).
+3. **Mais padrões de segredo/código inseguro**
+   (`secret-patterns.ts`/`insecure-patterns.ts`): token GitLab, chave
+   OpenAI/Anthropic/Twilio/SendGrid, token npm; TLS com verificação
+   desabilitada, hash fraco (MD5/SHA1) perto de senha, `Math.random()` pra
+   token, path traversal em `fs.*`, desserialização insegura.
+4. **Teste Ativo Autorizado — mais payloads de detecção**
+   (`active-security-test/payloads.ts`): marcador NoSQL (`{"$ne": null}`),
+   marcador de command injection com eco (`qa-probe; echo
+   qa-probe-marker`), marcador SSRF (IP de metadata de nuvem), marcador XXE,
+   marcador LDAP injection. `active-security-test.analyzer.ts` ganhou uma
+   checagem nova específica: se o marcador de eco do command injection
+   aparecer na resposta *sem* o resto do payload, é indício de execução real
+   de comando — reporta CRITICAL.
+
+**Não fiz nesta rodada** (fica pra quando o usuário puder revisar/priorizar
+com calma, ou exigem infraestrutura que o produto não tem): scan de
+Terraform/Kubernetes de verdade (parser dedicado); "PR/MR security review"
+automático a cada push (exigiria webhook + fila); scan de infraestrutura
+viva tipo nmap; qualquer coisa de compliance report (SOC2/ISO27001) — isso é
+elaboração de relatório, não detecção, e mereceria uma sessão própria de
+design de produto.
+
+**Mesma ressalva de sempre: sandbox sem `bash` — nada validado por
+`tsc`/build, só revisão manual.** Nenhuma mudança de schema nesta rodada —
+só código dos analyzers, `pnpm --filter @qa-ai/api exec tsc --noEmit` deve
+bastar (sem precisar de `db push`) antes de subir. Arquivos: `apps/api/src/
+modules/analysis/analyzers/source-security-scan/dockerfile-patterns.ts`
+(novo), `.../source-security-scan/source-security-scan.ts`,
+`.../source-security-scan/vulnerable-packages.ts`,
+`.../source-security-scan/secret-patterns.ts`,
+`.../source-security-scan/insecure-patterns.ts`,
+`.../active-security-test/payloads.ts`,
+`.../active-security-test/active-security-test.analyzer.ts`.
+
+## Sessão 08/08/2026 (continuação 2) — Mais superfície de ataque coberta (Segurança Avançada)
+
+Mais uma rodada sem parar, focada em `deep-security/paths.ts` (Segurança
+Avançada, categoria `DEEP_SECURITY`, 100% passiva — só GET, sem payload):
+
+- `SECRET_PATHS`: mais variantes de `.env` (dev/staging), `appsettings.Development.json`,
+  `config.yaml`/`config.yml`, `docker-compose.yml`, `.npmrc`, `.dockercfg`,
+  `.htpasswd`, `firebase-adminsdk.json`, `service-account.json`, `gcp-key.json`.
+- `BACKUP_PATHS`: `.rar`, `db.sqlite3`/`database.db`, `.DS_Store`, `web.config.bak`.
+- `API_DOCS_PATHS`: `graphiql`, variantes de path de swagger/openapi.
+- `ADMIN_PATHS`: `admin`, `administrator`, `django-admin`, `grafana`, `kibana`,
+  `actuator`/`actuator/health` (Spring Boot), `console`, `_profiler` (Symfony).
+- `DIR_LISTING_PATHS`: `backup/`, `backups/`, `media/`, `tmp/`.
+- `VULNERABLE_JS_LIBS`: Vue 2 (CVE-2021-30469), Handlebars (CVE-2021-23383).
+
+Mesma filosofia do resto do arquivo: só adiciona ao que já existia, nenhuma
+categoria nova, nenhuma infraestrutura nova. **Não validado por
+`tsc`/build** — revisão manual (é só uma lista de strings, risco de erro de
+sintaxe é baixo, mas ainda não compilado). Corrigido no meio do caminho: um
+caractere não-ASCII colado por engano em `SECRET_PATHS` foi removido antes
+de seguir.
+
+## Sessão 08/08/2026 (continuação 3) — Copy do site sincronizada
+
+Última rodada desta sequência sem pausa: a copy pública (`public-copy.ts`,
+homepage — seção "Módulos cobertos" e "Integrações reais") e a copy de
+`/docs/funcionalidades` (`docs-copy.ts`) ainda diziam só "GitHub" e não
+mencionavam Dockerfile/segredos nem o fato de que conectar repositório
+virou obrigatório — desatualizada desde a sessão do gate. Corrigido nos 3
+locales (en/pt/es): item vira "Análise de segurança via GitHub ou GitLab" /
+"Security scan via GitHub or GitLab" / "Análisis de seguridad vía GitHub o
+GitLab", descrição menciona Dockerfile e segredos, e adiciona a frase de que
+conectar um repositório é obrigatório antes de rodar qualquer análise. O
+item de integração "GitHub" também virou "GitHub ou GitLab" com a mesma
+atualização de descrição.
+
+**Não validado por build** — mesma ressalva de sempre, é só texto em array
+de tuplas, risco de erro de sintaxe é baixo mas não compilado. Arquivos:
+`apps/web/src/lib/docs-copy.ts`, `apps/web/src/lib/public-copy.ts`.
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —

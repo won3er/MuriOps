@@ -43,6 +43,8 @@ export const qk = {
   mcpConnection: (projectId: string) => ["mcp-connection", projectId] as const,
   githubConnection: (projectId: string) =>
     ["github-connection", projectId] as const,
+  gitlabConnection: (projectId: string) =>
+    ["gitlab-connection", projectId] as const,
   adapterConnections: (projectId: string) =>
     ["adapter-connections", projectId] as const,
   orchestrationRuns: (projectId: string) =>
@@ -559,11 +561,38 @@ export function useConnectGithub(projectId: string) {
       api.connectGithub(projectId, body),
     onSuccess: (connection) => {
       qc.setQueryData(qk.githubConnection(projectId), connection);
+      qc.invalidateQueries({ queryKey: qk.adapterConnections(projectId) });
       toast.success("Conexão GitHub criada");
     },
     onError: (err) =>
       toast.error(
         err instanceof Error ? err.message : "Falha ao conectar o GitHub",
+      ),
+  });
+}
+
+export function useGitlabConnection(projectId: string) {
+  return useQuery({
+    queryKey: qk.gitlabConnection(projectId),
+    queryFn: () => api.getGitlabConnection(projectId),
+    enabled: !!projectId,
+    retry: false,
+  });
+}
+
+export function useConnectGitlab(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { projectPath: string; token: string }) =>
+      api.connectGitlab(projectId, body),
+    onSuccess: (connection) => {
+      qc.setQueryData(qk.gitlabConnection(projectId), connection);
+      qc.invalidateQueries({ queryKey: qk.adapterConnections(projectId) });
+      toast.success("Conexão GitLab criada");
+    },
+    onError: (err) =>
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao conectar o GitLab",
       ),
   });
 }

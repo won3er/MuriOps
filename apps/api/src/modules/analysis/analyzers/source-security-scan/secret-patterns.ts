@@ -61,6 +61,36 @@ export const SECRET_PATTERNS: SecretPattern[] = [
     label: "String de conexão de banco com senha embutida",
     regex: /(postgres|postgresql|mysql|mongodb(\+srv)?):\/\/[^:\s"']+:[^@\s"']+@/gi,
   },
+  {
+    id: "gitlab-token",
+    label: "Token de acesso do GitLab",
+    regex: /\bglpat-[A-Za-z0-9_-]{20,}\b/g,
+  },
+  {
+    id: "openai-api-key",
+    label: "Chave de API da OpenAI",
+    regex: /\bsk-[A-Za-z0-9]{20,}(T3BlbkFJ[A-Za-z0-9]{20,})?\b/g,
+  },
+  {
+    id: "anthropic-api-key",
+    label: "Chave de API da Anthropic",
+    regex: /\bsk-ant-[A-Za-z0-9_-]{20,}\b/g,
+  },
+  {
+    id: "twilio-key",
+    label: "Chave de API da Twilio",
+    regex: /\bSK[0-9a-fA-F]{32}\b/g,
+  },
+  {
+    id: "sendgrid-key",
+    label: "Chave de API do SendGrid",
+    regex: /\bSG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}\b/g,
+  },
+  {
+    id: "npm-token",
+    label: "Token de acesso do npm",
+    regex: /\bnpm_[A-Za-z0-9]{36}\b/g,
+  },
 ];
 
 /** Nomes de variável comuns o bastante que geram muito falso positivo em placeholders/exemplos. */

@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   adapterConnectionService,
   InvalidGithubConnectionError,
+  InvalidGitlabConnectionError,
 } from "../../application/adapter-connection.service.js";
 import {
   analysisService,
@@ -30,6 +31,11 @@ const updateActiveTestingConsentSchema = z.object({
 const githubConnectionSchema = z.object({
   owner: z.string().min(1),
   repo: z.string().min(1),
+  token: z.string().min(10),
+});
+
+const gitlabConnectionSchema = z.object({
+  projectPath: z.string().min(1),
   token: z.string().min(10),
 });
 
@@ -197,6 +203,41 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
       ...connection,
       webhookUrl: `${apiBaseUrl(req)}/webhooks/github/${connection.id}`,
     };
+  });
+
+  // Conexão GitLab deste projeto — mesmo padrão push do GitHub (token colado).
+  app.post("/projects/:id/gitlab-connection", async (req, reply) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const body = gitlabConnectionSchema.parse(req.body);
+    try {
+      const connection = await adapterConnectionService.upsertGitlabConnection(
+        req.user.organizationId,
+        id,
+        req.user.sub,
+        body,
+      );
+      return reply.status(201).send(connection);
+    } catch (err) {
+      if (err instanceof NotFoundError)
+        return reply
+          .status(404)
+          .send({ statusCode: 404, error: "NotFound", message: err.message });
+      if (err instanceof InvalidGitlabConnectionError)
+        return reply
+          .status(400)
+          .send({ statusCode: 400, error: "GitLabConnection", message: err.message });
+      throw err;
+    }
+  });
+
+  app.get("/projects/:id/gitlab-connection", async (req) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const connection = await adapterConnectionService.getGitlabConnectionMasked(
+      req.user.organizationId,
+      id,
+    );
+    if (!connection) return { configured: false };
+    return connection;
   });
 
   // Lista todas as conexões do projeto — seletor de "qual conexão usar" na Orquestração.

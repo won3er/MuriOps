@@ -65,4 +65,46 @@ export const INSECURE_PATTERNS: InsecurePattern[] = [
     severity: "HIGH",
     regex: /jwt\.(sign|verify)\([^)]*\|\|\s*["'][^"']{4,}["']/g,
   },
+  // [07/08/2026] Padrões adicionais inspirados no escopo de SAST do Strix —
+  // mesma heurística textual simples do resto do arquivo, sem AST.
+  {
+    id: "tls-verification-disabled",
+    label: "Verificação de certificado TLS desabilitada",
+    description:
+      "rejectUnauthorized: false (ou NODE_TLS_REJECT_UNAUTHORIZED=0) desativa a validação de certificado TLS — abre a conexão para ataques man-in-the-middle. Nunca desabilite isso fora de um teste local isolado.",
+    severity: "CRITICAL",
+    regex: /rejectUnauthorized\s*:\s*false|NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*['"]?0/g,
+  },
+  {
+    id: "weak-hash-for-password",
+    label: "Hash fraco (MD5/SHA1) aparentemente usado para senha",
+    description:
+      "MD5/SHA1 perto de uma variável de senha — esses algoritmos são rápidos demais e vulneráveis a rainbow table/força bruta. Use bcrypt, scrypt ou argon2 para senhas.",
+    severity: "HIGH",
+    regex: /(md5|sha1)\([^)]*\b(pass(word)?|senha)\b/gi,
+  },
+  {
+    id: "insecure-random-for-token",
+    label: "Math.random() usado para gerar token/segredo",
+    description:
+      "Math.random() não é criptograficamente seguro — previsível o suficiente para ser explorado em token de sessão, reset de senha ou API key. Use crypto.randomBytes/randomUUID.",
+    severity: "HIGH",
+    regex: /Math\.random\(\)[^;]{0,60}\b(token|secret|senha|password|apikey|api_key)\b/gi,
+  },
+  {
+    id: "path-traversal-fs-user-input",
+    label: "Possível path traversal em leitura/escrita de arquivo",
+    description:
+      "fs.readFile/writeFile/unlink recebendo um caminho montado por concatenação/template — se algum trecho vier de input do usuário sem sanitização (ex.: bloquear \"..\"), permite ler/escrever arquivos fora do diretório esperado.",
+    severity: "HIGH",
+    regex: /fs\.(readFile|writeFile|unlink|createReadStream)(Sync)?\s*\(\s*(`[^`]*\$\{|["'][^"']*["']\s*\+)/g,
+  },
+  {
+    id: "insecure-deserialization",
+    label: "Desserialização insegura",
+    description:
+      "eval/Function/node-serialize/vm usados para desserializar dados vindos de fora do processo — permite execução remota de código se o payload for controlável pelo atacante.",
+    severity: "CRITICAL",
+    regex: /\b(node-serialize|unserialize)\s*\.\s*(parse|unserialize)\s*\(/g,
+  },
 ];

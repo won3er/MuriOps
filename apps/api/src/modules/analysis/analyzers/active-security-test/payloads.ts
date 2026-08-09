@@ -10,6 +10,14 @@ export const DETECTION_PAYLOADS: { label: string; value: string }[] = [
   { label: "xss-marker", value: '<script>/*qa-probe*/</script>' },
   { label: "path-traversal", value: "../../../../etc/passwd" },
   { label: "template-injection", value: "${7*7}{{7*7}}" },
+  // [08/08/2026] Inspirado no escopo de pentest de API/web app do Strix —
+  // mesma filosofia: marcador de detecção não-destrutivo, sem payload de
+  // exploração de verdade.
+  { label: "nosqli-operator", value: '{"$ne": null}' },
+  { label: "command-injection-marker", value: "qa-probe; echo qa-probe-marker" },
+  { label: "ssrf-marker", value: "http://169.254.169.254/latest/meta-data/" },
+  { label: "xxe-marker", value: "<?xml version=\"1.0\"?><!DOCTYPE qa [<!ENTITY qa SYSTEM \"file:///etc/passwd\">]><qa>&qa;</qa>" },
+  { label: "ldap-injection", value: "qa-probe)(uid=*))(|(uid=*" },
 ];
 
 /** Assinaturas de erro de banco de dados vazando na resposta (indício de SQLi). */
