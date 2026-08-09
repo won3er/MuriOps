@@ -1384,6 +1384,70 @@ atualização de descrição.
 de tuplas, risco de erro de sintaxe é baixo mas não compilado. Arquivos:
 `apps/web/src/lib/docs-copy.ts`, `apps/web/src/lib/public-copy.ts`.
 
+## Comparativo Strix x MuriOps (08/08/2026) — gaps reais, priorizado
+
+Levantamento que ficou faltando nas sessões anteriores (item marcado como
+feito sem ter sido escrito de fato — corrigido aqui). Baseado em busca web
+sobre o strix.ai (fontes no fim desta seção), comparado com o estado atual
+do módulo de segurança do MuriOps depois das sessões de 07-08/08.
+
+**O que o Strix faz que o MuriOps também já faz, hoje:**
+- Detecção de SQLi/NoSQLi/SSRF/XXE/command injection/SSTI via payload —
+  MuriOps tem isso no Teste Ativo Autorizado (`active-security-test`,
+  opt-in, com circuit breaker).
+- Varredura de dependências vulneráveis e segredos commitados — MuriOps
+  tem isso no `SOURCE_SECURITY_SCAN` via GitHub/GitLab.
+- Exigir repositório conectado antes de rodar — os dois exigem.
+
+**O que o Strix faz e o MuriOps NÃO faz — dividido por dá pra fazer sem
+infra nova vs. exige arquitetura que o produto não tem:**
+
+*Viável com o que já existe (candidatos a próxima sessão):*
+- **Confirmação de exploit real (proof-of-concept)**: o Strix não só
+  detecta um indício (ex.: marcador refletido) — ele efetivamente explora e
+  produz uma prova funcional. O MuriOps só reporta indício/heurística
+  (documentado como tal em cada achado). Fechar esse gap de verdade exigiria
+  ir além de "detecção não-destrutiva" — decisão de produto explícita do
+  usuário antes de qualquer código, porque muda o risco legal/operacional
+  do Teste Ativo.
+- **IDOR/lógica de negócio/CSRF mais profundo**: hoje o MuriOps só tem a
+  heurística de formulário POST sem token oculto (`checkDomIssues`). Testar
+  IDOR de verdade exigiria autenticação de sessão real no crawler, que o
+  produto não tem (Análise roda sem login).
+
+*Exige infraestrutura nova (fora de escopo por ora):*
+- **PR/MR security review automático a cada push**: precisa de webhook do
+  GitHub/GitLab + fila de processamento — hoje o `SOURCE_SECURITY_SCAN` só
+  roda sob demanda, quando o usuário pede.
+- **Autofix com PR pronta pra merge**: o MuriOps já tem o mecanismo de abrir
+  PR/MR com o checklist de remediação (adapters GitHub/GitLab), mas não gera
+  o *diff de código* pronto — só o plano em texto. Geraria o diff exigiria a
+  IA escrever patch de código de verdade — uma IA commitando código sem
+  supervisão humana é um risco que o produto não assumiu ainda.
+- **Monitoramento contínuo de superfície de ataque**: o Fluxos Críticos já
+  cobre monitoramento agendado de jornadas específicas (login/checkout), mas
+  não é "descobrir e vigiar toda a superfície" automaticamente — exigiria um
+  scheduler rodando o Teste Ativo/Segurança Avançada por conta própria, o
+  que precisa de mais cuidado com consentimento (hoje é opt-in manual por
+  análise).
+- **Relatórios de compliance (SOC2/ISO27001/PCI DSS)**: isso é elaboração de
+  relatório formatado pro padrão do framework, não detecção — trabalho de
+  produto/design de documento, não código de scanner. Não iniciado.
+- **Certificação SOC2/ISO27001 da própria MuriOps** (diferente de gerar
+  relatório pro cliente): processo de compliance organizacional, não é
+  código — fora do escopo de qualquer sessão de desenvolvimento.
+
+**Recomendação de prioridade** (não implementado, só a lista ordenada por
+impacto/esforço): 1) relatório de compliance simples (texto estruturado a
+partir dos achados existentes, sem certificação nenhuma) seria o menor
+esforço com maior valor percebido; 2) PR review automático via webhook é o
+próximo salto de arquitetura mais natural, já que a infraestrutura de
+adapter push já existe; 3) exploit confirmation e IDOR ficam por último —
+mudam o perfil de risco do produto e merecem decisão explícita do usuário
+antes de qualquer linha de código.
+
+Fontes: [Strix Review 2026](https://appsecsanta.com/strix), [Strix — Autonomous Security for the AI Era](https://www.strix.ai/), [AI Penetration Testing — Strix](https://www.strix.ai/ai-penetration-testing)
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —

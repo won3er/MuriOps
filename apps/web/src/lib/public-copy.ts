@@ -390,15 +390,15 @@ export const FEATURE_COPY = {
     features: [
       {
         key: "analisar",
-        label: "Analyses",
-        eyebrow: "Diagnosis",
-        heading: "Find problems with evidence, not assumptions",
+        label: "Analyses & Security",
+        eyebrow: "Diagnosis & pentest-style scanning",
+        heading: "QA and security testing, not just a checklist",
         description:
-          "Standard QA Analysis crawls pages and checks UI/UX, performance, SEO, accessibility, console and network behavior. The separate Security Analysis performs passive TLS, DNS, HTTP-header, CORS and exposure checks without attack payloads or penetration testing.",
+          "Standard QA Analysis crawls pages and checks UI/UX, performance, SEO, accessibility, console and network behavior. Security Analysis adds passive TLS/DNS/header/CORS/exposure checks, Authorized Active Testing (rate-limit, user enumeration, SQLi/XSS/SSRF/XXE/command-injection detection payloads with a circuit breaker), and a GitHub/GitLab-connected source scan for known-CVE dependencies, committed secrets and insecure Dockerfiles — connecting a repository is required before any analysis runs.",
         outcomes: [
           "Score by dimension",
           "Evidence per finding",
-          "Risk filters",
+          "Active + source security testing",
         ],
         route: "Analyses / Report",
       },
@@ -488,15 +488,15 @@ export const FEATURE_COPY = {
     features: [
       {
         key: "analisar",
-        label: "Análises",
-        eyebrow: "Diagnóstico",
-        heading: "Encontre problemas com evidências, não com suposições",
+        label: "Análises & Segurança",
+        eyebrow: "Diagnóstico e testes tipo pentest",
+        heading: "QA e testes de segurança, não só um checklist",
         description:
-          "A Análise QA padrão percorre páginas e verifica UI/UX, performance, SEO, acessibilidade, console e rede. A Análise de Segurança, executada separadamente, faz checagens passivas de TLS, DNS, headers HTTP, CORS e exposições, sem payloads de ataque ou pentest.",
+          "A Análise QA padrão percorre páginas e verifica UI/UX, performance, SEO, acessibilidade, console e rede. A Análise de Segurança soma checagens passivas de TLS/DNS/headers/CORS/exposições, o Teste Ativo Autorizado (rate-limit, enumeração de usuário e payloads de detecção de SQLi/XSS/SSRF/XXE/command injection com circuit breaker) e uma varredura do repositório conectado (GitHub ou GitLab) atrás de dependências com CVE, segredos commitados e Dockerfile inseguro — conectar um repositório é obrigatório antes de qualquer análise.",
         outcomes: [
           "Score por dimensão",
           "Evidências por achado",
-          "Filtros por risco",
+          "Teste ativo + varredura de código",
         ],
         route: "Análises / Relatório",
       },
@@ -590,15 +590,15 @@ export const FEATURE_COPY = {
     features: [
       {
         key: "analisar",
-        label: "Análisis",
-        eyebrow: "Diagnóstico",
-        heading: "Encuentra problemas con evidencia, no con suposiciones",
+        label: "Análisis y Seguridad",
+        eyebrow: "Diagnóstico y pruebas tipo pentest",
+        heading: "QA y pruebas de seguridad, no solo un checklist",
         description:
-          "El Análisis QA estándar recorre páginas y revisa UI/UX, rendimiento, SEO, accesibilidad, consola y red. El Análisis de Seguridad, ejecutado por separado, realiza comprobaciones pasivas de TLS, DNS, headers HTTP, CORS y exposiciones, sin payloads de ataque ni pentest.",
+          "El Análisis QA estándar recorre páginas y revisa UI/UX, rendimiento, SEO, accesibilidad, consola y red. El Análisis de Seguridad suma comprobaciones pasivas de TLS/DNS/headers/CORS/exposiciones, la Prueba Activa Autorizada (rate-limit, enumeración de usuarios y payloads de detección de SQLi/XSS/SSRF/XXE/command injection con circuit breaker) y un escaneo del repositorio conectado (GitHub o GitLab) en busca de dependencias con CVE, secretos confirmados y Dockerfile inseguro — conectar un repositorio es obligatorio antes de cualquier análisis.",
         outcomes: [
           "Puntuación por dimensión",
           "Evidencia por hallazgo",
-          "Filtros por riesgo",
+          "Prueba activa + escaneo de código",
         ],
         route: "Análisis / Informe",
       },
