@@ -91,7 +91,10 @@ function CriticalFlowsHub() {
 
       <section className="rounded-lg border bg-card">
         <div className="border-b px-5 py-4">
-          <h2 className="text-sm font-semibold">Selecione o projeto</h2>
+          <h2 className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+            Selecione o projeto
+          </h2>
         </div>
         <div className="p-5">
           <select
@@ -132,7 +135,10 @@ function CriticalFlowsHub() {
         <section>
           <div className="mb-3 flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold">Fluxos deste projeto</h2>
+              <h2 className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+                Fluxos deste projeto
+              </h2>
               <p className="text-xs text-muted-foreground">
                 {flows.length} fluxo(s) cadastrado(s)
               </p>
