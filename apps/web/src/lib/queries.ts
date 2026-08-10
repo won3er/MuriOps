@@ -6,6 +6,9 @@ import type {
   CreateCriticalFlowRequest,
   UpdateCriticalFlowRequest,
   CriticalFlow,
+  AnalysisSchedule,
+  CreateAnalysisScheduleRequest,
+  UpdateAnalysisScheduleRequest,
   Project,
   ProjectionTask,
   ProjectWithStats,
@@ -45,6 +48,7 @@ export const qk = {
   criticalFlows: (projectId: string) => ["critical-flows", projectId] as const,
   criticalFlow: (id: string) => ["critical-flow", id] as const,
   flowRuns: (id: string) => ["flow-runs", id] as const,
+  analysisSchedules: (projectId: string) => ["analysis-schedules", projectId] as const,
 };
 
 // ---------- Projeção (tarefas rastreáveis a partir de um plano de Aplicação) ----------
@@ -409,6 +413,16 @@ export function useAnalysesList() {
   });
 }
 
+/** Detalhe de uma análise (inclui páginas descobertas no crawl) — usado
+ * pelas sugestões automáticas de Fluxos Críticos. */
+export function useAnalysis(id: string) {
+  return useQuery({
+    queryKey: ["analyses", id],
+    queryFn: () => api.getAnalysis(id),
+    enabled: !!id,
+  });
+}
+
 // ---------- Projetos ----------
 
 export function useProjects() {
@@ -564,6 +578,55 @@ export function useReconciliation(projectId: string) {
     queryKey: qk.reconciliation(projectId),
     queryFn: () => api.getReconciliation(projectId),
     enabled: !!projectId,
+  });
+}
+
+// ---------- Agendamento de Análise de Segurança (Continuous Coverage passivo) ----------
+
+export function useAnalysisSchedules(projectId: string) {
+  return useQuery({
+    queryKey: qk.analysisSchedules(projectId),
+    queryFn: () => api.listAnalysisSchedules(projectId),
+    enabled: !!projectId,
+  });
+}
+
+export function useCreateAnalysisSchedule(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateAnalysisScheduleRequest) =>
+      api.createAnalysisSchedule(projectId, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.analysisSchedules(projectId) });
+      toast.success("Agendamento criado");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao criar agendamento"),
+  });
+}
+
+export function useUpdateAnalysisSchedule(id: string, projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: UpdateAnalysisScheduleRequest) => api.updateAnalysisSchedule(id, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.analysisSchedules(projectId) });
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao atualizar agendamento"),
+  });
+}
+
+export function useDeleteAnalysisSchedule(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteAnalysisSchedule(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.analysisSchedules(projectId) });
+      toast.success("Agendamento removido");
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Falha ao remover agendamento"),
   });
 }
 

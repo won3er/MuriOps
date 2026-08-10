@@ -159,8 +159,12 @@ async function requireProject(organizationId: string, projectId: string): Promis
 }
 
 function validateSteps(steps: CriticalFlowStep[]): void {
-  if (!Array.isArray(steps) || steps.length === 0) {
-    throw new InvalidFlowInputError("O fluxo precisa ter ao menos um passo.");
+  // Array vazio é válido de propósito: é o formato dos fluxos sugeridos
+  // automaticamente a partir das páginas descobertas na última Análise (só
+  // verifica se a startUrl carrega com status < 400 — ver flow-runner.ts).
+  // Passos manuais continuam validados normalmente quando presentes.
+  if (!Array.isArray(steps)) {
+    throw new InvalidFlowInputError("Passos do fluxo em formato inválido.");
   }
   for (const step of steps) {
     const needsSelector = ["CLICK", "FILL", "SELECT", "WAIT_FOR_SELECTOR", "ASSERT_TEXT"].includes(

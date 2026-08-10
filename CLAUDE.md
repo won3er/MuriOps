@@ -1772,6 +1772,175 @@ Guardian: sem clientes reais usando o ciclo autônomo). Depois do `db push`,
 `apps/web/src/lib/docs-copy.ts`,
 `CLAUDE.md`.
 
+## Sessão 10/08/2026 — Gate de conexão vira tela de conectar, Fluxos Críticos simplificado, Continuous Coverage passivo
+
+Usuário reportou, com prints do Strix (site deles + a interface real) e de
+`atualizar`/`aplicacao` do próprio MuriOps: (1) tela de Atualizar quebrava
+com erro cru quando o projeto não tinha GitHub/GitLab conectado, em vez de
+direcionar pra conectar como o onboarding do Strix; (2) Fluxos Críticos
+exigia preencher passo a passo manualmente, longe do "só clicar" do Strix;
+(3) dúvida sobre o que a conexão MCP realmente faz e se funciona; (4) pedido
+de "Scheduled pentesting" (reexecução agendada) na Análise de Segurança; (5)
+pedido de selos ISO/SOC no produto; (6) pedido pra trazer Autonomous
+Pentesting, PR Security Reviews, Auto-Fix, Continuous Coverage e
+Infrastructure Testing, além de redesenhar a interface pra girar em torno do
+projeto selecionado (como o dashboard do Strix depois de conectar um repo).
+**Mesma ressalva de sempre: sandbox sem `bash` a sessão inteira — nada
+validado por `tsc`/build, só revisão manual comparando com os padrões já
+existentes.**
+
+**1) Gate de conexão — corrigido.** Extraído `ConnectRepoPrompt`
+(`components/connect-repo-prompt.tsx`, com o hook `useHasRepoConnection`) do
+card que já existia em `/analyses`, e reaplicado em:
+- `/atualizar`: o botão "Investigar tecnologias" (que gerava o erro do
+  print) só aparece se o projeto tiver conexão; sem conexão, mostra o card
+  "Conecte um repositório" com os dois botões (GitHub/GitLab) no lugar do
+  botão fadado a falhar. Colar manifesto manualmente continua funcionando
+  sem conexão nenhuma (não depende de repositório).
+- `/monitoramento` (Fluxos Críticos): explicado no item 2 abaixo — o gate
+  real ali é "precisa de uma Análise concluída" (que por sua vez já exige
+  repo conectado), não uma cópia mecânica do card.
+- `/aplicacao` não mudou — já tinha os dois cards GitHub/GitLab lado a lado
+  desde a sessão do gate original (07-08/08), no padrão que o print 2 do
+  Strix mostra.
+`/analyses` foi refatorada pra usar o componente novo em vez do bloco
+inline que tinha antes (mesmo comportamento, menos duplicação).
+
+**2) Fluxos Críticos — sugestão automática, não mais formulário manual por
+padrão.** Painel novo "Sugestões de monitoramento" no topo de
+`/monitoramento`: lista as páginas descobertas na última Análise QA
+concluída do projeto (`CrawledPage`, via `useAnalysis(id)` — hook novo em
+`queries.ts`), marca como "Recomendado" as que batem palavra-chave de
+jornada de negócio (login, checkout, carrinho, cadastro, contato, preço...)
+e já vêm pré-selecionadas. Um clique em "Ativar monitoramento" cria um
+`CriticalFlow` por URL marcada, **sem passos** — só verifica se a página
+carrega. O builder manual antigo (passo a passo com seletor/valor/esperado)
+não sumiu, virou "Fluxo customizado", pra quem realmente precisa de
+interação (preencher login, clicar em finalizar compra).
+- **Bug real corrigido nesse processo**: `flow-runner.ts` nunca checava o
+  status HTTP da resposta — `page.goto()` do Playwright não rejeita em
+  404/500, só em erro de rede/timeout. Um fluxo cuja única "checagem" é a
+  `startUrl` (exatamente o caso das sugestões automáticas) sempre dava
+  "Passou" mesmo com a página fora do ar. Adicionado `assertOkResponse()`,
+  chamado depois do `goto()` inicial e de todo passo `NAVIGATE`, que falha
+  em qualquer resposta >= 400. Isso também deixa fluxos manuais mais
+  confiáveis, não só os automáticos.
+  Como consequência: `steps` deixou de ser obrigatoriamente não-vazio —
+  `critical-flow.service.ts.validateSteps()` e o zod schema de
+  `critical-flow.routes.ts` (`createSchema`/`updateSchema`) aceitam array
+  vazio agora (documentado inline no código).
+- Se o projeto não tem nenhuma Análise concluída, o painel explica isso e —
+  se também não tiver GitHub/GitLab conectado — mostra o `ConnectRepoPrompt`
+  ali mesmo, porque a causa raiz de "sem sugestão" é sempre a mesma cadeia
+  (sem repo → sem Análise → sem página descoberta).
+
+**3) Resposta sobre MCP (sem código, só leitura de `mcp-server.ts` e
+`mcp.routes.ts`):** a conexão MCP **não dá ao MuriOps acesso ao filesystem
+local do usuário, e não aplica correção nenhuma sozinha**. É o oposto do que
+a pergunta sugeria: o MuriOps é o *servidor* MCP; a ferramenta de IA de dev
+do próprio usuário (Claude Code, Cursor, Windsurf) é quem se conecta como
+*cliente*, chamando 3 tools (`get_analysis_summary`, `list_remediation_items`,
+`mark_item_done`) pra ler o resumo da análise e o checklist de remediação —
+a correção de código de verdade é feita pela ferramenta de dev do usuário,
+rodando no ambiente dela, com acesso normal aos arquivos locais; o MCP só
+avisa o MuriOps quando um item foi marcado como feito. Por leitura de
+código, a rota (`StreamableHTTPServerTransport` stateless, uma instância de
+server por request) segue o padrão oficial do SDK corretamente — mas
+**nunca foi confirmada rodando de verdade** com um cliente MCP real; isso
+continua fazendo parte da pendência #23 ("testar ponta a ponta em
+produção"), que segue em aberto.
+
+**4) Selos ISO/SOC — não implementado, e não vai ser sem uma certificação
+real.** Explicado ao usuário: o MuriOps hoje não passou por nenhuma
+auditoria SOC2/ISO27001 (o próprio comparativo Strix x MuriOps de 08/08/2026
+já registrava isso como "fora do escopo de qualquer sessão de
+desenvolvimento" — é processo organizacional, não código). Colocar esses
+selos no produto sem a certificação de verdade por trás seria uma alegação
+falsa de conformidade — risco real de credibilidade/legal, não só estético.
+Alternativa honesta oferecida (não implementada ainda, depende de decisão
+do usuário): um relatório de compliance em texto estruturado a partir dos
+achados reais de Análise/Fluxos Críticos, deixando claro que é uma
+autoavaliação, não uma certificação — é o item "relatório de compliance"
+que o usuário escolheu como prioridade pra próxima sessão (ver abaixo).
+
+**5) Continuous Coverage passivo — implementado como uma fatia segura do
+pedido maior.** Perguntado ao usuário (AskUserQuestion) sobre 3 decisões de
+risco antes de codar qualquer coisa dos 5 recursos estilo Strix:
+- **Auto-Fix**: usuário escolheu "Implementar" (IA gerando diff de código
+  pronto pra PR/MR). **Não implementado nesta sessão** — ver nota abaixo.
+- **Continuous Coverage**: usuário escolheu "só pra Segurança Avançada
+  (passiva)" — não reenviar o Teste Ativo Autorizado sozinho.
+  **Implementado**: modelo novo `AnalysisSchedule` (categorias
+  `DEEP_SECURITY`/`SOURCE_SECURITY_SCAN` só, `frequency`
+  `DAILY`/`WEEKLY` — mais grosso que Fluxos Críticos de propósito, porque
+  uma Análise crawleia o site inteiro com Playwright, bem mais pesado que
+  checar uma URL, e o Render free tier tem pouca memória). Backend:
+  `analysis-schedule.service.ts` (`list`/`create`/`update`/`remove`/
+  `runDueSchedules`, mesma filosofia sem fila de `criticalFlowService`) +
+  `analysis-schedule.routes.ts`, registrados em `app.ts`; polling de 30min
+  em `main.ts` (`ANALYSIS_SCHEDULE_CHECK_MS`) chamando
+  `analysisService.start()` — reusa o gate de conexão/consentimento que já
+  existe lá, então um agendamento cuja conexão foi removida depois de criado
+  só pula a rodada (log, não desativa sozinho). Validação de categoria
+  **sempre no backend** (`SCHEDULABLE_CATEGORIES` em
+  `packages/shared/src/types/analysis-schedule.ts`) — nunca confia só no
+  frontend pra impedir agendar `ACTIVE_SECURITY_TEST`. Frontend: painel
+  "Continuous Coverage — reexecução automática" em `/analyses`, abaixo do
+  formulário de nova análise, só visível com projeto selecionado e
+  conectado.
+- Escolhas do usuário pra "próximo foco" (todas as 4 marcadas): PR Security
+  Reviews automático, redesign "centrado no projeto", relatório de
+  compliance, Infrastructure Testing (Terraform/K8s). **Nenhuma delas foi
+  codada nesta sessão** — cada uma é um projeto de várias sessões por si só
+  (webhook novo + fila pro PR review; reestruturação de toda a IA do app pro
+  redesign; parser dedicado pra Infra Testing), e a mais arriscada de todas
+  (Auto-Fix, que o usuário também aprovou) muda o perfil de risco do
+  produto — a IA passaria a escrever código de verdade e abrir PR/MR com
+  ele, ainda que sem merge automático. Implementar isso de forma apressada,
+  numa sessão sem `tsc`/build funcionando pra validar, não é responsável.
+  **Ficou como plano pra sessão(ões) seguintes, nesta ordem sugerida**: (a)
+  relatório de compliance — menor risco, maior valor percebido, só
+  reorganiza dado que já existe; (b) PR Security Reviews automático — reusa
+  a infra de adapter push que já existe, só falta o webhook+fila; (c)
+  redesign centrado no projeto — épico de UI, precisa de um desenho
+  concreto tela por tela antes de codar (repositórios/issues agregados/PR
+  reviews como páginas próprias, inspirado nos prints de
+  `Interface Strix para usar de exemplo/`); (d) Infrastructure Testing e (e)
+  Auto-Fix por último — os dois que mais mudam superfície de risco do
+  produto (infra scanning é parser novo, Auto-Fix é IA escrevendo código
+  sem supervisão prévia).
+
+**Checklist de validação antes de subir isto:**
+```
+cd "C:\Users\woner\Desktop\Atlas QA"
+pnpm --filter @qa-ai/api exec prisma generate
+pnpm --filter @qa-ai/api exec prisma db push
+pnpm --filter @qa-ai/shared build
+pnpm --filter @qa-ai/api exec tsc --noEmit
+pnpm --filter @qa-ai/web build
+```
+Schema novo: só o modelo `AnalysisSchedule` + enum `AnalysisScheduleFrequency`
++ relations em `Project`/`Organization` — aditivo, sem risco de perda de
+dado, `db push` não deve pedir confirmação de nada destrutivo desta vez.
+Depois do `db push`, `git add` só dos arquivos específicos (nunca `-A`):
+`apps/api/prisma/schema.prisma`,
+`packages/shared/src/types/analysis-schedule.ts`,
+`packages/shared/src/index.ts`,
+`apps/api/src/application/analysis-schedule.service.ts`,
+`apps/api/src/presentation/routes/analysis-schedule.routes.ts`,
+`apps/api/src/presentation/app.ts`,
+`apps/api/src/main.ts`,
+`apps/api/src/modules/critical-flow/flow-runner.ts`,
+`apps/api/src/application/critical-flow.service.ts`,
+`apps/api/src/presentation/routes/critical-flow.routes.ts`,
+`apps/web/src/components/connect-repo-prompt.tsx`,
+`apps/web/src/app/(app)/analyses/page.tsx`,
+`apps/web/src/app/(app)/atualizar/page.tsx`,
+`apps/web/src/app/(app)/monitoramento/page.tsx`,
+`apps/web/src/lib/api.ts`,
+`apps/web/src/lib/queries.ts`,
+`CLAUDE.md`.
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —

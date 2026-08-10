@@ -14,7 +14,10 @@ const stepSchema = z.object({
 const createSchema = z.object({
   name: z.string().min(2),
   startUrl: z.string().url(),
-  steps: z.array(stepSchema).min(1),
+  // Array vazio é válido: fluxo "só verificar se a página carrega" (usado
+  // pelas sugestões automáticas a partir da última Análise). Ver
+  // critical-flow.service.ts.validateSteps.
+  steps: z.array(stepSchema).default([]),
   frequency: z.enum(["EVERY_15_MIN", "EVERY_HOUR", "DAILY"]).default("EVERY_HOUR"),
   alertEmail: z.string().email().optional(),
   alertAfterConsecutiveFailures: z.number().int().min(1).optional(),
@@ -23,7 +26,7 @@ const createSchema = z.object({
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
   startUrl: z.string().url().optional(),
-  steps: z.array(stepSchema).min(1).optional(),
+  steps: z.array(stepSchema).optional(),
   frequency: z.enum(["EVERY_15_MIN", "EVERY_HOUR", "DAILY"]).optional(),
   active: z.boolean().optional(),
   alertEmail: z.string().email().nullable().optional(),

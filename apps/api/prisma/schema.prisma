@@ -47,6 +47,7 @@ model Organization {
   remediationPlans  RemediationPlan[]
   upgradePlans      UpgradePlan[]
   criticalFlows     CriticalFlow[]
+  analysisSchedules AnalysisSchedule[]
 }
 
 model User {
@@ -111,6 +112,7 @@ model Project {
   adapterConnections   AdapterConnection[]
   projectionTasks      ProjectionTask[]
   criticalFlows        CriticalFlow[]
+  analysisSchedules    AnalysisSchedule[]
 
   @@index([organizationId])
 }
@@ -609,4 +611,45 @@ model FlowRun {
 
   @@index([criticalFlowId])
   @@index([status])
+}
+
+// ---------- Agendamento de Análise de Segurança (10/08/2026) ----------
+//
+// "Continuous Coverage" passivo: reexecuta as categorias de segurança que
+// não enviam requisição ativa contra o site (DEEP_SECURITY, headers/TLS/DNS/
+// exposições; SOURCE_SECURITY_SCAN, leitura do repositório) sozinho, num
+// intervalo, sem alguém precisar clicar "rodar" toda vez. Decisão explícita
+// do usuário (10/08/2026): ACTIVE_SECURITY_TEST (payloads de detecção contra
+// formulários reais) fica de fora — reenviar isso sem clique manual a cada
+// vez é um nível de consentimento que não foi aceito ainda. Frequência
+// limitada a DAILY/WEEKLY (não EVERY_15_MIN/EVERY_HOUR como Fluxos
+// Críticos) porque uma Análise crawleia o site inteiro com Playwright — bem
+// mais pesado que checar uma URL, e o ambiente de produção roda no Render
+// free tier com limite de memória apertado (ver notas de crawler.ts).
+enum AnalysisScheduleFrequency {
+  DAILY
+  WEEKLY
+}
+
+model AnalysisSchedule {
+  id             String                    @id @default(cuid())
+  projectId      String
+  organizationId String
+  createdById    String
+  // AnalysisCategory[] restrito a categorias passivas — validado em
+  // analysis-schedule.service.ts, nunca confia só no que o frontend manda.
+  categories     Json
+  frequency      AnalysisScheduleFrequency @default(DAILY)
+  active         Boolean                   @default(true)
+  lastRunAt         DateTime?
+  lastRunAnalysisId String?
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([organizationId])
+  @@index([active])
 }

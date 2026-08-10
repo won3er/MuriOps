@@ -11,6 +11,9 @@ import type {
   UpdateCriticalFlowRequest,
   CriticalFlow,
   FlowRun,
+  AnalysisSchedule,
+  CreateAnalysisScheduleRequest,
+  UpdateAnalysisScheduleRequest,
   DashboardStats,
   IssueFilters,
   LoginRequest,
@@ -330,6 +333,22 @@ export const api = {
   listFlowRuns: (id: string) => request<FlowRun[]>(`/critical-flows/${id}/runs`),
   runCriticalFlowNow: (id: string) =>
     request<FlowRun>(`/critical-flows/${id}/run-now`, { method: "POST" }),
+
+  // ---- agendamento de análise de segurança (continuous coverage passivo) ----
+  listAnalysisSchedules: (projectId: string) =>
+    request<AnalysisSchedule[]>(`/projects/${projectId}/analysis-schedules`),
+  createAnalysisSchedule: (projectId: string, body: CreateAnalysisScheduleRequest) =>
+    request<AnalysisSchedule>(`/projects/${projectId}/analysis-schedules`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateAnalysisSchedule: (id: string, body: UpdateAnalysisScheduleRequest) =>
+    request<AnalysisSchedule>(`/analysis-schedules/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  deleteAnalysisSchedule: (id: string) =>
+    request<void>(`/analysis-schedules/${id}`, { method: "DELETE" }),
 
   // ---- aplicação (RemediationPlan) ----
   listRemediationPlans: () =>

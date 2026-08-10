@@ -1,6 +1,7 @@
 "use client";
 
 import type { CriticalFlowFrequency, CriticalFlowStep, CriticalFlowStepAction } from "@qa-ai/shared";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   AlertTriangle,
@@ -9,16 +10,24 @@ import {
   Play,
   Plus,
   Radar,
+  Sparkles,
   Trash2,
+  Wrench,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { ConnectRepoPrompt, useHasRepoConnection } from "@/components/connect-repo-prompt";
 import { PageHeader } from "@/components/page-header";
 import { QueryErrorState } from "@/components/query-error-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 import {
+  qk,
+  useAnalysesList,
+  useAnalysis,
   useCreateCriticalFlow,
   useCriticalFlows,
   useDeleteCriticalFlow,
@@ -44,6 +53,22 @@ const ACTION_LABEL: Record<CriticalFlowStepAction, string> = {
   ASSERT_URL: "Verificar URL",
 };
 
+// Palavras-chave que indicam uma página valiosa o bastante pra monitorar
+// (jornada de negócio) — usadas só pra marcar "Recomendado" nas sugestões,
+// nunca escondem as demais páginas descobertas.
+const RECOMMENDED_KEYWORDS = [
+  "login", "entrar", "signin", "sign-in",
+  "checkout", "carrinho", "cart", "pagamento", "payment", "pay",
+  "cadastro", "signup", "sign-up", "registro", "register",
+  "contato", "contact",
+  "preco", "preço", "pricing", "planos",
+];
+
+function isRecommended(url: string): boolean {
+  const lower = url.toLowerCase();
+  return RECOMMENDED_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
 function emptyStep(): CriticalFlowStep {
   return { action: "NAVIGATE", value: "" };
 }
@@ -67,7 +92,7 @@ function CriticalFlowsHub() {
   const searchParams = useSearchParams();
   const { data: projects = [], isError: projectsError, refetch: refetchProjects } = useProjects();
   const [projectId, setProjectId] = useState("");
-  const [formOpen, setFormOpen] = useState(false);
+  const [customFormOpen, setCustomFormOpen] = useState(false);
 
   useEffect(() => {
     const requested = searchParams.get("projectId");
@@ -80,6 +105,8 @@ function CriticalFlowsHub() {
     isError: flowsError,
     refetch: refetchFlows,
   } = useCriticalFlows(projectId);
+
+  const { hasRepoConnection, isLoading: connectionLoading } = useHasRepoConnection(projectId);
 
   return (
     <div className="mx-auto max-w-7xl space-y-7">
@@ -101,7 +128,7 @@ function CriticalFlowsHub() {
             value={projectId}
             onChange={(event) => {
               setProjectId(event.target.value);
-              setFormOpen(false);
+              setCustomFormOpen(false);
             }}
             className="h-10 w-full max-w-sm rounded-md border border-input bg-background px-3 text-sm"
           >
@@ -132,6 +159,15 @@ function CriticalFlowsHub() {
       </section>
 
       {projectId && (
+        <SuggestedFlowsPanel
+          projectId={projectId}
+          existingUrls={flows.map((f) => f.startUrl)}
+          hasRepoConnection={hasRepoConnection}
+          connectionLoading={connectionLoading}
+        />
+      )}
+
+      {projectId && (
         <section>
           <div className="mb-3 flex items-center justify-between">
             <div>
@@ -143,13 +179,13 @@ function CriticalFlowsHub() {
                 {flows.length} fluxo(s) cadastrado(s)
               </p>
             </div>
-            <Button size="sm" onClick={() => setFormOpen((v) => !v)}>
-              <Plus className="h-3.5 w-3.5" /> Novo fluxo
+            <Button size="sm" variant="outline" onClick={() => setCustomFormOpen((v) => !v)}>
+              <Wrench className="h-3.5 w-3.5" /> Fluxo customizado
             </Button>
           </div>
 
-          {formOpen && (
-            <CreateFlowForm projectId={projectId} onDone={() => setFormOpen(false)} />
+          {customFormOpen && (
+            <CreateFlowForm projectId={projectId} onDone={() => setCustomFormOpen(false)} />
           )}
 
           {flowsError ? (
@@ -163,7 +199,7 @@ function CriticalFlowsHub() {
               <Radar className="mb-3 h-6 w-6 text-muted-foreground" />
               <p className="font-medium">Nenhum fluxo crítico cadastrado</p>
               <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                Crie um fluxo descrevendo os passos de uma jornada importante (ex.: login, checkout).
+                Escolha páginas nas sugestões acima, ou crie um fluxo customizado com passos (login, checkout com preenchimento).
               </p>
             </div>
           ) : (
@@ -177,6 +213,218 @@ function CriticalFlowsHub() {
       )}
     </div>
   );
+}
+
+/**
+ * Painel principal de criação — pensado pra ser um clique, não um
+ * formulário: lista as páginas descobertas na última Análise QA concluída
+ * do projeto, marca como "Recomendado" as que parecem jornada de negócio
+ * (login, checkout, cadastro...), e cria um fluxo por URL marcada com um
+ * único clique. Cada fluxo criado assim não tem passos — só verifica se a
+ * página carrega com status HTTP < 400 (ver flow-runner.ts) a cada
+ * execução, que já é o suficiente pra saber se ela está "protegida"/no ar.
+ * O builder manual de passos continua disponível como "Fluxo customizado"
+ * pra jornadas que precisam de interação (preencher login, clicar em
+ * finalizar compra etc.).
+ */
+function SuggestedFlowsPanel({
+  projectId,
+  existingUrls,
+  hasRepoConnection,
+  connectionLoading,
+}: {
+  projectId: string;
+  existingUrls: string[];
+  hasRepoConnection: boolean;
+  connectionLoading: boolean;
+}) {
+  const qc = useQueryClient();
+  const { data: allAnalyses = [] } = useAnalysesList();
+  const latestAnalysis = useMemo(
+    () =>
+      allAnalyses
+        .filter((a) => a.projectId === projectId && a.status === "COMPLETED")
+        .sort((a, b) => b.version - a.version)[0],
+    [allAnalyses, projectId],
+  );
+  const { data: analysisDetail, isLoading: pagesLoading } = useAnalysis(latestAnalysis?.id ?? "");
+
+  const alreadyMonitored = useMemo(() => new Set(existingUrls), [existingUrls]);
+  const candidates = useMemo(() => {
+    const seen = new Set<string>();
+    const pages = (analysisDetail?.pages ?? []).filter((p) => {
+      if (alreadyMonitored.has(p.url) || seen.has(p.url)) return false;
+      seen.add(p.url);
+      return true;
+    });
+    // Recomendadas primeiro, depois o resto em ordem de descoberta.
+    return [...pages].sort((a, b) => Number(isRecommended(b.url)) - Number(isRecommended(a.url)));
+  }, [analysisDetail, alreadyMonitored]);
+
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [frequency, setFrequency] = useState<CriticalFlowFrequency>("DAILY");
+  const [activating, setActivating] = useState(false);
+
+  useEffect(() => {
+    // Pré-seleciona as recomendadas quando a lista de candidatas muda (ex.:
+    // trocou de projeto) — o usuário só precisa clicar em "Ativar".
+    setSelected(new Set(candidates.filter((p) => isRecommended(p.url)).map((p) => p.url)));
+  }, [candidates]);
+
+  function toggle(url: string) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(url)) next.delete(url);
+      else next.add(url);
+      return next;
+    });
+  }
+
+  async function ativar() {
+    if (selected.size === 0) return;
+    setActivating(true);
+    let created = 0;
+    let failed = 0;
+    for (const url of selected) {
+      try {
+        await api.createCriticalFlow(projectId, {
+          name: nameFromUrl(url),
+          startUrl: url,
+          steps: [],
+          frequency,
+        });
+        created++;
+      } catch {
+        failed++;
+      }
+    }
+    setActivating(false);
+    setSelected(new Set());
+    void qc.invalidateQueries({ queryKey: qk.criticalFlows(projectId) });
+    if (created > 0) {
+      toast.success(
+        `${created} fluxo(s) ativado(s)${failed > 0 ? ` — ${failed} falharam` : ""}`,
+      );
+    } else {
+      toast.error("Não foi possível ativar os fluxos selecionados");
+    }
+  }
+
+  return (
+    <section className="rounded-lg border bg-card">
+      <div className="flex items-center gap-2 border-b px-5 py-4">
+        <Sparkles className="h-4 w-4 text-primary" />
+        <h2 className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+          Sugestões de monitoramento
+        </h2>
+      </div>
+      <div className="p-5">
+        {!latestAnalysis ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Nenhuma Análise QA concluída ainda pra sugerir páginas automaticamente.
+              Rode uma análise neste projeto e as páginas descobertas aparecem aqui pra
+              ativar o monitoramento com um clique.
+            </p>
+            {!connectionLoading && !hasRepoConnection && (
+              <ConnectRepoPrompt
+                projectId={projectId}
+                title="Conecte um repositório para rodar uma análise"
+                description="Toda Análise QA exige GitHub ou GitLab conectado — é isso que alimenta as sugestões aqui."
+              />
+            )}
+            <Link
+              href={`/analyses?projectId=${projectId}`}
+              className="inline-flex text-xs font-medium text-primary hover:underline"
+            >
+              Ir para Análises →
+            </Link>
+          </div>
+        ) : pagesLoading ? (
+          <div className="grid place-items-center py-8 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+          </div>
+        ) : candidates.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Todas as páginas descobertas na última análise (v{latestAnalysis.version}) já
+            estão monitoradas, ou nenhuma página foi encontrada. Use "Fluxo customizado"
+            abaixo pra uma URL específica.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              {candidates.length} página(s) da última análise (v{latestAnalysis.version}) ainda
+              sem monitoramento. As marcadas como <Badge className="mx-1">Recomendado</Badge>
+              já vêm pré-selecionadas.
+            </p>
+            <div className="max-h-80 space-y-1 overflow-y-auto rounded-md border p-2">
+              {candidates.map((page) => (
+                <label
+                  key={page.url}
+                  className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm hover:bg-accent/40"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected.has(page.url)}
+                    onChange={() => toggle(page.url)}
+                    className="h-4 w-4 shrink-0 accent-primary"
+                  />
+                  <span className="min-w-0 flex-1 truncate" title={page.url}>
+                    {page.url}
+                  </span>
+                  {isRecommended(page.url) && (
+                    <Badge className="shrink-0 border-primary/30 bg-primary/10 text-primary">
+                      Recomendado
+                    </Badge>
+                  )}
+                </label>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" disabled={selected.size === 0 || activating} onClick={() => void ativar()}>
+                {activating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                Ativar monitoramento ({selected.size})
+              </Button>
+              <select
+                value={frequency}
+                onChange={(e) => setFrequency(e.target.value as CriticalFlowFrequency)}
+                className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+              >
+                {Object.entries(FREQUENCY_LABEL).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                onClick={() =>
+                  setSelected(
+                    selected.size === candidates.length
+                      ? new Set()
+                      : new Set(candidates.map((p) => p.url)),
+                  )
+                }
+              >
+                {selected.size === candidates.length ? "Limpar seleção" : "Selecionar todas"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function nameFromUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    const path = u.pathname.replace(/\/+$/, "");
+    return path ? `Página${path.replace(/\//g, " › ")}` : `Página inicial (${u.hostname})`;
+  } catch {
+    return url;
+  }
 }
 
 function FlowCard({
@@ -219,7 +467,8 @@ function FlowCard({
             {!flow.active && <Badge>Pausado</Badge>}
           </div>
           <p className="mt-0.5 truncate text-xs text-muted-foreground">
-            {flow.startUrl} · {FREQUENCY_LABEL[flow.frequency]} · {flow.steps.length} passo(s)
+            {flow.startUrl} · {FREQUENCY_LABEL[flow.frequency]} ·{" "}
+            {flow.steps.length === 0 ? "verificação de disponibilidade" : `${flow.steps.length} passo(s)`}
             {flow.lastRunAt ? ` · última execução ${timeAgo(flow.lastRunAt)}` : ""}
           </p>
         </div>
@@ -254,23 +503,25 @@ function FlowCard({
             </Button>
           </div>
 
-          <div>
-            <p className="mb-1.5 text-xs font-medium text-muted-foreground">Passos</p>
-            <ol className="space-y-1 text-xs">
-              {flow.steps.map((step, i) => (
-                <li key={i} className="flex gap-2 text-muted-foreground">
-                  <span className="tabular w-4 shrink-0">{i + 1}.</span>
-                  <span>
-                    {step.label ? `${step.label} — ` : ""}
-                    {ACTION_LABEL[step.action]}
-                    {step.selector ? ` "${step.selector}"` : ""}
-                    {step.value ? ` = "${step.value}"` : ""}
-                    {step.expected ? ` (esperado: "${step.expected}")` : ""}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </div>
+          {flow.steps.length > 0 && (
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-muted-foreground">Passos</p>
+              <ol className="space-y-1 text-xs">
+                {flow.steps.map((step, i) => (
+                  <li key={i} className="flex gap-2 text-muted-foreground">
+                    <span className="tabular w-4 shrink-0">{i + 1}.</span>
+                    <span>
+                      {step.label ? `${step.label} — ` : ""}
+                      {ACTION_LABEL[step.action]}
+                      {step.selector ? ` "${step.selector}"` : ""}
+                      {step.value ? ` = "${step.value}"` : ""}
+                      {step.expected ? ` (esperado: "${step.expected}")` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
 
           <div>
             <p className="mb-1.5 text-xs font-medium text-muted-foreground">Execuções recentes</p>
@@ -330,6 +581,11 @@ function CreateFlowForm({ projectId, onDone }: { projectId: string; onDone: () =
 
   return (
     <div className="mb-4 space-y-4 rounded-lg border bg-card p-5">
+      <p className="text-xs text-muted-foreground">
+        Use isto pra jornadas que precisam de interação real (preencher login,
+        clicar em finalizar compra). Pra só verificar se uma página está no ar,
+        use as sugestões acima — mais rápido.
+      </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Nome do fluxo</label>

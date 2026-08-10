@@ -8,12 +8,12 @@ import {
   SearchCode,
   UploadCloud,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { PageHeader } from "@/components/page-header";
 import { ActionError } from "@/components/action-error";
+import { ConnectRepoPrompt, useHasRepoConnection } from "@/components/connect-repo-prompt";
+import { PageHeader } from "@/components/page-header";
 import { QueryErrorState } from "@/components/query-error-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,6 +36,11 @@ export default function AtualizarPage() {
   const [projectId, setProjectId] = useState("");
   const [manifest, setManifest] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
+  const {
+    hasRepoConnection,
+    isLoading: connectionLoading,
+    isError: connectionError,
+  } = useHasRepoConnection(projectId);
 
   function gerar() {
     if (!manifest.trim()) {
@@ -201,46 +206,47 @@ export default function AtualizarPage() {
               <li>✓ Detecta múltiplos ecossistemas e manifests legados</li>
               <li>✓ Prioriza manifestos da aplicação</li>
             </ul>
-            <Button
-              className="mt-auto"
-              onClick={investigarGithub}
-              disabled={!projectId || createFromGithub.isPending}
-            >
-              {createFromGithub.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <SearchCode className="h-4 w-4" />
-              )}
-              Investigar tecnologias
-            </Button>
-            <Link
-              href={
-                projectId
-                  ? `/aplicacao?projectId=${projectId}&view=connections`
-                  : "/aplicacao?view=connections"
-              }
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 text-center text-xs font-medium text-primary hover:underline"
-            >
-              Configurar ou atualizar conexão GitHub
-            </Link>
-            <p className="mt-1 text-center text-[11px] leading-4 text-muted-foreground">
-              As conexões GitHub e MCP ficam em Aplicações → selecione o projeto → Conexões e integrações.
-            </p>
-            {createFromGithub.error && (
-              <div className="mt-3">
-                <ActionError
-                  error={createFromGithub.error}
-                  message="Não foi possível investigar pelo GitHub. Abra a conexão do projeto, valide owner/repo e substitua o token se necessário."
+
+            <div className="mt-5">
+              {!projectId ? (
+                <p className="text-center text-[11px] text-muted-foreground">
+                  Selecione um projeto no formulário ao lado.
+                </p>
+              ) : connectionLoading ? (
+                <div className="flex justify-center py-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              ) : !connectionError && !hasRepoConnection ? (
+                <ConnectRepoPrompt
+                  projectId={projectId}
+                  title="Conecte um repositório para investigar automaticamente"
+                  description="O manifesto colado à esquerda funciona sem conexão nenhuma — mas para o MuriOps varrer o repositório sozinho e montar o plano, conecte GitHub ou GitLab primeiro."
                 />
-              </div>
-            )}
-            {!projectId && (
-              <p className="mt-2 text-center text-[11px] text-muted-foreground">
-                Selecione um projeto no formulário ao lado.
-              </p>
-            )}
+              ) : (
+                <>
+                  <Button
+                    className="w-full"
+                    onClick={investigarGithub}
+                    disabled={createFromGithub.isPending}
+                  >
+                    {createFromGithub.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <SearchCode className="h-4 w-4" />
+                    )}
+                    Investigar tecnologias
+                  </Button>
+                  {createFromGithub.error && (
+                    <div className="mt-3">
+                      <ActionError
+                        error={createFromGithub.error}
+                        message="Não foi possível investigar pelo repositório. Abra a conexão do projeto, valide owner/repo (ou namespace/repo no GitLab) e substitua o token se necessário."
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

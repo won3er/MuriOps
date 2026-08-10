@@ -1,3 +1,4 @@
+import { analysisScheduleService } from "./application/analysis-schedule.service.js";
 import { criticalFlowService } from "./application/critical-flow.service.js";
 import { projectionService } from "./application/projection.service.js";
 import { recoverStaleRemediationPlans } from "./application/remediation.service.js";
@@ -43,6 +44,20 @@ async function main(): Promise<void> {
   void criticalFlowService
     .runDueFlows()
     .catch((err) => app.log.error({ err }, "Falha ao rodar Fluxos Críticos (boot)"));
+
+  // Agendamento de Análise de Segurança ("Continuous Coverage" passivo):
+  // granularidade é diária/semanal (uma Análise crawleia o site inteiro,
+  // bem mais pesado que checar uma URL), então uma checagem a cada 30min é
+  // sobra suficiente pra nunca atrasar mais que isso.
+  const ANALYSIS_SCHEDULE_CHECK_MS = 30 * 60 * 1000;
+  setInterval(() => {
+    analysisScheduleService
+      .runDueSchedules()
+      .catch((err) => app.log.error({ err }, "Falha ao rodar agendamentos de Análise de Segurança"));
+  }, ANALYSIS_SCHEDULE_CHECK_MS);
+  void analysisScheduleService
+    .runDueSchedules()
+    .catch((err) => app.log.error({ err }, "Falha ao rodar agendamentos de Análise de Segurança (boot)"));
 }
 
 main().catch((err) => {

@@ -1,4 +1,4 @@
-import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
+import { chromium, type Browser, type BrowserContext, type Page, type Response } from "playwright";
 import type { CriticalFlowStep } from "@qa-ai/shared";
 import { assertPublicUrl, UnsafeUrlError } from "../../infrastructure/security/url-guard.js";
 
@@ -64,7 +64,11 @@ export async function runCriticalFlow(
     const page = await context.newPage();
     page.setDefaultTimeout(STEP_TIMEOUT_MS);
 
-    await page.goto(startUrl, { waitUntil: "domcontentloaded", timeout: STEP_TIMEOUT_MS });
+    const initialResponse = await page.goto(startUrl, {
+      waitUntil: "domcontentloaded",
+      timeout: STEP_TIMEOUT_MS,
+    });
+    assertOkResponse(initialResponse, startUrl);
 
     for (let i = 0; i < steps.length; i++) {
       const step = steps[i];
@@ -110,7 +114,11 @@ async function runStep(page: Page, step: CriticalFlowStep): Promise<void> {
   switch (step.action) {
     case "NAVIGATE": {
       if (!step.value) throw new Error("Passo NAVIGATE sem 'value' (URL de destino).");
-      await page.goto(step.value, { waitUntil: "domcontentloaded", timeout: STEP_TIMEOUT_MS });
+      const response = await page.goto(step.value, {
+        waitUntil: "domcontentloaded",
+        timeout: STEP_TIMEOUT_MS,
+      });
+      assertOkResponse(response, step.value);
       return;
     }
     case "CLICK": {
@@ -160,6 +168,24 @@ async function runStep(page: Page, step: CriticalFlowStep): Promise<void> {
       const exhaustive: never = step.action;
       throw new Error(`Ação de passo desconhecida: ${exhaustive}`);
     }
+  }
+}
+
+/**
+ * `page.goto()` do Playwright só rejeita em erro de rede/timeout — uma
+ * página que responde 404/500 "carrega" normalmente do ponto de vista do
+ * navegador, então sem esta checagem um fluxo cujo único passo é a
+ * `startUrl` (ex.: os fluxos sugeridos automaticamente a partir das páginas
+ * descobertas na última Análise, ver `monitoramento/page.tsx`) nunca
+ * detectava página fora do ar — sempre dava "Passou". Trata só 4xx/5xx como
+ * falha; redirecionamentos (3xx) já são seguidos pelo próprio Playwright
+ * antes do response final chegar aqui.
+ */
+function assertOkResponse(response: Response | null, url: string): void {
+  if (!response) throw new Error(`Não obteve resposta de "${url}".`);
+  const status = response.status();
+  if (status >= 400) {
+    throw new Error(`"${url}" respondeu HTTP ${status}.`);
   }
 }
 
