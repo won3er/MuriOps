@@ -1,7 +1,7 @@
 "use client";
 
 import type { AnalysisCategory, AnalysisScheduleFrequency } from "@qa-ai/shared";
-import { CalendarClock, Loader2, Play, ShieldAlert, Swords, Github, Trash2 } from "lucide-react";
+import { CalendarClock, Loader2, Pause, Play, ShieldAlert, Swords, Github, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -12,11 +12,13 @@ import { QueryErrorState } from "@/components/query-error-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import type { AnalysisSchedule } from "@qa-ai/shared";
 import {
   useAnalysisSchedules,
   useCreateAnalysisSchedule,
   useDeleteAnalysisSchedule,
   useProjects,
+  useUpdateAnalysisSchedule,
 } from "@/lib/queries";
 import { cn, timeAgo } from "@/lib/utils";
 
@@ -374,32 +376,13 @@ function ContinuousCoveragePanel({ projectId }: { projectId: string }) {
         ) : schedules.length > 0 ? (
           <div className="space-y-2">
             {schedules.map((schedule) => (
-              <div
+              <ScheduleRow
                 key={schedule.id}
-                className="flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm"
-              >
-                <div className="flex flex-wrap gap-1.5">
-                  {schedule.categories.map((c) => (
-                    <Badge key={c}>{SCHEDULE_CATEGORY_LABEL[c] ?? c}</Badge>
-                  ))}
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  · {SCHEDULE_FREQUENCY_LABEL[schedule.frequency]}
-                  {schedule.lastRunAt ? ` · última execução ${timeAgo(schedule.lastRunAt)}` : " · ainda não rodou"}
-                </span>
-                {!schedule.active && <Badge>Pausado</Badge>}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="ml-auto text-destructive hover:text-destructive"
-                  disabled={deleteSchedule.isPending}
-                  onClick={() => {
-                    if (confirm("Remover este agendamento?")) deleteSchedule.mutate(schedule.id);
-                  }}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+                schedule={schedule}
+                projectId={projectId}
+                onDelete={() => deleteSchedule.mutate(schedule.id)}
+                deleting={deleteSchedule.isPending}
+              />
             ))}
           </div>
         ) : null}
@@ -444,5 +427,55 @@ function ContinuousCoveragePanel({ projectId }: { projectId: string }) {
         </div>
       </div>
     </section>
+  );
+}
+
+function ScheduleRow({
+  schedule,
+  projectId,
+  onDelete,
+  deleting,
+}: {
+  schedule: AnalysisSchedule;
+  projectId: string;
+  onDelete: () => void;
+  deleting: boolean;
+}) {
+  const update = useUpdateAnalysisSchedule(schedule.id, projectId);
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm">
+      <div className="flex flex-wrap gap-1.5">
+        {schedule.categories.map((c) => (
+          <Badge key={c}>{SCHEDULE_CATEGORY_LABEL[c] ?? c}</Badge>
+        ))}
+      </div>
+      <span className="text-xs text-muted-foreground">
+        · {SCHEDULE_FREQUENCY_LABEL[schedule.frequency]}
+        {schedule.lastRunAt ? ` · última execução ${timeAgo(schedule.lastRunAt)}` : " · ainda não rodou"}
+      </span>
+      {!schedule.active && <Badge>Pausado</Badge>}
+      <Button
+        size="sm"
+        variant="ghost"
+        className="ml-auto"
+        disabled={update.isPending}
+        onClick={() => update.mutate({ active: !schedule.active })}
+        title={schedule.active ? "Pausar agendamento" : "Retomar agendamento"}
+      >
+        {schedule.active ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="text-destructive hover:text-destructive"
+        disabled={deleting}
+        onClick={() => {
+          if (confirm("Remover este agendamento?")) onDelete();
+        }}
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </Button>
+    </div>
   );
 }

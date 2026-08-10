@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Loader2,
+  Pause,
   Play,
   Plus,
   Radar,
@@ -33,6 +34,7 @@ import {
   useDeleteCriticalFlow,
   useFlowRuns,
   useProjects,
+  useUpdateCriticalFlow,
   useRunCriticalFlowNow,
 } from "@/lib/queries";
 import { cn, timeAgo } from "@/lib/utils";
@@ -438,6 +440,7 @@ function FlowCard({
   const { data: runs = [] } = useFlowRuns(open ? flow.id : "");
   const runNow = useRunCriticalFlowNow(flow.id, projectId);
   const remove = useDeleteCriticalFlow(projectId);
+  const update = useUpdateCriticalFlow(flow.id, projectId);
 
   const statusBadge =
     flow.lastRunStatus === "PASSED" ? (
@@ -489,6 +492,15 @@ function FlowCard({
                 <Play className="h-3.5 w-3.5" />
               )}
               Rodar agora
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={update.isPending}
+              onClick={() => update.mutate({ active: !flow.active })}
+            >
+              {flow.active ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+              {flow.active ? "Pausar" : "Retomar"}
             </Button>
             <Button
               size="sm"
