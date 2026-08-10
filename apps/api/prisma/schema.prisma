@@ -33,23 +33,12 @@ model Organization {
   aiProvider          String?
   aiApiKeyEncrypted   String?
 
-  // Conexão OAuth com Google Drive (opcional, por organização) — usada pelo
-  // Guardian para listar e ler documentos de uma pasta do Drive, sem exigir
-  // que o texto seja colado manualmente. Os tokens são criptografados com o
-  // mesmo secret-box.ts usado para as chaves de IA.
-  googleDriveRefreshTokenEncrypted String?
-  googleDriveAccessTokenEncrypted  String?
-  googleDriveTokenExpiresAt        DateTime?
-  googleDriveConnectedEmail        String?
-
-  // Provider de e-mail (opcional, por organização) — usado só pra enviar o
-  // resumo das auditorias agendadas do Guardian. Sem chave configurada, o
-  // agendamento ainda roda e grava a auditoria normalmente, só não envia
-  // e-mail. Hoje só suporta Resend (API simples, sem SMTP). Criptografado
-  // com o mesmo secret-box.ts das outras chaves.
+  // E-mail (Resend) — usado pelos alertas de Fluxos Críticos (agendamento
+  // do Guardian também usava, mas o Guardian foi removido em 09/08/2026;
+  // estes 3 campos continuam necessários pro CriticalFlow.sendAlertEmail).
   emailProvider       String?
   emailApiKeyEncrypted String?
-  emailFromAddress     String?
+  emailFromAddress    String?
 
   users             User[]
   projects          Project[]
@@ -57,9 +46,6 @@ model Organization {
   blueprints        Blueprint[]
   remediationPlans  RemediationPlan[]
   upgradePlans      UpgradePlan[]
-  guardianRulesets  GuardianRuleset[]
-  guardianRuns      GuardianRun[]
-  guardianSchedules GuardianSchedule[]
   criticalFlows     CriticalFlow[]
 }
 
@@ -606,104 +592,11 @@ model ProjectionTask {
   @@index([status])
 }
 
-// ---------- Guardian (auditoria operacional de negócio) ----------
-// Segundo pilar do produto, separado do QA de sites: audita documentos de
-// negócio (planilha exportada como texto, contrato, formulário) contra
-// regras que o próprio cliente define ("estoque nunca pode ficar negativo",
-// "desconto acima de 20% precisa de aprovação"), classifica cada achado por
-// risco e sugere a correção — mesma filosofia achado→severidade→correção do
-// resto do produto, aplicada a operação em vez de site. v1: entrada só por
-// texto colado (sem upload/parse de PDF/planilha binária ainda).
-
-enum GuardianStatus {
-  PENDING
-  READY
-  FAILED
-}
-
-enum GuardianOverallStatus {
-  GREEN
-  YELLOW
-  RED
-}
-
-model GuardianRuleset {
-  id             String   @id @default(cuid())
-  organizationId String
-  createdById    String
-  name           String
-  description    String?
-  // GuardianRule[] — regras de negócio em linguagem natural.
-  rules          Json
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  runs         GuardianRun[]
-  schedules    GuardianSchedule[]
-
-  @@index([organizationId])
-}
-
-// Auditoria Guardian recorrente: reaudita automaticamente um arquivo do
-// Google Drive conectado, todo dia num horário fixo (UTC), e opcionalmente
-// envia o resumo por e-mail. Depende da conexão Drive da organização (pra
-// reler a versão mais recente do arquivo a cada execução) — não funciona
-// com texto colado, já que não haveria o que reler no dia seguinte.
-model GuardianSchedule {
-  id             String    @id @default(cuid())
-  organizationId String
-  createdById    String
-  projectId      String?
-  rulesetId      String?
-  name           String
-  driveFileId    String
-  driveFileName  String
-  // Hora do dia (0-23) em UTC na qual a auditoria roda.
-  hourUtc        Int
-  recipientEmail String?
-  active         Boolean   @default(true)
-  lastRunAt      DateTime?
-  lastRunId      String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  ruleset      GuardianRuleset? @relation(fields: [rulesetId], references: [id], onDelete: SetNull)
-
-  @@index([organizationId])
-  @@index([active, hourUtc])
-}
-
-model GuardianRun {
-  id             String                 @id @default(cuid())
-  organizationId String
-  // Vínculo opcional a um projeto cadastrado — a auditoria também funciona avulsa.
-  projectId      String?
-  // SetNull (não Cascade): apagar o ruleset não deve apagar o histórico de runs.
-  rulesetId      String?
-  createdById    String
-  title          String
-  // Nome/descrição do documento auditado (ex.: "estoque_julho.csv"), livre.
-  sourceName     String?
-  // Texto colado pelo usuário — guardado pra auditoria/reprocessamento.
-  documentRaw    String                 @db.Text
-  provider       String
-  status         GuardianStatus         @default(PENDING)
-  overallStatus  GuardianOverallStatus?
-  // Saída estruturada da IA (GuardianResult).
-  result         Json?
-  error          String?
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-
-  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  ruleset      GuardianRuleset? @relation(fields: [rulesetId], references: [id], onDelete: SetNull)
-
-  @@index([organizationId])
-  @@index([projectId])
-  @@index([rulesetId])
-}
+// [09/08/2026] Guardian (auditoria de documento de negócio) removido — não
+// servia à tese central do produto (QA/segurança de projetos de software
+// construídos com IA). Sem clientes reais usando, usuário autorizou remoção
+// completa incluindo os dados (diferente do precedente do Blueprint, que
+// tinha 6 registros reais e foi só esvaziado de código, mantendo o model).
 
 // ---------- Fluxos Críticos (monitoramento sintético) ----------
 // Terceiro pilar do produto: enquanto Análise faz um scan pontual sob demanda,
@@ -711,8 +604,7 @@ model GuardianRun {
 // etc.) periodicamente, simulando um usuário real, pra pegar quebras de
 // jornada de negócio (não só problemas de código/SEO/acessibilidade) antes
 // que o cliente perca vendas por causa delas. Reusa o mesmo lançador de
-// Chromium com memória controlada do crawler (crawler.ts) e o mesmo
-// provider de e-mail (Resend) já usado pelo agendamento do Guardian.
+// Chromium com memória controlada do crawler (crawler.ts).
 
 enum CriticalFlowStepAction {
   NAVIGATE

@@ -12,7 +12,6 @@ import {
   LogOut,
   Menu,
   Settings,
-  ShieldCheck,
   Wrench,
   X,
 } from "lucide-react";
@@ -39,12 +38,6 @@ const NAV_GROUPS = [
       { href: "/aplicacao", label: "Aplicações", icon: Wrench },
       { href: "/orquestracao", label: "Orquestrações", icon: GitBranch },
       { href: "/atualizar", label: "Atualizações", icon: ArrowUpCircle },
-    ],
-  },
-  {
-    label: "Guardian",
-    items: [
-      { href: "/guardian", label: "Auditoria operacional", icon: ShieldCheck },
     ],
   },
   {

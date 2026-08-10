@@ -1,16 +1,5 @@
-import type {
-  GuardianResult,
-  RemediationResult,
-  UpgradeResult,
-} from "@qa-ai/shared";
+import type { RemediationResult, UpgradeResult } from "@qa-ai/shared";
 import { env } from "../../config/env.js";
-import {
-  buildGuardianUserPrompt,
-  GUARDIAN_SYSTEM_PROMPT,
-  normalizeGuardian,
-  parseGuardianJson,
-  type GuardianCheckInput,
-} from "./guardian-prompt.js";
 import { buildUserPrompt, normalizeAiResult, parseAiJson, SYSTEM_PROMPT } from "./prompt.js";
 import type { AiAnalysisInput, AiAnalysisResult, AiProvider } from "./provider.js";
 import {
@@ -170,13 +159,5 @@ export class GeminiProvider implements AiProvider {
       buildUpgradeUserPrompt(input),
     );
     return normalizeUpgrade(parseUpgradeJson(text), input.ecosystem, input.manifestFile);
-  }
-
-  async runGuardianCheck(input: GuardianCheckInput): Promise<GuardianResult> {
-    const text = await this.generate(GUARDIAN_SYSTEM_PROMPT, buildGuardianUserPrompt(input));
-    return normalizeGuardian(
-      parseGuardianJson(text),
-      new Set(input.rules.map((r) => r.id)),
-    );
   }
 }

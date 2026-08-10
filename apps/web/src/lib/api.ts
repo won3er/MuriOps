@@ -5,10 +5,6 @@ import type {
   AnalysisDetail,
   AnalysisSummary,
   AuthSession,
-  CreateGuardianRulesetRequest,
-  CreateGuardianRunRequest,
-  CreateGuardianScheduleRequest,
-  UpdateGuardianScheduleRequest,
   CreateOrchestrationRunRequest,
   CreateProjectRequest,
   CreateRemediationPlanRequest,
@@ -17,13 +13,6 @@ import type {
   CriticalFlow,
   FlowRun,
   DashboardStats,
-  GuardianDashboardStats,
-  GuardianFindingStatus,
-  GuardianRuleset,
-  GuardianRulesetSummary,
-  GuardianRun,
-  GuardianRunSummary,
-  GuardianSchedule,
   IssueFilters,
   LoginRequest,
   ProjectionTask,
@@ -510,7 +499,7 @@ export const api = {
     }),
   deleteAiSettings: () => request<void>("/settings/ai", { method: "DELETE" }),
 
-  // ---- configurações de e-mail (Resend — usado pelos agendamentos do Guardian) ----
+  // ---- configurações de e-mail (Resend — usado pelos alertas de Fluxos Críticos) ----
   getEmailSettings: () =>
     request<{
       configured: boolean;
@@ -524,93 +513,4 @@ export const api = {
       body: JSON.stringify({ apiKey, fromAddress }),
     }),
   deleteEmailSettings: () => request<void>("/settings/email", { method: "DELETE" }),
-
-  // ---- Guardian (auditoria operacional de negócio) ----
-  listGuardianRulesets: () => request<GuardianRulesetSummary[]>("/guardian/rulesets"),
-  createGuardianRuleset: (body: CreateGuardianRulesetRequest) =>
-    request<GuardianRuleset>("/guardian/rulesets", {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
-  getGuardianRuleset: (id: string) =>
-    request<GuardianRuleset>(`/guardian/rulesets/${id}`),
-  deleteGuardianRuleset: (id: string) =>
-    request<void>(`/guardian/rulesets/${id}`, { method: "DELETE" }),
-
-  listGuardianRuns: () => request<GuardianRunSummary[]>("/guardian/runs"),
-  createGuardianRun: (body: CreateGuardianRunRequest) =>
-    request<GuardianRun>("/guardian/runs", {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
-  getGuardianRun: (id: string) => request<GuardianRun>(`/guardian/runs/${id}`),
-  retryGuardianRun: (id: string) =>
-    request<GuardianRun>(`/guardian/runs/${id}/retry`, { method: "POST" }),
-  // Upload de PDF/Excel — não usa request() porque FormData precisa que o
-  // navegador defina o Content-Type (com boundary) sozinho.
-  extractGuardianFileText: async (
-    file: File,
-  ): Promise<{ name: string; content: string }> => {
-    const token = getToken();
-    const form = new FormData();
-    form.append("file", file);
-    const res = await fetch(`${BASE}/guardian/extract-text`, {
-      method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      body: form,
-    });
-    if (!res.ok) {
-      let message = res.statusText;
-      try {
-        const body = await res.json();
-        message = body.message ?? message;
-      } catch {
-        /* ignore */
-      }
-      throw new ApiError(message, res.status);
-    }
-    return res.json();
-  },
-  updateGuardianFinding: (id: string, findingId: string, status: GuardianFindingStatus) =>
-    request<GuardianRun>(`/guardian/runs/${id}/findings/${findingId}`, {
-      method: "PATCH",
-      body: JSON.stringify({ status }),
-    }),
-  deleteGuardianRun: (id: string) =>
-    request<void>(`/guardian/runs/${id}`, { method: "DELETE" }),
-  guardianDashboard: () => request<GuardianDashboardStats>("/guardian/dashboard"),
-
-  // ---- Guardian: agendamento automático ----
-  listGuardianSchedules: () => request<GuardianSchedule[]>("/guardian/schedules"),
-  createGuardianSchedule: (body: CreateGuardianScheduleRequest) =>
-    request<GuardianSchedule>("/guardian/schedules", {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
-  updateGuardianSchedule: (id: string, body: UpdateGuardianScheduleRequest) =>
-    request<GuardianSchedule>(`/guardian/schedules/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(body),
-    }),
-  deleteGuardianSchedule: (id: string) =>
-    request<void>(`/guardian/schedules/${id}`, { method: "DELETE" }),
-
-  // ---- Guardian × Google Drive ----
-  guardianDriveStatus: () =>
-    request<{ configured: boolean; connected: boolean; email: string | null }>(
-      "/guardian/drive/status",
-    ),
-  guardianDriveConnectUrl: () => request<{ url: string }>("/guardian/drive/connect"),
-  guardianDriveDisconnect: () =>
-    request<void>("/guardian/drive/connection", { method: "DELETE" }),
-  guardianDriveListFiles: (opts: { folderId?: string; query?: string } = {}) => {
-    const q = new URLSearchParams(
-      Object.entries(opts).filter(([, v]) => v) as [string, string][],
-    ).toString();
-    return request<
-      Array<{ id: string; name: string; mimeType: string; modifiedTime: string; isFolder: boolean }>
-    >(`/guardian/drive/files${q ? `?${q}` : ""}`);
-  },
-  guardianDriveFileContent: (fileId: string) =>
-    request<{ name: string; content: string }>(`/guardian/drive/files/${fileId}/content`),
 };

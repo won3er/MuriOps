@@ -1501,6 +1501,143 @@ pediu. Se quiser expandir pra essas, é o mesmo padrão (`buttonVariants`
 onde precisar de link-como-botão, header dot+mono, cards com tag/dot em vez
 de fundo colorido) aplicado tela por tela.
 
+## Sessão 09/08/2026 — Remoção do Guardian, decisão sobre Orquestração
+
+Depois de eu apresentar uma avaliação honesta pilar por pilar (pedida
+explicitamente pelo usuário, com aviso explícito de cuidado contra
+alucinação/relatório sem embasamento — instrução que passa a valer pra
+**todos** os relatórios futuros, não só esse), o usuário confirmou: **cortar
+o Guardian por completo.** Justificativa aceita: diferente de todo o resto
+do produto (Análise crawla o site real, Atualizar lê o manifesto real,
+Fluxos Críticos executa contra o site real), o Guardian auditava um
+documento de negócio colado/importado do Drive — fora da tese central do
+produto (QA/segurança de *projetos de software*, não documentos de
+negócio). Também **autorização em bloco pra decisões futuras**: (a) pode
+apagar/mudar dados livremente daqui pra frente, porque o produto não tem
+clientes reais ainda (só o usuário e amigos desenvolvedores usaram) — ao
+contrário do precedente do Blueprint (6 registros reais, resolvido só
+esvaziando código e retendo a tabela), aqui o usuário pediu remoção
+completa dos dados também; (b) autorização explícita e sem ressalvas pra
+implementar **confirmação real de exploit (proof-of-concept)** no Teste
+Ativo Autorizado no futuro, aceitando a mudança de perfil de risco,
+inspirado no Strix — **ainda não implementado nesta sessão**, é trabalho
+maior que pede escopo próprio.
+
+**O que foi removido (código + dados, sem retenção — diferente do
+Blueprint):**
+- Backend: `guardian.service.ts`, `guardian.routes.ts`,
+  `guardian-drive.routes.ts`, `guardian-schedule.routes.ts`,
+  `guardian-schedule.service.ts`, `guardian-prompt.ts`,
+  `google-drive.service.ts` (Drive era só consumido pelo Guardian),
+  `text-extractor.ts` (extração de PDF/Excel, idem) — todos esvaziados
+  (`export {};`) pelo mesmo motivo de sempre (sandbox sem `rm`).
+  `fastify/multipart` desregistrado de `app.ts` (só o upload do Guardian
+  usava). `recoverStaleGuardianRuns` e o polling de agendamento removidos
+  de `main.ts`.
+- `AiProvider` (interface + Claude/OpenAI/Gemini/Noop): método
+  `runGuardianCheck` removido dos 4 providers.
+- Schema: modelos `GuardianRuleset`/`GuardianRun`/`GuardianSchedule` e enums
+  `GuardianStatus`/`GuardianOverallStatus` removidos por completo (não
+  retidos — dados reais apagados, autorizado explicitamente pelo usuário).
+  Campos de Google Drive (`googleDriveRefreshTokenEncrypted` e os outros 3)
+  removidos de `Organization`.
+  **Cuidado que evitou quebrar Fluxos Críticos:** os campos de e-mail
+  (`emailProvider`/`emailApiKeyEncrypted`/`emailFromAddress`) quase foram
+  removidos junto por estarem documentados como "usados pelo agendamento do
+  Guardian" — na real, `critical-flow.service.ts` **também** depende
+  desses 3 campos pra mandar alerta de fluxo quebrado via Resend (ver seção
+  de 06/08/2026 sobre Fluxos Críticos, que já dizia isso, só não tinha sido
+  cruzado antes de mexer no schema). Verificado com Grep antes do `db push`
+  e os 3 campos foram restaurados em `Organization` com comentário
+  explicando a dependência cruzada. **Isso é o tipo de erro que só um Grep
+  focado em "quem mais usa isso" evita** — lição direta do episódio do
+  Blueprint (nunca confie em "acho que só X usa Y" sem checar).
+- Frontend: `/guardian` e `/guardian/[id]` viraram `redirect("/dashboard")`
+  (mesmo padrão do Blueprint — não quebra links salvos). Item de menu
+  "Guardian" removido de `layout.tsx`. Hooks (`useGuardianRun` e ~20
+  outros) e funções de API removidos de `queries.ts`/`api.ts`. Tipo
+  `packages/shared/src/types/guardian.ts` esvaziado, removido do barrel
+  `index.ts`.
+- Home (`feature-showcase.tsx` + `public-copy.ts`, 3 locales): aba
+  "Guardian" removida (`FEATURE_VISUALS`, `ACTIVE_NAV_ITEM`,
+  `GuardianPreview`, `copy.features`), "Seis frentes" → "Cinco frentes"
+  (`cycleTitle`/`cycleDescription` sem menção ao Guardian), card "Google
+  Drive" removido de "Integrações reais" (Drive só existia pro Guardian),
+  menção a "auditorias de documentos (Guardian)" removida da descrição do
+  card de provedores de IA.
+- `/docs/funcionalidades` (`docs-copy.ts`, 3 locales): seção "Auditoria de
+  negócio"/"Business audit" removida, entradas "Google Drive" removidas da
+  tabela de integrações (mesmo motivo — só existia pro Guardian).
+- Configurações (`settings/page.tsx` + `settings.routes.ts`): o card
+  "E-mail (Resend)" **não foi removido** (continua servindo Fluxos
+  Críticos) — só a copy foi corrigida pra não citar mais "agendamentos do
+  Guardian" como motivo de existir.
+- `robots.ts`: a entrada `/guardian` no disallow **foi mantida** — a rota
+  ainda existe como redirect, então continua fazendo sentido não indexá-la.
+
+**Não fiz**: não apaguei fisicamente os arquivos esvaziados (sandbox sem
+`rm` — mesma limitação de sempre, listar pro usuário rodar `git rm` quando
+confirmar que nada mais importa deles). Não removi a migration histórica
+`20260731000000_guardian_google_drive`/`20260803000000_guardian_core` do
+diretório de migrations — é registro histórico do schema, sem efeito
+funcional em diante.
+
+**Checklist de validação antes de subir isto (mais arriscado que o normal
+por causa da migration destrutiva de verdade — dados reais sendo
+apagados, diferente do precedente do Blueprint):**
+```
+cd "C:\Users\woner\Desktop\Atlas QA"
+pnpm --filter @qa-ai/api exec prisma generate
+pnpm --filter @qa-ai/api exec prisma db push
+pnpm --filter @qa-ai/shared build
+pnpm --filter @qa-ai/api exec tsc --noEmit
+pnpm --filter @qa-ai/web build
+```
+**Atenção ao prompt do `db push`:** ele vai avisar que vai dropar as
+tabelas `GuardianRuleset`/`GuardianRun`/`GuardianSchedule` e colunas de
+`Organization` (Drive + as que sobraram do Guardian) — isso é esperado e
+autorizado (usuário confirmou explicitamente que não há clientes reais).
+Se o prompt mencionar dropar `emailProvider`/`emailApiKeyEncrypted`/
+`emailFromAddress` também, **pare e não aceite** — esses 3 foram
+restaurados de propósito porque Fluxos Críticos depende deles; dropá-los
+quebraria o alerta por e-mail de Fluxos Críticos silenciosamente. Depois
+do `db push`, `git add` só dos arquivos específicos (nunca `-A`):
+`apps/api/prisma/schema.prisma`,
+`apps/api/src/presentation/app.ts`,
+`apps/api/src/main.ts`,
+`apps/api/src/application/guardian.service.ts`,
+`apps/api/src/presentation/routes/guardian.routes.ts`,
+`apps/api/src/presentation/routes/guardian-drive.routes.ts`,
+`apps/api/src/presentation/routes/guardian-schedule.routes.ts`,
+`apps/api/src/application/guardian-schedule.service.ts`,
+`apps/api/src/infrastructure/ai/guardian-prompt.ts`,
+`apps/api/src/application/google-drive.service.ts`,
+`apps/api/src/infrastructure/documents/text-extractor.ts`,
+`apps/api/src/infrastructure/ai/provider.ts`,
+`apps/api/src/infrastructure/ai/claude-provider.ts`,
+`apps/api/src/infrastructure/ai/openai-provider.ts`,
+`apps/api/src/infrastructure/ai/gemini-provider.ts`,
+`apps/api/src/infrastructure/ai/noop-provider.ts`,
+`apps/api/src/presentation/routes/settings.routes.ts`,
+`packages/shared/src/types/guardian.ts`,
+`packages/shared/src/index.ts`,
+`apps/web/src/app/(app)/guardian/page.tsx`,
+`apps/web/src/app/(app)/guardian/[id]/page.tsx`,
+`apps/web/src/app/(app)/layout.tsx`,
+`apps/web/src/app/(app)/settings/page.tsx`,
+`apps/web/src/lib/api.ts`,
+`apps/web/src/lib/queries.ts`,
+`apps/web/src/components/feature-showcase.tsx`,
+`apps/web/src/lib/public-copy.ts`,
+`apps/web/src/lib/docs-copy.ts`.
+
+**Próximo passo combinado com o usuário (não iniciado ainda):** redesenhar
+a Orquestração como uma "checagem geral" (all-analyse/reconciliação do que
+foi aplicado vs. o que falta), em vez do ciclo autônomo atual — direção
+acordada em conversa, mas sem nenhum código escrito ainda. Precisa de um
+desenho concreto (o que exatamente essa tela mostra, que dado ela consome)
+antes de começar a implementar.
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —

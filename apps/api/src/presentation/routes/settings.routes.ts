@@ -149,7 +149,7 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(204).send();
   });
 
-  // ---- E-mail (Resend) — usado só pelo resumo dos agendamentos do Guardian ----
+  // ---- E-mail (Resend) — usado pelos alertas de Fluxos Críticos ----
 
   const emailSaveSchema = z.object({
     apiKey: z.string().min(10),

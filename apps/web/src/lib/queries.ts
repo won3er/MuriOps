@@ -2,17 +2,12 @@
 
 import type {
   AutonomyLevel,
-  CreateGuardianRulesetRequest,
-  CreateGuardianRunRequest,
-  CreateGuardianScheduleRequest,
-  UpdateGuardianScheduleRequest,
   CreateOrchestrationRunRequest,
   CreateProjectRequest,
   CreateRemediationPlanRequest,
   CreateCriticalFlowRequest,
   UpdateCriticalFlowRequest,
   CriticalFlow,
-  GuardianFindingStatus,
   OrchestrationRun,
   Project,
   ProjectionTask,
@@ -52,14 +47,6 @@ export const qk = {
   orchestrationRun: (id: string) => ["orchestration-run", id] as const,
   orchestrationEvents: (id: string) => ["orchestration-events", id] as const,
   qualityGates: (projectId: string) => ["quality-gates", projectId] as const,
-  guardianRulesets: ["guardian-rulesets"] as const,
-  guardianRuns: ["guardian-runs"] as const,
-  guardianRun: (id: string) => ["guardian-run", id] as const,
-  guardianDashboard: ["guardian-dashboard"] as const,
-  guardianDriveStatus: ["guardian-drive-status"] as const,
-  guardianDriveFiles: (folderId?: string, query?: string) =>
-    ["guardian-drive-files", folderId ?? null, query ?? null] as const,
-  guardianSchedules: ["guardian-schedules"] as const,
   emailSettings: ["email-settings"] as const,
   criticalFlows: (projectId: string) => ["critical-flows", projectId] as const,
   criticalFlow: (id: string) => ["critical-flow", id] as const,
@@ -727,197 +714,4 @@ export function useDashboard() {
   return useQuery({ queryKey: qk.dashboard, queryFn: api.dashboard });
 }
 
-// ---------- Guardian (auditoria operacional de negócio) ----------
-
-export function useGuardianRulesets() {
-  return useQuery({ queryKey: qk.guardianRulesets, queryFn: api.listGuardianRulesets });
-}
-
-export function useCreateGuardianRuleset() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body: CreateGuardianRulesetRequest) => api.createGuardianRuleset(body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.guardianRulesets });
-      toast.success("Conjunto de regras criado");
-    },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao criar regras"),
-  });
-}
-
-export function useDeleteGuardianRuleset() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => api.deleteGuardianRuleset(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.guardianRulesets });
-      toast.success("Conjunto de regras apagado");
-    },
-    onError: () => toast.error("Falha ao apagar conjunto de regras"),
-  });
-}
-
-export function useGuardianRuns() {
-  return useQuery({ queryKey: qk.guardianRuns, queryFn: api.listGuardianRuns });
-}
-
-export function useGuardianRun(id: string) {
-  return useQuery({
-    queryKey: qk.guardianRun(id),
-    queryFn: () => api.getGuardianRun(id),
-    enabled: Boolean(id),
-    refetchInterval: (query) =>
-      query.state.data?.status === "PENDING" ? 2500 : false,
-  });
-}
-
-export function useCreateGuardianRun() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body: CreateGuardianRunRequest) => api.createGuardianRun(body),
-    onSuccess: (run) => {
-      qc.setQueryData(qk.guardianRun(run.id), run);
-      qc.invalidateQueries({ queryKey: qk.guardianRuns });
-      qc.invalidateQueries({ queryKey: qk.guardianDashboard });
-    },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao iniciar auditoria"),
-  });
-}
-
-export function useGuardianSchedules() {
-  return useQuery({ queryKey: qk.guardianSchedules, queryFn: api.listGuardianSchedules });
-}
-
-export function useCreateGuardianSchedule() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body: CreateGuardianScheduleRequest) => api.createGuardianSchedule(body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.guardianSchedules }),
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao criar agendamento"),
-  });
-}
-
-export function useUpdateGuardianSchedule() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, body }: { id: string; body: UpdateGuardianScheduleRequest }) =>
-      api.updateGuardianSchedule(id, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.guardianSchedules }),
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao atualizar agendamento"),
-  });
-}
-
-export function useDeleteGuardianSchedule() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => api.deleteGuardianSchedule(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.guardianSchedules }),
-    onError: () => toast.error("Falha ao remover agendamento"),
-  });
-}
-
-export function useExtractGuardianFileText() {
-  return useMutation({
-    mutationFn: (file: File) => api.extractGuardianFileText(file),
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao ler o arquivo"),
-  });
-}
-
-export function useRetryGuardianRun(runId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: () => api.retryGuardianRun(runId),
-    onSuccess: (run) => {
-      qc.setQueryData(qk.guardianRun(runId), run);
-      qc.invalidateQueries({ queryKey: qk.guardianRuns });
-      qc.invalidateQueries({ queryKey: qk.guardianDashboard });
-    },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao tentar de novo"),
-  });
-}
-
-export function useUpdateGuardianFinding(runId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      findingId,
-      status,
-    }: {
-      findingId: string;
-      status: GuardianFindingStatus;
-    }) => api.updateGuardianFinding(runId, findingId, status),
-    onSuccess: (run) => {
-      qc.setQueryData(qk.guardianRun(runId), run);
-    },
-    onError: () => toast.error("Falha ao atualizar achado"),
-  });
-}
-
-export function useDeleteGuardianRun() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => api.deleteGuardianRun(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.guardianRuns });
-      qc.invalidateQueries({ queryKey: qk.guardianDashboard });
-      toast.success("Auditoria apagada");
-    },
-    onError: () => toast.error("Falha ao apagar auditoria"),
-  });
-}
-
-export function useGuardianDashboard() {
-  return useQuery({ queryKey: qk.guardianDashboard, queryFn: api.guardianDashboard });
-}
-
-// ---------- Guardian × Google Drive ----------
-
-export function useGuardianDriveStatus() {
-  return useQuery({
-    queryKey: qk.guardianDriveStatus,
-    queryFn: api.guardianDriveStatus,
-  });
-}
-
-/** Abre o consentimento do Google numa aba nova; a aba original só precisa
- * revalidar o status quando o usuário voltar (não dá pra saber exatamente
- * quando o popup fecha, então o botão "Conectar" refaz o fetch ao focar a
- * janela — ver GuardianPage). */
-export function useConnectGuardianDrive() {
-  return useMutation({
-    mutationFn: api.guardianDriveConnectUrl,
-    onSuccess: ({ url }) => {
-      window.open(url, "_blank", "noopener,noreferrer");
-    },
-    onError: () => toast.error("Falha ao iniciar conexão com o Google Drive"),
-  });
-}
-
-export function useDisconnectGuardianDrive() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: api.guardianDriveDisconnect,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.guardianDriveStatus });
-      toast.message("Google Drive desconectado");
-    },
-    onError: () => toast.error("Falha ao desconectar o Google Drive"),
-  });
-}
-
-export function useGuardianDriveFiles(
-  opts: { folderId?: string; query?: string },
-  enabled: boolean,
-) {
-  return useQuery({
-    queryKey: qk.guardianDriveFiles(opts.folderId, opts.query),
-    queryFn: () => api.guardianDriveListFiles(opts),
-    enabled,
-  });
-}
+// [09/08/2026] Guardian removido — hooks apagados junto (ver CLAUDE.md).

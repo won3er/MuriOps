@@ -13,9 +13,9 @@ export const LANDING_COPY = {
     trustLine:
       "Start without a credit card · Bring your own AI key · Keep approval control",
     cycleEyebrow: "One connected cycle",
-    cycleTitle: "Six workflows, one workspace",
+    cycleTitle: "Five workflows, one workspace",
     cycleDescription:
-      "From the first diagnosis to improvement tracking, every stage preserves project context and prepares the next decision — including Guardian, a separate audit layer for business documents, not just websites.",
+      "From the first diagnosis to improvement tracking, every stage preserves project context and prepares the next decision.",
     howItWorks: "From input to tracked work",
     howItWorksDescription:
       "The main workflow connects three real outputs: a diagnosis or plan, an Application checklist, and execution progress.",
@@ -98,10 +98,6 @@ export const LANDING_COPY = {
         "Nothing here is decorative — every connection below exists in the product and does exactly what's described.",
       items: [
         [
-          "Google Drive",
-          "Read-only connection per organization. Guardian lists your folders and reads a document (Google Docs, Sheets, PDF, Excel, CSV/TXT/TSV/JSON) straight from Drive, no need to paste text manually — including for scheduled automatic re-audits.",
-        ],
-        [
           "GitHub or GitLab",
           "Connect a repository (via personal access token) to apply the remediation plan through a pull/merge request, or use it as a source for Security Analysis (CVE-flagged dependencies, insecure patterns, secrets, Dockerfile checks) and Update (detects dependency manifests and generates an upgrade plan). Connecting one of the two is required before running any analysis.",
         ],
@@ -111,7 +107,7 @@ export const LANDING_COPY = {
         ],
         [
           "Claude, OpenAI and Gemini",
-          "Each organization pastes its own API key in Settings. Used to interpret findings and generate remediation plans, upgrade plans (Update) and document audits (Guardian).",
+          "Each organization pastes its own API key in Settings. Used to interpret findings and generate remediation plans and upgrade plans (Update).",
         ],
       ],
     },
@@ -136,9 +132,9 @@ export const LANDING_COPY = {
     trustLine:
       "Comece sem cartão · Use sua própria chave de IA · Mantenha o controle das aprovações",
     cycleEyebrow: "Um ciclo conectado",
-    cycleTitle: "Seis frentes, um só workspace",
+    cycleTitle: "Cinco frentes, um só workspace",
     cycleDescription:
-      "Do primeiro diagnóstico ao acompanhamento das melhorias, cada etapa preserva o contexto do projeto e prepara a próxima decisão — incluindo o Guardian, uma camada de auditoria separada para documentos de negócio, não só sites.",
+      "Do primeiro diagnóstico ao acompanhamento das melhorias, cada etapa preserva o contexto do projeto e prepara a próxima decisão.",
     howItWorks: "Da origem ao trabalho acompanhado",
     howItWorksDescription:
       "O fluxo principal conecta três resultados reais: um diagnóstico ou plano, um checklist em Aplicação e o acompanhamento da execução.",
@@ -217,10 +213,6 @@ export const LANDING_COPY = {
         "Nada aqui é decorativo — cada conexão abaixo existe no produto e faz exatamente o que está descrito.",
       items: [
         [
-          "Google Drive",
-          "Conexão só leitura, por organização. O Guardian lista suas pastas e lê um documento (Google Docs, Sheets, PDF, Excel, CSV/TXT/TSV/JSON) direto do Drive, sem precisar colar o texto manualmente — inclusive para reauditoria automática agendada.",
-        ],
-        [
           "GitHub ou GitLab",
           "Conecta um repositório (via token de acesso pessoal) para aplicar o plano de correção via pull/merge request, ou para servir de fonte da Análise de Segurança (dependências com CVE, padrões inseguros, segredos, checagens de Dockerfile) e da Atualização (detecta manifestos de dependências e gera plano de upgrade). Conectar um dos dois é obrigatório antes de rodar qualquer análise.",
         ],
@@ -230,7 +222,7 @@ export const LANDING_COPY = {
         ],
         [
           "Claude, OpenAI e Gemini",
-          "Cada organização cola a própria chave de API em Configurações. Usadas para interpretar achados e gerar planos de correção, arquitetura (Projetar), planos de upgrade (Atualizar) e auditorias de documentos (Guardian).",
+          "Cada organização cola a própria chave de API em Configurações. Usadas para interpretar achados e gerar planos de correção e planos de upgrade (Atualizar).",
         ],
       ],
     },
@@ -255,9 +247,9 @@ export const LANDING_COPY = {
     trustLine:
       "Empieza sin tarjeta · Usa tu propia clave de IA · Conserva el control de las aprobaciones",
     cycleEyebrow: "Un ciclo conectado",
-    cycleTitle: "Seis frentes, un solo workspace",
+    cycleTitle: "Cinco frentes, un solo workspace",
     cycleDescription:
-      "Desde el primer diagnóstico hasta el seguimiento de las mejoras, cada etapa conserva el contexto del proyecto y prepara la próxima decisión — incluyendo Guardian, una capa de auditoría separada para documentos de negocio, no solo sitios web.",
+      "Desde el primer diagnóstico hasta el seguimiento de las mejoras, cada etapa conserva el contexto del proyecto y prepara la próxima decisión.",
     howItWorks: "Del origen al trabajo acompañado",
     howItWorksDescription:
       "El flujo principal conecta tres resultados reales: un diagnóstico o plan, un checklist en Aplicación y el seguimiento de la ejecución.",
@@ -343,10 +335,6 @@ export const LANDING_COPY = {
         "Nada aquí es decorativo — cada conexión de abajo existe en el producto y hace exactamente lo que se describe.",
       items: [
         [
-          "Google Drive",
-          "Conexión de solo lectura por organización. Guardian lista tus carpetas y lee un documento (Google Docs, Sheets, PDF, Excel, CSV/TXT/TSV/JSON) directo desde Drive, sin necesidad de pegar el texto manualmente — incluida la reauditoría automática programada.",
-        ],
-        [
           "GitHub o GitLab",
           "Conecta un repositorio (vía token de acceso personal) para aplicar el plan de remediación mediante pull/merge request, o para usarlo como fuente del Análisis de Seguridad (dependencias con CVE, patrones inseguros, secretos, verificaciones de Dockerfile) y de Actualización (detecta manifiestos de dependencias y genera un plan de actualización). Conectar uno de los dos es obligatorio antes de ejecutar cualquier análisis.",
         ],
@@ -356,7 +344,7 @@ export const LANDING_COPY = {
         ],
         [
           "Claude, OpenAI y Gemini",
-          "Cada organización pega su propia clave de API en Configuración. Se usan para interpretar hallazgos y generar planes de remediación, planes de actualización (Actualizar) y auditorías de documentos (Guardian).",
+          "Cada organización pega su propia clave de API en Configuración. Se usan para interpretar hallazgos y generar planes de remediación y planes de actualización (Actualizar).",
         ],
       ],
     },
@@ -385,7 +373,6 @@ export const FEATURE_COPY = {
       "Applications",
       "Orchestrations",
       "Updates",
-      "Guardian",
     ],
     features: [
       {
@@ -441,20 +428,6 @@ export const FEATURE_COPY = {
         route: "Orchestrations / Run",
       },
       {
-        key: "guardian",
-        label: "Guardian",
-        eyebrow: "Business QA",
-        heading: "Audit business documents, not just websites",
-        description:
-          "Paste a spreadsheet export, contract or form — or pick a file straight from a connected Google Drive folder — define optional business rules in plain language, and AI flags inconsistencies and risks with severity, evidence and a suggested fix. Requires a connected AI key.",
-        outcomes: [
-          "Risk severity per finding",
-          "Google Drive file picker",
-          "Status tracking per finding",
-        ],
-        route: "Guardian / Audit",
-      },
-      {
         key: "acompanhar",
         label: "Overview",
         eyebrow: "Management",
@@ -483,7 +456,6 @@ export const FEATURE_COPY = {
       "Aplicações",
       "Orquestrações",
       "Atualizações",
-      "Guardian",
     ],
     features: [
       {
@@ -543,20 +515,6 @@ export const FEATURE_COPY = {
         route: "Orquestrações / Execução",
       },
       {
-        key: "guardian",
-        label: "Guardian",
-        eyebrow: "QA operacional",
-        heading: "Audite documentos de negócio, não só sites",
-        description:
-          "Cole uma planilha exportada, contrato ou formulário — ou escolha um arquivo direto de uma pasta do Google Drive conectada — defina regras de negócio opcionais em linguagem natural, e a IA aponta inconsistências e riscos com severidade, evidência e correção sugerida. Exige chave de IA conectada.",
-        outcomes: [
-          "Severidade por achado",
-          "Seletor de arquivo do Google Drive",
-          "Status por achado",
-        ],
-        route: "Guardian / Auditoria",
-      },
-      {
         key: "acompanhar",
         label: "Visão geral",
         eyebrow: "Gestão",
@@ -585,7 +543,6 @@ export const FEATURE_COPY = {
       "Aplicaciones",
       "Orquestaciones",
       "Actualizaciones",
-      "Guardian",
     ],
     features: [
       {
@@ -639,20 +596,6 @@ export const FEATURE_COPY = {
           "Reanudación controlada",
         ],
         route: "Orquestaciones / Ejecución",
-      },
-      {
-        key: "guardian",
-        label: "Guardian",
-        eyebrow: "QA operativo",
-        heading: "Audita documentos de negocio, no solo sitios web",
-        description:
-          "Pega una hoja de cálculo exportada, contrato o formulario — o elige un archivo directo de una carpeta de Google Drive conectada — define reglas de negocio opcionales en lenguaje natural, y la IA señala inconsistencias y riesgos con severidad, evidencia y corrección sugerida. Requiere una clave de IA conectada.",
-        outcomes: [
-          "Severidad por hallazgo",
-          "Selector de archivos de Google Drive",
-          "Estado por hallazgo",
-        ],
-        route: "Guardian / Auditoría",
       },
       {
         key: "acompanhar",
@@ -718,17 +661,6 @@ export const PREVIEW_COPY = {
         ["Reanalyze", "Waiting", "Next stage"],
       ],
     },
-    guardian: {
-      title: "Business audit",
-      badge: "Needs review",
-      metric: "3",
-      metricLabel: "open findings",
-      rows: [
-        ["Expense category formula error", "High", "#ERROR! in every row"],
-        ["Duplicate invoice number", "Medium", "Rows 12 and 47"],
-        ["Missing renewal date", "Medium", "Vendor contract, clause 4"],
-      ],
-    },
     acompanhar: {
       title: "Workspace health",
       badge: "Updated now",
@@ -786,17 +718,6 @@ export const PREVIEW_COPY = {
         ["Reanalisar", "Aguardando", "Próxima etapa"],
       ],
     },
-    guardian: {
-      title: "Auditoria de negócio",
-      badge: "Precisa de revisão",
-      metric: "3",
-      metricLabel: "achados abertos",
-      rows: [
-        ["Erro de fórmula na categoria de despesa", "Alto", "#ERROR! em todas as linhas"],
-        ["Número de nota fiscal duplicado", "Médio", "Linhas 12 e 47"],
-        ["Data de renovação ausente", "Médio", "Contrato de fornecedor, cláusula 4"],
-      ],
-    },
     acompanhar: {
       title: "Saúde do workspace",
       badge: "Atualizado agora",
@@ -852,17 +773,6 @@ export const PREVIEW_COPY = {
         ["Analizar", "Completado", "92 puntos"],
         ["Evaluar gates", "Completado", "6 aprobados"],
         ["Volver a analizar", "En espera", "Próxima etapa"],
-      ],
-    },
-    guardian: {
-      title: "Auditoría de negocio",
-      badge: "Necesita revisión",
-      metric: "3",
-      metricLabel: "hallazgos abiertos",
-      rows: [
-        ["Error de fórmula en categoría de gasto", "Alto", "#ERROR! en todas las filas"],
-        ["Número de factura duplicado", "Medio", "Filas 12 y 47"],
-        ["Falta fecha de renovación", "Medio", "Contrato de proveedor, cláusula 4"],
       ],
     },
     acompanhar: {

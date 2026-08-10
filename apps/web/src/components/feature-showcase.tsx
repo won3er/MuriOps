@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   RefreshCw,
   ScanSearch,
-  ShieldCheck,
   Wrench,
 } from "lucide-react";
 import Link from "next/link";
@@ -46,15 +45,8 @@ const FEATURE_VISUALS = [
     glow: "bg-[#d29922]/14",
   },
   {
-    key: "guardian",
-    number: "05",
-    icon: ShieldCheck,
-    accent: "from-[#da3633]/32 via-[#6366f1]/20 to-[#bf8700]/26",
-    glow: "bg-[#f85149]/16",
-  },
-  {
     key: "acompanhar",
-    number: "06",
+    number: "05",
     icon: LayoutDashboard,
     accent: "from-[#2f81f7]/38 via-[#6366f1]/20 to-[#8250df]/32",
     glow: "bg-[#6366f1]/20",
@@ -68,7 +60,6 @@ const ACTIVE_NAV_ITEM: Record<FeatureKey, number> = {
   projetar: 3,
   aplicar: 4,
   automatizar: 5,
-  guardian: 7,
   acompanhar: 0,
 };
 
@@ -195,37 +186,6 @@ function OrchestrationPreview({ preview, hint }: { preview: PreviewData; hint: s
   );
 }
 
-function GuardianPreview({ preview }: { preview: PreviewData }) {
-  return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
-      <div className="flex items-baseline justify-between gap-3 border-b border-white/[0.07] pb-3">
-        <span className="text-xs font-medium text-[#e6edf3]">{preview.metric} {preview.metricLabel}</span>
-        <span className="rounded-full border border-[#d29922]/30 bg-[#d29922]/10 px-2 py-0.5 text-[10px] text-[#d29922]">{preview.badge}</span>
-      </div>
-      <div className="mt-3 space-y-2.5">
-        {preview.rows.map(([label, risk, detail]) => (
-          <div key={label} className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-2.5">
-            <span
-              className={cn(
-                "mt-0.5 justify-self-start rounded-full border px-2 py-0.5 text-center text-[9px] font-medium",
-                risk === "Alto" || risk === "High" || risk === "Alta"
-                  ? "border-[#f85149]/35 bg-[#f85149]/10 text-[#f85149]"
-                  : "border-[#d29922]/35 bg-[#d29922]/10 text-[#d29922]",
-              )}
-            >
-              {risk}
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-[#e6edf3]">{label}</p>
-              <p className="truncate text-[10px] text-[#8b949e]">{detail}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function OverviewPreview({ preview, activeProjects, needAttention }: { preview: PreviewData; activeProjects: string; needAttention: string }) {
   return (
     <div className="space-y-3">
@@ -297,7 +257,6 @@ function ProductPreview({ feature }: { feature: FeatureKey }) {
           {feature === "projetar" && <MonitoringPreview preview={preview} />}
           {feature === "aplicar" && <ApplicationPreview preview={preview} channels={uiCopy.channels} />}
           {feature === "automatizar" && <OrchestrationPreview preview={preview} hint={uiCopy.orchestrationHint} />}
-          {feature === "guardian" && <GuardianPreview preview={preview} />}
           {feature === "acompanhar" && <OverviewPreview preview={preview} activeProjects={uiCopy.activeProjects} needAttention={uiCopy.needAttention} />}
         </div>
 

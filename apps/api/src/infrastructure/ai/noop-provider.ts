@@ -1,10 +1,5 @@
-import type {
-  GuardianResult,
-  RemediationResult,
-  UpgradeResult,
-} from "@qa-ai/shared";
+import type { RemediationResult, UpgradeResult } from "@qa-ai/shared";
 import { extractDependencies } from "../../modules/upgrade/manifest-detector.js";
-import type { GuardianCheckInput } from "./guardian-prompt.js";
 import type {
   AiAnalysisInput,
   AiAnalysisResult,
@@ -123,22 +118,6 @@ export class NoopProvider implements AiProvider {
                 "Java, VB6 → .NET) está fora do escopo da ferramenta.",
             ]
           : [],
-    };
-  }
-
-  /**
-   * Guardian exige IA de verdade (gate em guardian.service.ts) — julgamento
-   * de risco sobre documento de negócio sem IA não tem valor de auditoria
-   * nenhum. Este método só existe pra satisfazer a interface; na prática
-   * nunca é chamado (o service bloqueia antes).
-   */
-  async runGuardianCheck(input: GuardianCheckInput): Promise<GuardianResult> {
-    return {
-      summary:
-        `Sem IA configurada, não é possível auditar "${input.title}". ` +
-        `Configure um provider (Claude, OpenAI ou Gemini) em Configurações.`,
-      overallStatus: "yellow",
-      findings: [],
     };
   }
 }

@@ -146,16 +146,6 @@ export const DOCS_COPY = {
           ],
         },
         {
-          title: "Business audit",
-          items: [
-            [
-              "Guardian",
-              "available",
-              "Audits pasted documents (spreadsheets, contracts, forms) or files picked from a connected Google Drive folder against optional business rules, with severity, evidence and a suggested fix. Requires a connected AI key.",
-            ],
-          ],
-        },
-        {
           title: "Continuous monitoring",
           items: [
             [
@@ -213,11 +203,6 @@ export const DOCS_COPY = {
               "available",
               "Lets a development tool read the plan and update its checklist without exposing a shared AI key.",
             ],
-            [
-              "Google Drive",
-              "available",
-              "Read-only OAuth connection per organization. Guardian lists folders and reads a document straight from Drive, including for scheduled automatic re-audits.",
-            ],
           ],
         },
       ],
@@ -235,12 +220,6 @@ export const DOCS_COPY = {
           "Push with approval",
           "For example, creates a separate branch and stores a checklist file in .muriops/remediation inside your repository, then opens a pull request for review.",
           "It does not implement code fixes and never merges.",
-        ],
-        [
-          "Google Drive",
-          "Read-only",
-          "Connected once per organization via OAuth. Guardian lists your folders and reads a document (Google Docs, Sheets, PDF, Excel, CSV/TXT/TSV/JSON) directly from Drive — including for a daily scheduled re-audit that can email a summary via Resend when configured.",
-          "Read-only — never writes to or edits anything in Drive.",
         ],
       ],
       aiTitle: "AI and development tools",
@@ -401,16 +380,6 @@ export const DOCS_COPY = {
           ],
         },
         {
-          title: "Auditoria de negócio",
-          items: [
-            [
-              "Guardian",
-              "available",
-              "Audita um documento colado (planilha, contrato, formulário) ou escolhido de uma pasta do Google Drive conectada, contra regras de negócio opcionais, com severidade, evidência e correção sugerida. Exige chave de IA conectada.",
-            ],
-          ],
-        },
-        {
           title: "Monitoramento contínuo",
           items: [
             [
@@ -468,11 +437,6 @@ export const DOCS_COPY = {
               "available",
               "Permite que uma ferramenta de desenvolvimento leia o plano e atualize o checklist sem expor uma chave de IA compartilhada.",
             ],
-            [
-              "Google Drive",
-              "available",
-              "Conexão só leitura por organização via OAuth. O Guardian lista pastas e lê um documento direto do Drive, inclusive para reauditoria automática agendada.",
-            ],
           ],
         },
       ],
@@ -490,12 +454,6 @@ export const DOCS_COPY = {
           "Push com aprovação",
           "Por exemplo, cria uma branch separada e salva um arquivo de checklist em .muriops/remediation dentro do seu repositório; depois abre uma pull request para revisão.",
           "Não implementa a correção de código e nunca faz merge.",
-        ],
-        [
-          "Google Drive",
-          "Só leitura",
-          "Conectado uma vez por organização via OAuth. O Guardian lista suas pastas e lê um documento (Google Docs, Sheets, PDF, Excel, CSV/TXT/TSV/JSON) direto do Drive — inclusive para uma reauditoria diária agendada que pode enviar um resumo por e-mail via Resend quando configurado.",
-          "Só leitura — nunca grava nem edita nada no Drive.",
         ],
       ],
       aiTitle: "IA e ferramentas de desenvolvimento",
@@ -656,16 +614,6 @@ export const DOCS_COPY = {
           ],
         },
         {
-          title: "Auditoría de negocio",
-          items: [
-            [
-              "Guardian",
-              "available",
-              "Audita un documento pegado (hoja de cálculo, contrato, formulario) o elegido desde una carpeta de Google Drive conectada, contra reglas de negocio opcionales, con severidad, evidencia y corrección sugerida. Requiere una clave de IA conectada.",
-            ],
-          ],
-        },
-        {
           title: "Monitoreo continuo",
           items: [
             [
@@ -723,11 +671,6 @@ export const DOCS_COPY = {
               "available",
               "Permite que una herramienta de desarrollo lea el plan y actualice el checklist sin exponer una clave de IA compartida.",
             ],
-            [
-              "Google Drive",
-              "available",
-              "Conexión de solo lectura por organización vía OAuth. Guardian lista carpetas y lee un documento directo desde Drive, incluida la reauditoría automática programada.",
-            ],
           ],
         },
       ],
@@ -745,12 +688,6 @@ export const DOCS_COPY = {
           "Push con aprobación",
           "Por ejemplo, crea una branch separada y guarda un archivo de checklist en .muriops/remediation dentro de tu repositorio; luego abre una pull request para revisión.",
           "No implementa la corrección de código y nunca hace merge.",
-        ],
-        [
-          "Google Drive",
-          "Solo lectura",
-          "Conectado una vez por organización vía OAuth. Guardian lista tus carpetas y lee un documento (Google Docs, Sheets, PDF, Excel, CSV/TXT/TSV/JSON) directo desde Drive — incluida una reauditoría diaria programada que puede enviar un resumen por correo vía Resend cuando está configurado.",
-          "Solo lectura — nunca escribe ni edita nada en Drive.",
         ],
       ],
       aiTitle: "IA y herramientas de desarrollo",

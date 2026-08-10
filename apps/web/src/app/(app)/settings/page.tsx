@@ -50,7 +50,7 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<unknown>(null);
 
-  // ---- E-mail (Resend) — usado só pelo resumo dos agendamentos do Guardian ----
+  // ---- E-mail (Resend) — usado pelos alertas de Fluxos Críticos ----
   const [emailConfigured, setEmailConfigured] = useState(false);
   const [emailMaskedKey, setEmailMaskedKey] = useState<string | null>(null);
   const [emailFromAddress, setEmailFromAddress] = useState<string | null>(null);
@@ -108,7 +108,7 @@ export default function SettingsPage() {
   async function removeEmail() {
     if (
       !confirm(
-        "Remover a chave de e-mail? Os agendamentos do Guardian continuam rodando e gravando auditorias, só param de enviar o resumo por e-mail.",
+        "Remover a chave de e-mail? Os Fluxos Críticos continuam rodando e gravando execuções, só param de enviar alerta por e-mail.",
       )
     )
       return;
@@ -379,10 +379,10 @@ export default function SettingsPage() {
             <div>
               <h2 className="text-lg font-medium">E-mail (Resend)</h2>
               <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-                Opcional — usado só pra enviar o resumo dos{" "}
-                <strong>agendamentos automáticos do Guardian</strong>. Sem
-                chave, os agendamentos continuam rodando e gravando as
-                auditorias normalmente, só não chegam por e-mail.
+                Opcional — usado só pra enviar os{" "}
+                <strong>alertas de Fluxos Críticos</strong> quando um passo
+                monitorado quebra. Sem chave, os fluxos continuam rodando e
+                gravando as execuções normalmente, só não chegam por e-mail.
               </p>
             </div>
             {emailConfigured && (
@@ -428,7 +428,7 @@ export default function SettingsPage() {
             />
             <Input
               type="email"
-              placeholder="Remetente (ex.: guardian@seudominio.com)"
+              placeholder="Remetente (ex.: alertas@seudominio.com)"
               value={emailFromInput}
               onChange={(e) => setEmailFromInput(e.target.value)}
             />
