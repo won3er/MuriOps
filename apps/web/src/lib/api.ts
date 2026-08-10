@@ -18,6 +18,10 @@ import type {
   DashboardStats,
   IssueFilters,
   LoginRequest,
+  OAuthConnectionResult,
+  OAuthGithubRepoOption,
+  OAuthGitlabProjectOption,
+  OAuthStartResponse,
   ProjectionTask,
   ReconciliationResult,
   HumanCheckResponse,
@@ -199,10 +203,16 @@ export const api = {
     projectId: string,
     body: { owner: string; repo: string; token: string },
   ) =>
-    request<AdapterConnection & { webhookSecret: string; webhookUrl: string }>(
-      `/projects/${projectId}/github-connection`,
-      { method: "POST", body: JSON.stringify(body) },
-    ),
+    request<
+      AdapterConnection & {
+        webhookSecret: string;
+        webhookUrl: string;
+        webhookConfiguredAutomatically: boolean;
+      }
+    >(`/projects/${projectId}/github-connection`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   // ---- adapter GitLab (mesmo padrão push do GitHub) ----
   getGitlabConnection: (projectId: string) =>
@@ -214,10 +224,46 @@ export const api = {
     projectId: string,
     body: { projectPath: string; token: string },
   ) =>
-    request<AdapterConnection & { webhookSecret: string; webhookUrl: string }>(
-      `/projects/${projectId}/gitlab-connection`,
-      { method: "POST", body: JSON.stringify(body) },
+    request<
+      AdapterConnection & {
+        webhookSecret: string;
+        webhookUrl: string;
+        webhookConfiguredAutomatically: boolean;
+      }
+    >(`/projects/${projectId}/gitlab-connection`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  // ---- "Conectar com GitHub/GitLab" via OAuth (10/08/2026) ----
+  startGithubOAuth: (projectId: string) =>
+    request<OAuthStartResponse>(`/projects/${projectId}/github-oauth/start`),
+  listGithubOAuthRepos: (projectId: string, session: string) =>
+    request<{ accountLabel: string | null; repos: OAuthGithubRepoOption[] }>(
+      `/projects/${projectId}/github-oauth/repos?session=${encodeURIComponent(session)}`,
     ),
+  selectGithubOAuthRepo: (
+    projectId: string,
+    body: { session: string; owner: string; repo: string },
+  ) =>
+    request<OAuthConnectionResult>(`/projects/${projectId}/github-oauth/select-repo`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  startGitlabOAuth: (projectId: string) =>
+    request<OAuthStartResponse>(`/projects/${projectId}/gitlab-oauth/start`),
+  listGitlabOAuthProjects: (projectId: string, session: string) =>
+    request<{ accountLabel: string | null; projects: OAuthGitlabProjectOption[] }>(
+      `/projects/${projectId}/gitlab-oauth/repos?session=${encodeURIComponent(session)}`,
+    ),
+  selectGitlabOAuthProject: (
+    projectId: string,
+    body: { session: string; projectPath: string },
+  ) =>
+    request<OAuthConnectionResult>(`/projects/${projectId}/gitlab-oauth/select-repo`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   // ---- conexões do projeto ----
   listAdapterConnections: (projectId: string) =>

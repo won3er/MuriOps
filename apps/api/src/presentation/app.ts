@@ -5,6 +5,10 @@ import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
 import { ZodError } from "zod";
 import { env } from "../config/env.js";
 import { authPlugin } from "./plugins/auth.plugin.js";
+import {
+  adapterOAuthCallbackRoutes,
+  adapterOAuthRoutes,
+} from "./routes/adapter-oauth.routes.js";
 import { analysisRoutes } from "./routes/analysis.routes.js";
 import { authRoutes } from "./routes/auth.routes.js";
 import { accountRoutes } from "./routes/account.routes.js";
@@ -104,6 +108,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(accountRoutes);
   await app.register(evidenceRoutes);
   await app.register(projectRoutes);
+  await app.register(adapterOAuthRoutes);
+  // Callback de OAuth do GitHub/GitLab: público, identidade vem do state assinado.
+  await app.register(adapterOAuthCallbackRoutes);
   await app.register(analysisRoutes);
   await app.register(projectionRoutes);
   await app.register(criticalFlowRoutes);

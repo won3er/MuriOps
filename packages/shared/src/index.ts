@@ -14,4 +14,5 @@ export * from "./types/upgrade.js";
 export * from "./types/orchestration.js";
 export * from "./types/reconciliation.js";
 export * from "./types/adapter.js";
+export * from "./types/adapter-oauth.js";
 export * from "./dto/index.js";

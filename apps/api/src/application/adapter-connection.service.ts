@@ -2,7 +2,36 @@ import { randomBytes } from "node:crypto";
 import type { AdapterConnection } from "@qa-ai/shared";
 import { decryptSecret, encryptSecret, maskSecret } from "../infrastructure/crypto/secret-box.js";
 import { prisma } from "../infrastructure/database/prisma.js";
+import { refreshGitlabAccessToken } from "../infrastructure/oauth/gitlab-oauth-client.js";
 import { NotFoundError } from "./analysis.service.js";
+
+/** Extras só presentes quando a conexão veio do fluxo OAuth (não do PAT colado à mão). */
+export interface OAuthExtras {
+  refreshToken?: string | null;
+  expiresAt?: Date | null;
+  accountLabel?: string | null;
+}
+
+function oauthExtrasToData(oauth?: OAuthExtras) {
+  if (!oauth) return {};
+  return {
+    refreshTokenEncrypted: oauth.refreshToken ? encryptSecret(oauth.refreshToken) : null,
+    tokenExpiresAt: oauth.expiresAt ?? null,
+    oauthAccountLabel: oauth.accountLabel ?? null,
+  };
+}
+
+/** Linha crua o bastante pra `ensureFreshCredential` reavaliar/atualizar — mesmo subconjunto usado por `createAdapterFor`. */
+interface RefreshableConnectionRow {
+  id: string;
+  kind: string;
+  credentialEncrypted: string | null;
+  refreshTokenEncrypted: string | null;
+  tokenExpiresAt: Date | null;
+}
+
+/** Renova o access token 1 minuto antes de expirar — folga pra cobrir o tempo da própria chamada seguinte. */
+const EXPIRY_SAFETY_MARGIN_MS = 60_000;
 
 export class InvalidGithubConnectionError extends Error {
   readonly statusCode = 400;
@@ -115,6 +144,52 @@ export const adapterConnectionService = {
     return toDto(row);
   },
 
+  /**
+   * [10/08/2026] Garante um access token válido antes de usar a conexão
+   * (chamado por pr-review.service.ts/remediation.service.ts logo antes de
+   * `createAdapterFor`). GitHub OAuth App clássico normalmente não expira —
+   * só GitLab expira de verdade (2h), então só GITLAB com
+   * `refreshTokenEncrypted` preenchido dispara uma chamada de rede; os
+   * outros casos (PAT colado à mão, GitHub sem expiração) devolvem a
+   * credencial como está, sem custo extra. Persiste o token renovado antes
+   * de devolver, pra não ter que renovar de novo na próxima chamada dentro
+   * da janela de validade.
+   */
+  async ensureFreshCredential(
+    connection: RefreshableConnectionRow,
+  ): Promise<{ credentialEncrypted: string | null }> {
+    if (connection.kind !== "GITLAB" || !connection.refreshTokenEncrypted) {
+      return { credentialEncrypted: connection.credentialEncrypted };
+    }
+    const stillValid =
+      !connection.tokenExpiresAt ||
+      connection.tokenExpiresAt.getTime() - EXPIRY_SAFETY_MARGIN_MS > Date.now();
+    if (stillValid) {
+      return { credentialEncrypted: connection.credentialEncrypted };
+    }
+    try {
+      const refreshToken = decryptSecret(connection.refreshTokenEncrypted);
+      const refreshed = await refreshGitlabAccessToken(refreshToken);
+      const credentialEncrypted = encryptSecret(refreshed.accessToken);
+      await prisma.adapterConnection.update({
+        where: { id: connection.id },
+        data: {
+          credentialEncrypted,
+          refreshTokenEncrypted: refreshed.refreshToken
+            ? encryptSecret(refreshed.refreshToken)
+            : connection.refreshTokenEncrypted,
+          tokenExpiresAt: refreshed.expiresAt,
+        },
+      });
+      return { credentialEncrypted };
+    } catch {
+      // Renovação falhou (refresh token revogado/expirado) — devolve a
+      // credencial antiga como está; a chamada seguinte à API do GitLab vai
+      // falhar com 401 de um jeito já tratado (mensagem "token recusado").
+      return { credentialEncrypted: connection.credentialEncrypted };
+    }
+  },
+
   async getByProjectAndKind(
     organizationId: string,
     projectId: string,
@@ -136,6 +211,7 @@ export const adapterConnectionService = {
     projectId: string,
     userId: string,
     input: { owner: string; repo: string; token: string },
+    oauth?: OAuthExtras,
   ): Promise<AdapterConnection & { webhookSecret: string; webhookUrl: string }> {
     const project = await prisma.project.findFirst({
       where: { id: projectId, organizationId },
@@ -163,6 +239,7 @@ export const adapterConnectionService = {
       credentialEncrypted: encryptSecret(input.token),
       webhookSecretEncrypted: encryptSecret(webhookSecret),
       createdById: userId,
+      ...oauthExtrasToData(oauth),
     };
 
     const row = existing
@@ -205,6 +282,7 @@ export const adapterConnectionService = {
     projectId: string,
     userId: string,
     input: { projectPath: string; token: string },
+    oauth?: OAuthExtras,
   ): Promise<AdapterConnection & { webhookSecret: string; webhookUrl: string }> {
     const project = await prisma.project.findFirst({
       where: { id: projectId, organizationId },
@@ -237,6 +315,7 @@ export const adapterConnectionService = {
       credentialEncrypted: encryptSecret(input.token),
       webhookSecretEncrypted: encryptSecret(webhookSecret),
       createdById: userId,
+      ...oauthExtrasToData(oauth),
     };
 
     const row = existing
@@ -377,6 +456,7 @@ function toDto(row: {
   config: unknown;
   bridgeToken: string | null;
   prReviewsEnabled: boolean;
+  oauthAccountLabel: string | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -390,6 +470,7 @@ function toDto(row: {
     config: (row.config as Record<string, unknown> | null) ?? null,
     bridgeToken: row.bridgeToken,
     prReviewsEnabled: row.prReviewsEnabled,
+    oauthAccountLabel: row.oauthAccountLabel,
     isActive: row.isActive,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

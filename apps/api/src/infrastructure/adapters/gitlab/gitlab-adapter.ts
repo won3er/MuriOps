@@ -121,6 +121,29 @@ export class GitlabAdapter implements Adapter {
     await this.post(`/projects/${this.encodedPath}/merge_requests/${mrIid}/notes`, { body });
   }
 
+  /**
+   * [10/08/2026] Cria o webhook do PR Security Reviews automático via API —
+   * mesma ideia do GithubAdapter.ensureWebhook. Idempotente e best-effort.
+   */
+  async ensureWebhook(
+    webhookUrl: string,
+    secret: string,
+  ): Promise<{ created: boolean; alreadyExisted: boolean }> {
+    const existing = await this.get<{ id: number; url?: string }[]>(
+      `/projects/${this.encodedPath}/hooks`,
+    );
+    if (existing.some((hook) => hook.url === webhookUrl)) {
+      return { created: false, alreadyExisted: true };
+    }
+    await this.post(`/projects/${this.encodedPath}/hooks`, {
+      url: webhookUrl,
+      token: secret,
+      merge_requests_events: true,
+      push_events: false,
+    });
+    return { created: true, alreadyExisted: false };
+  }
+
   private async ensureBranch(branch: string, ref: string): Promise<void> {
     const res = await fetch(
       `${API_BASE}/projects/${this.encodedPath}/repository/branches`,

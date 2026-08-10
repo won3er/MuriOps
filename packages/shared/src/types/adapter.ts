@@ -28,6 +28,8 @@ export interface AdapterConnection {
   bridgeToken: string | null;
   /** PR Security Reviews automático ligado/desligado — só relevante pra GITHUB/GITLAB. */
   prReviewsEnabled: boolean;
+  /** Login/username da conta conectada via OAuth (ex.: "won3er") — null em conexões por PAT colado à mão. */
+  oauthAccountLabel: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

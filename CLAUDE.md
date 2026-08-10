@@ -2451,6 +2451,200 @@ documentado até agora). Infrastructure Testing não tem teste automatizado
 nenhum rodado contra Terraform/Kubernetes real — só revisão de regex por
 leitura.
 
+## Sessão 10/08/2026 (continuação, 3ª) — Login direto via OAuth pro GitHub e GitLab
+
+Pedido do usuário: acabar com a exigência de colar um Personal Access Token
+manualmente pra conectar GitHub/GitLab — "isso é bem amador, resolva já essa
+questão do login pra facilitar e ficar como login direto... tanto para
+github quanto para gitlab", com permissão explícita pra usar o navegador.
+Troca completa pelo fluxo clássico OAuth 2.0 authorization code (App OAuth
+"clássica" em cada provedor, não GitHub App instalável nem GitLab App
+genérica) — o usuário clica em "Conectar com GitHub/GitLab", autoriza na
+tela do próprio provedor com a conta dele, e a conexão (incluindo o webhook
+de PR Security Reviews) fica pronta sozinha, sem copiar/colar token nem
+secret manualmente depois da configuração inicial (essa, sim, feita uma
+única vez em produção). **Mesma ressalva de sempre nas partes que não
+puderam ser buildadas: sandbox sem `bash`/disco a maior parte desta sessão
+— revisão manual, não validação de compilador. Onde diz "testado ao vivo",
+foi de verdade, pelo navegador.**
+
+**Backend (App OAuth de cada provedor + troca de código por token):**
+- Schema: campos OAuth novos em `AdapterConnection` (access/refresh token
+  criptografados, expiração, `oauthAccountLabel` pra mostrar "Conectado como
+  X" na UI) — mesmo padrão AES-256-GCM de `secret-box.ts` já usado em toda
+  credencial do produto.
+- `apps/api/src/infrastructure/oauth/github-oauth-client.ts` /
+  `gitlab-oauth-client.ts` (novos): cliente HTTP puro do fluxo OAuth de cada
+  provedor (monta a URL de autorização, troca `code` por token, busca o
+  login da conta pra exibir, lista repositórios/projetos acessíveis) — sem
+  Prisma nem `secret-box` aqui de propósito, só pra
+  `adapter-connection.service.ts` poder importar a parte pura sem criar
+  dependência circular entre services.
+- `apps/api/src/application/github-oauth.service.ts` /
+  `gitlab-oauth.service.ts` (novos): orquestram sessão/estado/persistência —
+  `buildAuthUrl` (com um `state` assinado, mesmo padrão HMAC usado no Google
+  Drive), `handleCallback` (troca code por token, guarda numa sessão OAuth
+  temporária em memória, redireciona de volta pro frontend com um id de
+  sessão na query string — nunca com o token em si), `listAccessibleRepos`/
+  `listAccessibleProjects`, `selectRepo`/`selectProject` (grava a
+  `AdapterConnection` de verdade só quando o usuário escolhe o
+  repositório/projeto certo no seletor).
+- `apps/api/src/presentation/routes/adapter-oauth.routes.ts` (novo): rotas
+  autenticadas (`/projects/:id/github-oauth/start`, `/repos`,
+  `/select-repo`, espelhado pro GitLab) + rotas **públicas** separadas
+  (`adapterOAuthCallbackRoutes`, registradas à parte porque o callback é o
+  provedor redirecionando o navegador do usuário, sem Authorization header)
+  que recebem o `code`, chamam `handleCallback`, e redirecionam pro
+  frontend (`${PUBLIC_WEB_URL}/aplicacao?view=connections&githubOAuthSession=...`
+  ou `?oauthError=...`).
+- **Webhook do PR Security Reviews configurado automaticamente.** Antes
+  (sessão anterior) o usuário tinha que copiar URL+secret do painel e colar
+  manualmente nas configurações de webhook do GitHub/GitLab. Agora
+  `github-adapter.ts`/`gitlab-adapter.ts` ganharam `ensureWebhook()`,
+  chamado no fim de `selectRepo`/`selectProject`: cria o webhook via API do
+  próprio provedor (`POST /repos/:owner/:repo/hooks` no GitHub,
+  `POST /projects/:id/hooks` no GitLab) usando o token OAuth recém-obtido,
+  sem exigir nenhuma ação manual do usuário depois de escolher o
+  repositório. `res.webhookConfiguredAutomatically` sinaliza isso pro
+  frontend mostrar um toast em vez do bloco de "copie a URL e o secret" (que
+  continua existindo só no caminho manual/token colado).
+- `env.ts`: 6 variáveis novas — `GITHUB_OAUTH_CLIENT_ID`/
+  `GITHUB_OAUTH_CLIENT_SECRET`/`GITHUB_OAUTH_REDIRECT_URI`,
+  `GITLAB_OAUTH_CLIENT_ID`/`GITLAB_OAUTH_CLIENT_SECRET`/
+  `GITLAB_OAUTH_REDIRECT_URI` — todas opcionais (sem elas, o botão de OAuth
+  informa "não configurado" e o formulário de token manual continua
+  funcionando normalmente, mesmo espírito do resto do produto onde nada tem
+  fallback silencioso). `githubOAuthRedirectUri()`/`gitlabOAuthRedirectUri()`
+  caem pra `${apiBaseUrl}/adapter-connections/<provider>/oauth/callback`
+  quando a variável de redirect não está setada.
+
+**Frontend (popup + seletor de repositório):**
+- Padrão popup + `postMessage`: `connectWithOAuth()` abre a popup
+  (`window.open`) **de forma síncrona no clique** (senão o navegador
+  bloqueia como pop-up — perde o "user activation"), só define a URL de
+  destino depois que a mutation `start` resolve (`popup.location.href =
+  res.authUrl`). A popup segue o redirect inteiro (frontend → backend
+  `/oauth/start` → tela de consentimento do provedor → backend
+  `/oauth/callback` → frontend `/aplicacao?...OAuthSession=...`). A própria
+  página `/aplicacao`, ao carregar DENTRO da popup, detecta
+  `window.opener`, repassa o resultado via `postMessage` (origem validada
+  contra `window.location.origin`) e se fecha sozinha — o usuário nunca vê
+  essa tela carregar de fato.
+- `apps/web/src/app/(app)/aplicacao/page.tsx`: `useEffect` novo que lê
+  `githubOAuthSession`/`gitlabOAuthSession`/`oauthError` da query string e
+  faz o relay acima.
+- `apps/web/src/components/github-connection-panel.tsx` /
+  `gitlab-connection-panel.tsx` (reescritos): botão primário "Conectar com
+  GitHub/GitLab" no topo; ao voltar da popup com sessão válida, mostra um
+  seletor listando os repositórios/projetos acessíveis pela conta
+  autorizada (`useGithubOAuthRepos`/`useGitlabOAuthProjects`), um clique
+  grava a conexão (`useSelectGithubOAuthRepo`/`useSelectGitlabOAuthProject`).
+  O formulário antigo de colar token não foi removido — virou um
+  `<details>` recolhido "Prefere colar um token pessoal manualmente?",
+  fallback pra quando OAuth não está configurado no ambiente ou o usuário
+  simplesmente prefere token. Estado conectado mostra "Conectado via GitHub
+  como <login>" quando veio de OAuth, ou o token mascarado de sempre quando
+  veio do caminho manual.
+
+**Resposta à pergunta de segurança do usuário** ("isso vai fazer ser
+possível qualquer pessoa logar com a conta do GitHub fácil?"): não — o
+login no MuriOps em si não mudou (e-mail/senha ou Google, inalterado). O
+que mudou é só a forma de autorizar o MuriOps a acessar um repositório
+específico: antes exigia gerar e colar um token manualmente, agora é um
+"Autorizar" na tela do próprio GitHub/GitLab, que só a pessoa dona daquela
+conta (com a sessão/2FA dela) consegue aprovar — e só depois de já estar
+logada no MuriOps e dona do projeto. O Client Secret nunca sai do backend.
+Resumo dado ao usuário: "Sim" — a conexão ficou mais direta/fácil, sem
+abrir brecha de segurança nova.
+
+**Testado ao vivo em produção, GitHub:** App OAuth criada em
+github.com/settings/developers (Client ID `Ov23liT0F39aFKdMWEXX`, callback
+`https://api.muriops.com.br/adapter-connections/github/oauth/callback`),
+Client ID/Redirect URI adicionados no Render pelo agente, Client Secret
+colado pelo usuário, deploy `Live` — confirmado funcionando porque uma
+Análise QA padrão com `SOURCE_SECURITY_SCAN` rodou de verdade no projeto do
+usuário logo em seguida (essa categoria só roda com GitHub/GitLab
+conectado, gate obrigatório de 07-08/08/2026).
+
+**GitLab, backend configurado e confirmado, frontend ainda não:** App OAuth
+criada em gitlab.com/-/user_settings/applications (nome "MuriOps",
+Application ID
+`f6a052b2072f84dac878f8fd63cd9df8213b64daf2d6197860ba8921f5903faf`, escopo
+`api`, confidential, callback
+`https://api.muriops.com.br/adapter-connections/gitlab/oauth/callback`),
+Client ID/Secret/Redirect URI confirmados salvos no Render (verificado
+lendo a tela de Environment Variables depois do deploy), deploy `Live`.
+**Só que a tela de `/aplicacao` em produção, checada ao vivo depois do
+deploy, ainda mostra o card antigo de GitLab (namespace/repositório + token
+PAT colado)** — os 3 arquivos de frontend desta sessão
+(`aplicacao/page.tsx`, `github-connection-panel.tsx`,
+`gitlab-connection-panel.tsx`) nunca foram commitados: o sandbox ficou sem
+`bash`/espaço em disco a sessão inteira de novo (mesmo problema recorrente
+documentado em várias sessões anteriores), então não deu pra rodar `git
+add`/`commit` por aqui. O botão "Conectar com GitHub" também não vai
+aparecer até esse commit ser feito e builda/deployado — hoje em produção
+GitHub também está com o card antigo (mostra "Configuração salva · token
+••••Wgak", não "Conectado via GitHub como X"), então o teste end-to-end
+citado acima validou o **backend OAuth** (rotas funcionando, se algo já
+tivesse a UI nova rodando localmente ela teria funcionado), não
+necessariamente que alguém já clicou no botão novo em produção — vale
+reconfirmar via UI depois que o frontend for commitado/deployado.
+
+**Ação necessária do usuário antes desta UI aparecer:** rodar, no terminal
+dele:
+```
+cd "C:\Users\woner\Desktop\Atlas QA"
+pnpm --filter @qa-ai/api exec prisma generate
+pnpm --filter @qa-ai/api exec prisma db push
+pnpm --filter @qa-ai/shared build
+pnpm --filter @qa-ai/api exec tsc --noEmit
+pnpm --filter @qa-ai/web build
+```
+Schema novo: só os campos OAuth em `AdapterConnection` (access/refresh
+token, expiração, `oauthAccountLabel`) — aditivo, sem risco de perda de
+dado. Depois, `git add` só dos arquivos específicos (nunca `-A`):
+`apps/api/prisma/schema.prisma`,
+`apps/api/src/config/env.ts`,
+`apps/api/src/infrastructure/oauth/github-oauth-client.ts`,
+`apps/api/src/infrastructure/oauth/gitlab-oauth-client.ts`,
+`apps/api/src/application/github-oauth.service.ts`,
+`apps/api/src/application/gitlab-oauth.service.ts`,
+`apps/api/src/presentation/routes/adapter-oauth.routes.ts`,
+`apps/api/src/application/adapter-connection.service.ts`,
+`apps/api/src/presentation/app.ts`,
+`apps/api/src/infrastructure/adapters/github/github-adapter.ts`,
+`apps/api/src/infrastructure/adapters/gitlab/gitlab-adapter.ts`,
+`packages/shared/src/types/adapter.ts`,
+`packages/shared/src/types/adapter-oauth.ts`,
+`packages/shared/src/index.ts`,
+`apps/web/src/app/(app)/aplicacao/page.tsx`,
+`apps/web/src/components/github-connection-panel.tsx`,
+`apps/web/src/components/gitlab-connection-panel.tsx`,
+`apps/web/src/lib/api.ts`,
+`apps/web/src/lib/queries.ts`,
+`CLAUDE.md`.
+
+**Variáveis de ambiente novas, já configuradas em produção no Render (não
+precisa mexer, só documentando pra referência):**
+- `GITHUB_OAUTH_CLIENT_ID=Ov23liT0F39aFKdMWEXX`
+- `GITHUB_OAUTH_REDIRECT_URI=https://api.muriops.com.br/adapter-connections/github/oauth/callback`
+- `GITHUB_OAUTH_CLIENT_SECRET` (colado pelo usuário, valor não registrado aqui)
+- `GITLAB_OAUTH_CLIENT_ID=f6a052b2072f84dac878f8fd63cd9df8213b64daf2d6197860ba8921f5903faf`
+- `GITLAB_OAUTH_REDIRECT_URI=https://api.muriops.com.br/adapter-connections/gitlab/oauth/callback`
+- `GITLAB_OAUTH_CLIENT_SECRET` (colado pelo usuário, valor não registrado aqui)
+Se algum dia precisar reconfigurar do zero: as duas Apps OAuth (GitHub em
+github.com/settings/developers, GitLab em
+gitlab.com/-/user_settings/applications, ambas sob a conta
+jadsonpavia@gmail.com) já existem — não recriar, só editar se o callback
+mudar de domínio.
+
+**Não fiz:** não removi o formulário de token manual (fica como fallback
+permanente, não só transição); não testei o fluxo completo de GitLab
+clicando no botão de verdade (só quando o frontend for deployado); não
+migrei conexões GitHub já existentes com token manual pro formato OAuth
+automaticamente — quem já conectou por token continua assim até reconectar
+manualmente pela nova UI se quiser o webhook automático.
+
 ## Convenções
 
 - Copy em pt-BR em toda a UI.

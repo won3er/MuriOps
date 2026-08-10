@@ -90,6 +90,25 @@ function AplicacaoPageInner() {
     if (searchParams.get("view") === "connections") setConnectionsOpen(true);
   }, [searchParams]);
 
+  // [10/08/2026] "Conectar com GitHub/GitLab" via OAuth: o callback do backend
+  // redireciona de volta pra esta mesma página com um desses parâmetros na
+  // query string. Quando isso acontece DENTRO do popup que o painel de
+  // conexão abriu, repassa o resultado pra janela original via postMessage e
+  // fecha o popup sozinho — o usuário nunca vê esta tela carregar de fato.
+  useEffect(() => {
+    const githubOAuthSession = searchParams.get("githubOAuthSession");
+    const gitlabOAuthSession = searchParams.get("gitlabOAuthSession");
+    const oauthError = searchParams.get("oauthError");
+    if (!githubOAuthSession && !gitlabOAuthSession && !oauthError) return;
+    if (typeof window !== "undefined" && window.opener) {
+      window.opener.postMessage(
+        { githubOAuthSession, gitlabOAuthSession, oauthError },
+        window.location.origin,
+      );
+      window.close();
+    }
+  }, [searchParams]);
+
   function exportar() {
     if (!projectId) return;
     createPlan.mutate(

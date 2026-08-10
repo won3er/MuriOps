@@ -60,6 +60,21 @@ const schema = z
     // Callback OAuth de Drive. Precisa constar nos redirect URIs autorizados
     // no Google Cloud Console; sem ela, a API usa PUBLIC_API_URL.
     GOOGLE_DRIVE_REDIRECT_URI: z.string().url().optional(),
+
+    // [10/08/2026] OAuth App do GitHub/GitLab — substitui o fluxo de colar
+    // PAT à mão por "Conectar com GitHub/GitLab" (autorizar e pronto, mesmo
+    // padrão do Drive). Sem essas variáveis configuradas, o botão de OAuth
+    // fica desabilitado e a tela cai pro formulário manual de PAT (que nunca
+    // foi removido — funciona igual antes). Client secret nunca é exposto
+    // ao frontend, só o backend troca o code por token.
+    GITHUB_OAUTH_CLIENT_ID: z.string().optional(),
+    GITHUB_OAUTH_CLIENT_SECRET: z.string().optional(),
+    // Precisa constar em "Authorization callback URL" no GitHub OAuth App;
+    // sem ela, a API usa PUBLIC_API_URL + /adapter-connections/github/oauth/callback.
+    GITHUB_OAUTH_REDIRECT_URI: z.string().url().optional(),
+    GITLAB_OAUTH_CLIENT_ID: z.string().optional(),
+    GITLAB_OAUTH_CLIENT_SECRET: z.string().optional(),
+    GITLAB_OAUTH_REDIRECT_URI: z.string().url().optional(),
   })
   // Em produção, barra segredo fraco/placeholder e CORS aberto — os mesmos
   // erros que o próprio módulo de Segurança Avançada da ferramenta aponta.

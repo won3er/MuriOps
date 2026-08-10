@@ -464,6 +464,17 @@ model AdapterConnection {
   // inteiro (que também pararia Aplicação). Default true — quem já configurou
   // o webhook manualmente já deu o opt-in; este campo é só um controle extra.
   prReviewsEnabled Boolean            @default(true)
+  // [10/08/2026] Login via OAuth (GitHub/GitLab) em vez de colar PAT à mão —
+  // três campos novos, todos opcionais (conexões antigas por PAT colado
+  // continuam funcionando sem eles, credentialEncrypted já cobre o caso).
+  // refreshTokenEncrypted só é preenchido quando o provedor devolve um
+  // (GitLab sempre; GitHub só se a OAuth App tiver "expiring tokens"
+  // habilitado). tokenExpiresAt fica null quando o token não expira.
+  refreshTokenEncrypted String?
+  tokenExpiresAt DateTime?
+  // Login/username da conta conectada (ex.: "won3er") — só pra exibir
+  // "Conectado como X" na UI, nunca usado como credencial.
+  oauthAccountLabel String?
   isActive       Boolean             @default(true)
   createdById    String
   createdAt      DateTime            @default(now())

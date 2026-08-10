@@ -133,6 +133,39 @@ export class GithubAdapter implements Adapter {
     await this.post(`/repos/${this.owner}/${this.repo}/issues/${prNumber}/comments`, { body });
   }
 
+  /**
+   * [10/08/2026] Cria o webhook do PR Security Reviews automático via API,
+   * em vez de pedir pro usuário copiar URL+secret e colar manualmente nas
+   * configurações do repositório. Idempotente: se já existir um hook
+   * apontando pra essa mesma URL, não duplica. Best-effort — chamador trata
+   * falha (token sem permissão de admin do repo, por exemplo) sem quebrar o
+   * resto da conexão; quem chamou continua podendo mostrar o passo manual
+   * como alternativa.
+   */
+  async ensureWebhook(
+    webhookUrl: string,
+    secret: string,
+  ): Promise<{ created: boolean; alreadyExisted: boolean }> {
+    const existing = await this.get<{ id: number; config?: { url?: string } }[]>(
+      `/repos/${this.owner}/${this.repo}/hooks`,
+    );
+    if (existing.some((hook) => hook.config?.url === webhookUrl)) {
+      return { created: false, alreadyExisted: true };
+    }
+    await this.post(`/repos/${this.owner}/${this.repo}/hooks`, {
+      name: "web",
+      active: true,
+      events: ["pull_request"],
+      config: {
+        url: webhookUrl,
+        content_type: "json",
+        secret,
+        insecure_ssl: "0",
+      },
+    });
+    return { created: true, alreadyExisted: false };
+  }
+
   private async ensureBranch(branch: string, baseSha: string): Promise<void> {
     const res = await fetch(`${API_BASE}/repos/${this.owner}/${this.repo}/git/refs`, {
       method: "POST",

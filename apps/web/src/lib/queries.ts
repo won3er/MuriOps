@@ -585,6 +585,73 @@ export function useConnectGitlab(projectId: string) {
   });
 }
 
+// ---------- "Conectar com GitHub/GitLab" via OAuth (10/08/2026) ----------
+
+/** Dispara o `start` e devolve a resposta — quem chama abre o popup e navega pra `authUrl`. */
+export function useStartGithubOAuth(projectId: string) {
+  return useMutation({
+    mutationFn: () => api.startGithubOAuth(projectId),
+  });
+}
+
+export function useGithubOAuthRepos(projectId: string, session: string | null) {
+  return useQuery({
+    queryKey: ["github-oauth-repos", projectId, session],
+    queryFn: () => api.listGithubOAuthRepos(projectId, session as string),
+    enabled: !!session,
+    retry: false,
+  });
+}
+
+export function useSelectGithubOAuthRepo(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { session: string; owner: string; repo: string }) =>
+      api.selectGithubOAuthRepo(projectId, body),
+    onSuccess: (connection) => {
+      qc.setQueryData(qk.githubConnection(projectId), connection);
+      qc.invalidateQueries({ queryKey: qk.adapterConnections(projectId) });
+      toast.success(`Conectado ao GitHub como ${connection.oauthAccountLabel ?? "—"}`);
+    },
+    onError: (err) =>
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao conectar o repositório escolhido",
+      ),
+  });
+}
+
+export function useStartGitlabOAuth(projectId: string) {
+  return useMutation({
+    mutationFn: () => api.startGitlabOAuth(projectId),
+  });
+}
+
+export function useGitlabOAuthProjects(projectId: string, session: string | null) {
+  return useQuery({
+    queryKey: ["gitlab-oauth-projects", projectId, session],
+    queryFn: () => api.listGitlabOAuthProjects(projectId, session as string),
+    enabled: !!session,
+    retry: false,
+  });
+}
+
+export function useSelectGitlabOAuthProject(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { session: string; projectPath: string }) =>
+      api.selectGitlabOAuthProject(projectId, body),
+    onSuccess: (connection) => {
+      qc.setQueryData(qk.gitlabConnection(projectId), connection);
+      qc.invalidateQueries({ queryKey: qk.adapterConnections(projectId) });
+      toast.success(`Conectado ao GitLab como ${connection.oauthAccountLabel ?? "—"}`);
+    },
+    onError: (err) =>
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao conectar o projeto escolhido",
+      ),
+  });
+}
+
 export function useAdapterConnections(projectId: string) {
   return useQuery({
     queryKey: qk.adapterConnections(projectId),
