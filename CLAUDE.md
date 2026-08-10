@@ -2365,6 +2365,24 @@ destacar porque é evidência de que a revisão sem compilador vale a pena, não
    esse tipo de erro só aparece na revisão manual linha a linha — reforça
    por que a tarefa de self-review (que quase foi pulada por pressa) importa
    de verdade, não é só formalidade da rotina do projeto.
+
+   **Correção adicional, pego só no `tsc --noEmit` real do usuário (não na
+   revisão manual):** `scanForInsecurePatterns` no mesmo arquivo ficou sem
+   `export` — as outras três funções (`scanForSecrets`, `scanDockerfile`,
+   `scanKubernetes`) ganharam durante a criação de `pr-review-scan.ts`, essa
+   passou despercebida mesmo na revisão linha a linha. `pr-review-scan.ts`
+   importa as quatro do mesmo lugar; sem o `export` o `tsc --noEmit` do `api`
+   falhava com `TS2459`. Corrigido (`export function scanForInsecurePatterns`).
+   Prova de que a revisão manual sem compilador, por mais cuidadosa, não
+   substitui rodar o `tsc` de verdade — bom lembrete pra próximas sessões
+   sem sandbox: tratar essas revisões como redução de risco, não garantia.
+
+   **Deploy confirmado, 11/08/2026 de manhã:** o usuário rodou o checklist
+   completo no terminal dele (`prisma generate` → `db push` → `shared build`
+   → o `tsc --noEmit` acima, que pegou o `TS2459` → correção → `tsc --noEmit`
+   limpo → `web build` limpo) e fez commit + push — commit `fdb32f8`
+   (`436a275..fdb32f8`), 27 arquivos alterados. Render e Vercel devem pegar o
+   deploy automaticamente a partir daqui.
 6. **Revisão de segurança própria feita nesta sessão (task de self-review),
    sem mais achados além dos dois acima:** reli
    `pr-review-scan.ts`/`render-comment.ts`/`pr-review.service.ts`,
