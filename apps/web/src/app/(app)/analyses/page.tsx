@@ -116,11 +116,11 @@ function AnalysesHub() {
             Nova análise
           </h2>
         </div>
-        <div className="grid gap-5 p-5 lg:grid-cols-[minmax(220px,1fr)_minmax(0,2fr)]">
-          <div>
+        <div className="space-y-5 p-5">
+          <div className="flex flex-col gap-2 sm:max-w-sm">
             <label
               htmlFor="analysis-project"
-              className="mb-1.5 block text-sm font-medium"
+              className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground"
             >
               Projeto
             </label>
@@ -138,19 +138,17 @@ function AnalysesHub() {
               ))}
             </select>
             {projectsError ? (
-              <div className="mt-3">
-                <QueryErrorState
-                  compact
-                  title="Projetos indisponíveis"
-                  description="Não foi possível carregar as opções."
-                  onRetry={() => void refetchProjects()}
-                />
-              </div>
+              <QueryErrorState
+                compact
+                title="Projetos indisponíveis"
+                description="Não foi possível carregar as opções."
+                onRetry={() => void refetchProjects()}
+              />
             ) : (
               projects.length === 0 && (
                 <Link
                   href="/projects"
-                  className="mt-2 inline-flex text-xs text-primary hover:underline"
+                  className="inline-flex text-xs text-primary hover:underline"
                 >
                   Cadastre um projeto primeiro
                 </Link>
