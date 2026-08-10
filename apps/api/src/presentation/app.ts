@@ -13,7 +13,7 @@ import { criticalFlowRoutes } from "./routes/critical-flow.routes.js";
 import { dashboardRoutes } from "./routes/dashboard.routes.js";
 import { evidenceRoutes } from "./routes/evidence.routes.js";
 import { mcpBridgeRoutes } from "./routes/mcp.routes.js";
-import { orchestrationRoutes } from "./routes/orchestration.routes.js";
+import { reconciliationRoutes } from "./routes/reconciliation.routes.js";
 import { projectRoutes } from "./routes/project.routes.js";
 import {
   remediationBridgeRoutes,
@@ -113,7 +113,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(upgradeBridgeRoutes);
   await app.register(dashboardRoutes);
   await app.register(settingsRoutes);
-  await app.register(orchestrationRoutes);
+  await app.register(reconciliationRoutes);
   // Bridge MCP: pública, autenticada só pelo token da conexão na URL.
   await app.register(mcpBridgeRoutes);
   // Webhook do GitHub: público, autenticado por assinatura HMAC.

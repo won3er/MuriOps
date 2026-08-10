@@ -371,7 +371,6 @@ export const FEATURE_COPY = {
       "Analyses",
       "Monitoring",
       "Applications",
-      "Orchestrations",
       "Updates",
     ],
     features: [
@@ -415,17 +414,17 @@ export const FEATURE_COPY = {
       },
       {
         key: "automatizar",
-        label: "Orchestrations",
-        eyebrow: "Orchestration",
-        heading: "Repeat the cycle with checkpoints and clear criteria",
+        label: "Reconciliation",
+        eyebrow: "Reconciliation",
+        heading: "Know at a glance if the latest analysis was actually applied",
         description:
-          "Orchestration organizes analyze, evaluate, plan, apply and reanalyze. In the current mode, you control checkpoints and approvals.",
+          "No autonomous cycle or execution state — reconciliation is calculated on the fly, comparing the project's latest completed analysis against the Applications generated from it, and checking the result against your quality gates.",
         outcomes: [
-          "Quality gates",
-          "History by iteration",
-          "Controlled resume",
+          "Applied vs. pending items",
+          "Quality gate check",
+          "Zero setup, always current",
         ],
-        route: "Orchestrations / Run",
+        route: "Project / Reconciliation",
       },
       {
         key: "acompanhar",
@@ -454,7 +453,6 @@ export const FEATURE_COPY = {
       "Análises",
       "Monitoramento",
       "Aplicações",
-      "Orquestrações",
       "Atualizações",
     ],
     features: [
@@ -502,17 +500,17 @@ export const FEATURE_COPY = {
       },
       {
         key: "automatizar",
-        label: "Orquestrações",
-        eyebrow: "Orquestração",
-        heading: "Repita o ciclo com checkpoints e critérios claros",
+        label: "Reconciliação",
+        eyebrow: "Reconciliação",
+        heading: "Saiba de cara se a última análise foi mesmo aplicada",
         description:
-          "A Orquestração organiza analisar, avaliar, gerar plano, aplicar e reanalisar. No modo atual, você controla checkpoints e aprovações.",
+          "Sem execução nem estado próprio — a reconciliação é calculada na hora, comparando a última análise concluída do projeto com as Aplicações geradas a partir dela, e checando o resultado contra os quality gates.",
         outcomes: [
-          "Quality gates",
-          "Histórico por iteração",
-          "Retomada controlada",
+          "Itens aplicados vs. pendentes",
+          "Checagem de quality gate",
+          "Sem configuração, sempre atual",
         ],
-        route: "Orquestrações / Execução",
+        route: "Projeto / Reconciliação",
       },
       {
         key: "acompanhar",
@@ -541,7 +539,6 @@ export const FEATURE_COPY = {
       "Análisis",
       "Monitoreo",
       "Aplicaciones",
-      "Orquestaciones",
       "Actualizaciones",
     ],
     features: [
@@ -585,17 +582,17 @@ export const FEATURE_COPY = {
       },
       {
         key: "automatizar",
-        label: "Orquestaciones",
-        eyebrow: "Orquestación",
-        heading: "Repite el ciclo con checkpoints y criterios claros",
+        label: "Reconciliación",
+        eyebrow: "Reconciliación",
+        heading: "Sabe de un vistazo si el último análisis realmente se aplicó",
         description:
-          "La Orquestación organiza analizar, evaluar, planificar, aplicar y volver a analizar. En el modo actual, controlas checkpoints y aprobaciones.",
+          "Sin ciclo autónomo ni estado propio — la reconciliación se calcula al instante, comparando el último análisis completado del proyecto con las Aplicaciones generadas a partir de él, y verificando el resultado contra los quality gates.",
         outcomes: [
-          "Quality gates",
-          "Historial por iteración",
-          "Reanudación controlada",
+          "Ítems aplicados vs. pendientes",
+          "Verificación de quality gate",
+          "Sin configuración, siempre actual",
         ],
-        route: "Orquestaciones / Ejecución",
+        route: "Proyecto / Reconciliación",
       },
       {
         key: "acompanhar",
@@ -651,14 +648,14 @@ export const PREVIEW_COPY = {
       ],
     },
     automatizar: {
-      title: "Orchestration cycle",
-      badge: "Iteration 02",
-      metric: "4/5",
-      metricLabel: "stages",
+      title: "Reconciliation",
+      badge: "Pending items",
+      metric: "7/10",
+      metricLabel: "items applied",
       rows: [
-        ["Analyze", "Completed", "92 points"],
-        ["Evaluate gates", "Completed", "6 approved"],
-        ["Reanalyze", "Waiting", "Next stage"],
+        ["Latest analysis", "v12", "3 days ago"],
+        ["Applied items", "7/10", "3 pending"],
+        ["Quality gates", "Failing", "1 below threshold"],
       ],
     },
     acompanhar: {
@@ -708,14 +705,14 @@ export const PREVIEW_COPY = {
       ],
     },
     automatizar: {
-      title: "Ciclo de orquestração",
-      badge: "Iteração 02",
-      metric: "4/5",
-      metricLabel: "etapas",
+      title: "Reconciliação",
+      badge: "Itens pendentes",
+      metric: "7/10",
+      metricLabel: "itens aplicados",
       rows: [
-        ["Analisar", "Concluído", "92 pontos"],
-        ["Avaliar gates", "Concluído", "6 aprovados"],
-        ["Reanalisar", "Aguardando", "Próxima etapa"],
+        ["Última análise", "v12", "há 3 dias"],
+        ["Itens aplicados", "7/10", "3 pendentes"],
+        ["Quality gates", "Reprovado", "1 abaixo do mínimo"],
       ],
     },
     acompanhar: {
@@ -765,14 +762,14 @@ export const PREVIEW_COPY = {
       ],
     },
     automatizar: {
-      title: "Ciclo de orquestación",
-      badge: "Iteración 02",
-      metric: "4/5",
-      metricLabel: "etapas",
+      title: "Reconciliación",
+      badge: "Ítems pendientes",
+      metric: "7/10",
+      metricLabel: "ítems aplicados",
       rows: [
-        ["Analizar", "Completado", "92 puntos"],
-        ["Evaluar gates", "Completado", "6 aprobados"],
-        ["Volver a analizar", "En espera", "Próxima etapa"],
+        ["Último análisis", "v12", "hace 3 días"],
+        ["Ítems aplicados", "7/10", "3 pendientes"],
+        ["Quality gates", "Reprobado", "1 debajo del mínimo"],
       ],
     },
     acompanhar: {

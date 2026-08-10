@@ -7,7 +7,6 @@ import {
   CircleHelp,
   FileSearch,
   FolderKanban,
-  GitBranch,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -36,7 +35,6 @@ const NAV_GROUPS = [
     items: [
       { href: "/analyses", label: "Análises", icon: FileSearch },
       { href: "/aplicacao", label: "Aplicações", icon: Wrench },
-      { href: "/orquestracao", label: "Orquestrações", icon: GitBranch },
       { href: "/atualizar", label: "Atualizações", icon: ArrowUpCircle },
     ],
   },

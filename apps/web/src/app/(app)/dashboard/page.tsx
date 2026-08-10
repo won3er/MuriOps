@@ -22,7 +22,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   useAnalysesList,
   useDashboard,
-  useOrchestrationRuns,
   useProjectRemediationPlans,
   useProjects,
   useUpgradePlans,
@@ -33,16 +32,6 @@ const PLAN_STATUS: Record<string, string> = {
   PENDING: "Gerando",
   READY: "Pronto",
   FAILED: "Falhou",
-};
-
-const RUN_STATUS: Record<string, string> = {
-  QUEUED: "Na fila",
-  RUNNING: "Em execução",
-  AWAITING_APPROVAL: "Aguardando aprovação",
-  AWAITING_APPLY: "Aguardando aplicação",
-  COMPLETED: "Concluída",
-  FAILED: "Falhou",
-  CANCELLED: "Cancelada",
 };
 
 function HistorySection({
@@ -88,11 +77,10 @@ export default function DashboardPage() {
   }, [projectId, projects]);
 
   const { data: remediationPlans = [], isLoading: remediationLoading, isError: remediationError, refetch: refetchRemediation } = useProjectRemediationPlans(projectId);
-  const { data: runs = [], isLoading: runsLoading, isError: runsError, refetch: refetchRuns } = useOrchestrationRuns(projectId);
   const selectedProject = projects.find((project) => project.id === projectId);
   const selectedAnalyses = analyses.filter((analysis) => analysis.projectId === projectId).slice(0, 4);
   const selectedUpgrades = upgradePlans.filter((plan) => plan.projectId === projectId).slice(0, 4);
-  const hasError = statsError || projectsError || analysesError || upgradesError || remediationError || runsError;
+  const hasError = statsError || projectsError || analysesError || upgradesError || remediationError;
 
   function retry() {
     void refetchStats();
@@ -101,7 +89,6 @@ export default function DashboardPage() {
     void refetchUpgrades();
     if (projectId) {
       void refetchRemediation();
-      void refetchRuns();
     }
   }
 
@@ -172,10 +159,14 @@ export default function DashboardPage() {
                 ))}
               </HistorySection>
 
-              <HistorySection title="Histórico de orquestrações" description="Execuções, iterações e checkpoints deste projeto" icon={GitBranch}>
-                {runsLoading ? <EmptyHistory>Carregando orquestrações…</EmptyHistory> : runs.length === 0 ? <EmptyHistory>Nenhuma orquestração registrada para este projeto.</EmptyHistory> : runs.slice(0, 4).map((run) => (
-                  <Link key={run.id} href={`/orquestracao?projectId=${projectId}`} className="group flex items-center gap-3 px-4 py-3 hover:bg-accent/40"><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium group-hover:text-primary">Execução · iteração {run.iteration}/{run.maxIterations}</p><p className="mt-0.5 text-xs text-muted-foreground">{timeAgo(run.createdAt)}</p></div><Badge>{RUN_STATUS[run.status] ?? run.status}</Badge><ArrowRight className="h-3.5 w-3.5 text-muted-foreground" /></Link>
-                ))}
+              <HistorySection title="Reconciliação" description="A última análise deste projeto já foi aplicada?" icon={GitBranch}>
+                <Link href={`/projects/${projectId}`} className="group flex items-center gap-3 px-4 py-3 hover:bg-accent/40">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium group-hover:text-primary">Ver status de reconciliação</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">Itens aplicados vs. pendentes na página do projeto</p>
+                  </div>
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                </Link>
               </HistorySection>
             </div>
           )}

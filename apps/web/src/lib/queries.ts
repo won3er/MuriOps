@@ -1,14 +1,11 @@
 "use client";
 
 import type {
-  AutonomyLevel,
-  CreateOrchestrationRunRequest,
   CreateProjectRequest,
   CreateRemediationPlanRequest,
   CreateCriticalFlowRequest,
   UpdateCriticalFlowRequest,
   CriticalFlow,
-  OrchestrationRun,
   Project,
   ProjectionTask,
   ProjectWithStats,
@@ -42,26 +39,13 @@ export const qk = {
     ["gitlab-connection", projectId] as const,
   adapterConnections: (projectId: string) =>
     ["adapter-connections", projectId] as const,
-  orchestrationRuns: (projectId: string) =>
-    ["orchestration-runs", projectId] as const,
-  orchestrationRun: (id: string) => ["orchestration-run", id] as const,
-  orchestrationEvents: (id: string) => ["orchestration-events", id] as const,
+  reconciliation: (projectId: string) => ["reconciliation", projectId] as const,
   qualityGates: (projectId: string) => ["quality-gates", projectId] as const,
   emailSettings: ["email-settings"] as const,
   criticalFlows: (projectId: string) => ["critical-flows", projectId] as const,
   criticalFlow: (id: string) => ["critical-flow", id] as const,
   flowRuns: (id: string) => ["flow-runs", id] as const,
 };
-
-/** Estados em que o loop ainda está em andamento — mantém o polling ligado. */
-const ACTIVE_RUN_STATUSES = new Set([
-  "QUEUED",
-  "ANALYZING",
-  "EVALUATING_GATES",
-  "PLANNING",
-  "APPLYING",
-  "REANALYZING",
-]);
 
 // ---------- Projeção (tarefas rastreáveis a partir de um plano de Aplicação) ----------
 
@@ -467,25 +451,6 @@ export function useDeleteProject() {
   });
 }
 
-export function useUpdateProjectAutonomy() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      id,
-      autonomyLevel,
-    }: {
-      id: string;
-      autonomyLevel: AutonomyLevel;
-    }) => api.updateProjectAutonomy(id, autonomyLevel),
-    onSuccess: (project) => {
-      qc.invalidateQueries({ queryKey: qk.projects });
-      qc.setQueryData<Project>(["project", project.id], project);
-      toast.success("Nível de autonomia atualizado");
-    },
-    onError: () => toast.error("Falha ao atualizar o nível de autonomia"),
-  });
-}
-
 // ---------- Adapter MCP (Fase 1) ----------
 
 export function useMcpConnection(projectId: string) {
@@ -592,84 +557,13 @@ export function useAdapterConnections(projectId: string) {
   });
 }
 
-// ---------- Orquestrador (Fase 3) ----------
+// ---------- Reconciliação (substitui o antigo orquestrador — ver CLAUDE.md) ----------
 
-export function useOrchestrationRuns(projectId: string) {
+export function useReconciliation(projectId: string) {
   return useQuery({
-    queryKey: qk.orchestrationRuns(projectId),
-    queryFn: () => api.listOrchestrationRuns(projectId),
+    queryKey: qk.reconciliation(projectId),
+    queryFn: () => api.getReconciliation(projectId),
     enabled: !!projectId,
-  });
-}
-
-/** Polling ativo enquanto o run está em andamento; para quando parado esperando humano/adapter ou terminal. */
-export function useOrchestrationRun(id: string) {
-  return useQuery({
-    queryKey: qk.orchestrationRun(id),
-    queryFn: () => api.getOrchestrationRun(id),
-    enabled: !!id,
-    refetchInterval: (query) => {
-      const status = query.state.data?.status;
-      if (!status) return false;
-      return ACTIVE_RUN_STATUSES.has(status)
-        ? 2000
-        : status === "AWAITING_APPLY"
-          ? 4000
-          : false;
-    },
-  });
-}
-
-export function useOrchestrationEvents(id: string) {
-  return useQuery({
-    queryKey: qk.orchestrationEvents(id),
-    queryFn: () => api.listOrchestrationEvents(id),
-    enabled: !!id,
-    refetchInterval: 3000,
-  });
-}
-
-export function useCreateOrchestrationRun(projectId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (body: CreateOrchestrationRunRequest = {}) =>
-      api.createOrchestrationRun(projectId, body),
-    onSuccess: (run) => {
-      qc.setQueryData<OrchestrationRun>(qk.orchestrationRun(run.id), run);
-      qc.invalidateQueries({ queryKey: qk.orchestrationRuns(projectId) });
-      toast.success("Execução iniciada");
-    },
-    onError: (err) =>
-      toast.error(
-        err instanceof Error ? err.message : "Falha ao iniciar a execução",
-      ),
-  });
-}
-
-export function useApproveOrchestrationRun(id: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: () => api.approveOrchestrationRun(id),
-    onSuccess: (run) => {
-      qc.setQueryData(qk.orchestrationRun(id), run);
-      qc.invalidateQueries({ queryKey: qk.orchestrationEvents(id) });
-      toast.success("Aprovado — reanalisando");
-    },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao aprovar"),
-  });
-}
-
-export function useCancelOrchestrationRun(id: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: () => api.cancelOrchestrationRun(id),
-    onSuccess: (run) => {
-      qc.setQueryData(qk.orchestrationRun(id), run);
-      toast.message("Execução cancelada");
-    },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Falha ao cancelar"),
   });
 }
 

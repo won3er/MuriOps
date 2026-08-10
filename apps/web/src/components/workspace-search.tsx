@@ -5,7 +5,6 @@ import {
   ArrowUpCircle,
   FileSearch,
   FolderKanban,
-  GitBranch,
   Github,
   LayoutDashboard,
   Search,
@@ -25,7 +24,6 @@ const SEARCH_ITEMS = [
   { title: "Aplicações", description: "Planos de remediação e conexões", href: "/aplicacao", icon: Wrench, terms: "aplicar aplicação plano remediação checklist" },
   { title: "Monitoramento", description: "Fluxos críticos e monitoramento sintético", href: "/monitoramento", icon: Activity, terms: "monitoramento fluxos críticos criticos flow synthetic" },
   { title: "Conexões GitHub e MCP", description: "Configure repositórios, token e servidor MCP", href: "/aplicacao?view=connections", icon: Github, terms: "github mcp token repositório repositorio integração conexão api" },
-  { title: "Orquestrações", description: "Acompanhe execuções e quality gates", href: "/orquestracao", icon: GitBranch, terms: "orquestração orquestracao execução automação automatizar supervisionado autônomo" },
   { title: "Atualizações", description: "Investigue dependências do projeto", href: "/atualizar", icon: ArrowUpCircle, terms: "atualizar dependência dependencias package manifest github" },
   { title: "Configurações", description: "Perfil, organização e chave de IA", href: "/settings", icon: Settings, terms: "configuração configurações ia chave organização conta" },
 ] as const;

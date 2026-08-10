@@ -74,19 +74,19 @@ type PreviewData = {
 const PREVIEW_UI_COPY = {
   en: {
     channels: "GitHub · MCP · PDF",
-    orchestrationHint: "Run with checkpoints and controlled resume.",
+    orchestrationHint: "Compares the latest analysis to what's actually been applied.",
     activeProjects: "active projects",
     needAttention: "need attention",
   },
   pt: {
     channels: "GitHub · MCP · PDF",
-    orchestrationHint: "Execução com checkpoints e retomada controlada.",
+    orchestrationHint: "Compara a última análise com o que já foi aplicado de verdade.",
     activeProjects: "projetos ativos",
     needAttention: "pedem atenção",
   },
   es: {
     channels: "GitHub · MCP · PDF",
-    orchestrationHint: "Ejecución con puntos de control y reanudación controlada.",
+    orchestrationHint: "Compara el último análisis con lo que realmente se aplicó.",
     activeProjects: "proyectos activos",
     needAttention: "requieren atención",
   },

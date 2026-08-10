@@ -1,7 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { onObservation } from "../../application/orchestration.service.js";
 import { decryptSecret } from "../../infrastructure/crypto/secret-box.js";
 import { prisma } from "../../infrastructure/database/prisma.js";
 
@@ -70,21 +69,10 @@ export async function githubWebhookRoutes(app: FastifyInstance): Promise<void> {
       });
     }
 
-    const githubEvent = req.headers["x-github-event"] as string | undefined;
-    const payload = req.body as GithubPullRequestPayload;
-
-    if (
-      githubEvent === "pull_request" &&
-      payload.action === "closed" &&
-      payload.pull_request?.merged
-    ) {
-      await onObservation(connection.projectId, {
-        source: "github",
-        prNumber: payload.pull_request.number,
-        prUrl: payload.pull_request.html_url,
-      });
-    }
-
+    // [09/08/2026] O `onObservation` daqui alimentava o ciclo autônomo de
+    // Orquestração (removido — ver CLAUDE.md); o webhook em si (validação de
+    // assinatura + recebimento do evento de PR merged) foi mantido porque
+    // pode servir de base pra um evento futuro, mas hoje não aciona nada.
     return reply.status(202).send({ ok: true });
   });
 }

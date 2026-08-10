@@ -20,10 +20,6 @@ const createSchema = z.object({
   description: z.string().optional(),
 });
 
-const updateAutonomySchema = z.object({
-  autonomyLevel: z.enum(["MANUAL", "SUPERVISED", "AUTONOMOUS"]),
-});
-
 const updateActiveTestingConsentSchema = z.object({
   consent: z.boolean(),
 });
@@ -286,25 +282,6 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
     try {
       await qualityGateService.remove(req.user.organizationId, id, gateId);
       return reply.status(204).send();
-    } catch (err) {
-      if (err instanceof NotFoundError)
-        return reply
-          .status(404)
-          .send({ statusCode: 404, error: "NotFound", message: err.message });
-      throw err;
-    }
-  });
-
-  // Nível de autonomia do orquestrador pra este projeto (padrão MANUAL).
-  app.patch("/projects/:id", async (req, reply) => {
-    const { id } = z.object({ id: z.string() }).parse(req.params);
-    const { autonomyLevel } = updateAutonomySchema.parse(req.body);
-    try {
-      return await projectService.updateAutonomyLevel(
-        req.user.organizationId,
-        id,
-        autonomyLevel,
-      );
     } catch (err) {
       if (err instanceof NotFoundError)
         return reply

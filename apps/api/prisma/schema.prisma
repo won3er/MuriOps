@@ -87,12 +87,6 @@ model Subscription {
 
 // ---------- Projetos ----------
 
-enum AutonomyLevel {
-  MANUAL
-  SUPERVISED
-  AUTONOMOUS
-}
-
 model Project {
   id             String        @id @default(cuid())
   name           String
@@ -100,7 +94,6 @@ model Project {
   url            String
   organizationId String
   createdById    String
-  autonomyLevel  AutonomyLevel @default(MANUAL)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
@@ -114,7 +107,6 @@ model Project {
 
   organization       Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   analyses            Analysis[]
-  orchestrationRuns    OrchestrationRun[]
   qualityGates         ProjectQualityGate[]
   adapterConnections   AdapterConnection[]
   projectionTasks      ProjectionTask[]
@@ -396,84 +388,16 @@ model UpgradePlan {
   @@index([projectId])
 }
 
-// ---------- Orquestrador + Adapters (núcleo QA-only) ----------
-// O orquestrador analisa um projeto, gera um plano, aplica por um adapter
-// adequado e reanalisa até bater os quality gates. Toda regra de QA e decisão
-// de negócio mora aqui — os adapters ativos (MCP e GitHub) são só
-// mecanismos de integração (analyze/apply/observe), nunca donos de lógica.
-
-enum OrchestrationRunStatus {
-  QUEUED
-  ANALYZING
-  EVALUATING_GATES
-  PLANNING
-  AWAITING_APPLY
-  APPLYING
-  AWAITING_OBSERVATION
-  REANALYZING
-  PASSED
-  STOPPED
-  FAILED
-}
-
-enum OrchestrationEventType {
-  RUN_STARTED
-  ANALYSIS_STARTED
-  ANALYSIS_COMPLETED
-  GATE_EVALUATED
-  PLAN_GENERATED
-  APPLY_REQUESTED
-  APPLY_APPROVED
-  APPLY_COMPLETED
-  OBSERVATION_RECEIVED
-  ITERATION_ADVANCED
-  RUN_PASSED
-  RUN_STOPPED
-  RUN_FAILED
-}
-
-model OrchestrationRun {
-  id             String                 @id @default(cuid())
-  projectId      String
-  organizationId String
-  status         OrchestrationRunStatus @default(QUEUED)
-  iteration      Int                    @default(1)
-  maxIterations  Int                    @default(3)
-  // Snapshot do nível de autonomia no início do run (não segue mudanças
-  // posteriores em Project.autonomyLevel).
-  autonomyLevel  AutonomyLevel
-  // Refs soltas (sem @relation), mesmo padrão de RemediationPlan.sourceId —
-  // um run atravessa várias Analysis/RemediationPlan ao longo das iterações.
-  currentAnalysisId   String?
-  currentPlanId       String?
-  adapterConnectionId String?
-  // { passed, details: [{ category, threshold, actual, passed }] }
-  gateResult Json?
-  error      String?
-  startedAt  DateTime?
-  finishedAt DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
-  project Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  events  OrchestrationEvent[]
-
-  @@index([projectId])
-  @@index([organizationId])
-}
-
-model OrchestrationEvent {
-  id        String                 @id @default(cuid())
-  runId     String
-  type      OrchestrationEventType
-  message   String
-  data      Json?
-  createdAt DateTime               @default(now())
-
-  run OrchestrationRun @relation(fields: [runId], references: [id], onDelete: Cascade)
-
-  @@index([runId])
-}
+// ---------- Orquestração (REMOVIDA 09/08/2026) ----------
+// O ciclo autônomo antigo (OrchestrationRun/OrchestrationEvent, autonomyLevel
+// por projeto, quality gates avaliados por iteração) foi substituído por uma
+// "Reconciliação" mais simples: sem execuções nem estado próprio, calculada
+// on-the-fly comparando a última Analysis do projeto com os RemediationPlans
+// gerados a partir dela (quantos itens já foram aplicados vs. quantos faltam).
+// Sem clientes reais usando o ciclo antigo, o usuário autorizou apagar
+// OrchestrationRun/OrchestrationEvent por completo (mesmo espírito da decisão
+// do Guardian) em vez de reter os dados. ProjectQualityGate foi mantido —
+// ainda é referenciado pela reconciliação nova como critério de "em dia".
 
 model ProjectQualityGate {
   id       String            @id @default(cuid())

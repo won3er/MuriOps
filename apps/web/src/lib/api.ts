@@ -5,7 +5,6 @@ import type {
   AnalysisDetail,
   AnalysisSummary,
   AuthSession,
-  CreateOrchestrationRunRequest,
   CreateProjectRequest,
   CreateRemediationPlanRequest,
   CreateCriticalFlowRequest,
@@ -16,8 +15,7 @@ import type {
   IssueFilters,
   LoginRequest,
   ProjectionTask,
-  OrchestrationEvent,
-  OrchestrationRun,
+  ReconciliationResult,
   HumanCheckResponse,
   Project,
   ProjectQualityGate,
@@ -160,14 +158,6 @@ export const api = {
     request<RemediationSummary[]>(`/projects/${id}/remediation-plans`),
   deleteProject: (id: string) =>
     request<void>(`/projects/${id}`, { method: "DELETE" }),
-  updateProjectAutonomy: (
-    id: string,
-    autonomyLevel: Project["autonomyLevel"],
-  ) =>
-    request<Project>(`/projects/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ autonomyLevel }),
-    }),
 
   updateActiveTestingConsent: (id: string, consent: boolean) =>
     request<Project>(`/projects/${id}/active-testing-consent`, {
@@ -225,7 +215,7 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
-  // ---- conexões do projeto (seletor de adapter na Orquestração) ----
+  // ---- conexões do projeto ----
   listAdapterConnections: (projectId: string) =>
     request<AdapterConnection[]>(`/projects/${projectId}/adapter-connections`),
 
@@ -245,29 +235,9 @@ export const api = {
       method: "DELETE",
     }),
 
-  // ---- orquestrador (Fase 3) ----
-  listOrchestrationRuns: (projectId: string) =>
-    request<OrchestrationRun[]>(`/projects/${projectId}/orchestration-runs`),
-  createOrchestrationRun: (
-    projectId: string,
-    body: CreateOrchestrationRunRequest = {},
-  ) =>
-    request<OrchestrationRun>(`/projects/${projectId}/orchestration-runs`, {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
-  getOrchestrationRun: (id: string) =>
-    request<OrchestrationRun>(`/orchestration-runs/${id}`),
-  listOrchestrationEvents: (id: string) =>
-    request<OrchestrationEvent[]>(`/orchestration-runs/${id}/events`),
-  approveOrchestrationRun: (id: string) =>
-    request<OrchestrationRun>(`/orchestration-runs/${id}/approve`, {
-      method: "POST",
-    }),
-  cancelOrchestrationRun: (id: string) =>
-    request<OrchestrationRun>(`/orchestration-runs/${id}/cancel`, {
-      method: "POST",
-    }),
+  // ---- reconciliação (substitui o antigo orquestrador — ver CLAUDE.md) ----
+  getReconciliation: (projectId: string) =>
+    request<ReconciliationResult>(`/projects/${projectId}/reconciliation`),
 
   // ---- analyses ----
   /** Hub "Análise": todas as análises da organização, qualquer projeto. */

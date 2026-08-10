@@ -118,7 +118,6 @@ export const remediationService = {
         result: { ...result, items } as unknown as Prisma.InputJsonValue,
       },
     });
-    await notifyOrchestrationOfPlanUpdate(updated.id);
     return toDto(updated);
   },
 
@@ -165,26 +164,9 @@ export const remediationService = {
         result: { ...result, items } as unknown as Prisma.InputJsonValue,
       },
     });
-    await notifyOrchestrationOfPlanUpdate(updated.id);
     return toDto(updated);
   },
 };
-
-/**
- * Import dinâmico pra evitar ciclo de import em tempo de módulo —
- * `orchestration.service.ts` já importa `remediationService` no topo do
- * arquivo. Avisa a Orquestração toda vez que um item muda de status (via
- * checklist manual, ponte universal ou MCP), pra ela poder retomar sozinha
- * um run parado em AWAITING_APPLY quando o plano inteiro já estiver feito.
- */
-async function notifyOrchestrationOfPlanUpdate(planId: string): Promise<void> {
-  try {
-    const { maybeAutoResumeFromPlan } = await import("./orchestration.service.js");
-    await maybeAutoResumeFromPlan(planId);
-  } catch {
-    /* nunca deixa isso quebrar a atualização do item em si */
-  }
-}
 
 // ---------- geração em background ----------
 

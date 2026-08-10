@@ -3,7 +3,6 @@ import { projectionService } from "./application/projection.service.js";
 import { recoverStaleRemediationPlans } from "./application/remediation.service.js";
 import { recoverStaleUpgradePlans } from "./application/upgrade.service.js";
 import { env } from "./config/env.js";
-import { recoverStaleOrchestrationRuns } from "./infrastructure/queue/orchestration-runner.js";
 import { recoverStaleAnalyses } from "./infrastructure/queue/runner.js";
 import { buildApp } from "./presentation/app.js";
 
@@ -14,7 +13,6 @@ async function main(): Promise<void> {
   await recoverStaleAnalyses();
   await recoverStaleRemediationPlans();
   await recoverStaleUpgradePlans();
-  await recoverStaleOrchestrationRuns();
   await app.listen({ port: env.API_PORT, host: env.API_HOST });
   app.log.info(`🚀 MuriOps API em http://${env.API_HOST}:${env.API_PORT}`);
 

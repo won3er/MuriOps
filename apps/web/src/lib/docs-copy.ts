@@ -9,7 +9,7 @@ export const DOCS_COPY = {
       flowCards: [
         ["Analyze", "Find and prioritize problems."],
         ["Apply", "Turn findings into traceable work."],
-        ["Orchestrate", "Repeat the cycle with control."],
+        ["Reconcile", "Know at a glance what's applied and what's left."],
       ],
       answerTitle: "Find your answer",
       sections: [
@@ -55,7 +55,7 @@ export const DOCS_COPY = {
           items: [
             "Use a URL you manage or are authorized to test.",
             "Confirm the website is accessible without a private session.",
-            "The project provides context for analyses, applications and orchestrations.",
+            "The project provides context for analyses, applications and reconciliation.",
           ],
         },
         {
@@ -95,9 +95,9 @@ export const DOCS_COPY = {
           title: "Reanalyze and track",
           description: "Measure the outcome of changes and continue the cycle.",
           items: [
-            "Manual autonomy keeps checkpoints under your control.",
-            "Orchestration can resume after bridge items are completed.",
-            "Supervised and Autonomous modes respect the configured iteration limit and stop when an external action needs review.",
+            "Reanalyze the project after applying items to get a fresh score.",
+            "Check the Reconciliation panel on the project page to see applied vs. pending items and quality gate status.",
+            "No autonomous cycle to configure — reconciliation is calculated on the fly, always up to date.",
           ],
         },
       ],
@@ -174,19 +174,9 @@ export const DOCS_COPY = {
               "Read the plan and update items through MCP.",
             ],
             [
-              "Manual Orchestration",
+              "Reconciliation",
               "available",
-              "Runs the cycle with checkpoints and resumes after items are applied.",
-            ],
-            [
-              "Supervised Orchestration",
-              "available",
-              "Continues after a successful application and pauses for review if an item fails or the score regresses.",
-            ],
-            [
-              "Autonomous Orchestration",
-              "available",
-              "Continues within the iteration limit until it reaches quality gates or needs an external application.",
+              "No execution or run state — calculated on the fly on the project page, comparing the latest analysis against the Applications generated from it and checking the result against your quality gates.",
             ],
           ],
         },
@@ -242,7 +232,7 @@ export const DOCS_COPY = {
       flowCards: [
         ["Analisar", "Encontre e priorize problemas."],
         ["Aplicar", "Transforme achados em trabalho."],
-        ["Orquestrar", "Repita o ciclo com controle."],
+        ["Reconciliar", "Saiba de cara o que já foi aplicado."],
       ],
       answerTitle: "Encontre sua resposta",
       sections: [
@@ -288,7 +278,7 @@ export const DOCS_COPY = {
           items: [
             "Use uma URL que você administra ou tem autorização para testar.",
             "Confirme que o site pode ser acessado sem uma sessão privada.",
-            "O projeto será o contexto para análises, aplicações e orquestrações.",
+            "O projeto será o contexto para análises, aplicações e reconciliação.",
           ],
         },
         {
@@ -329,9 +319,9 @@ export const DOCS_COPY = {
           title: "Reanalise e acompanhe",
           description: "Meça o resultado das mudanças e continue o ciclo.",
           items: [
-            "Na autonomia Manual, você mantém o controle dos checkpoints.",
-            "A orquestração pode retomar quando os itens da ponte forem concluídos.",
-            "Os modos Supervisionado e Autônomo respeitam o limite de iterações e param quando uma ação externa precisa de revisão.",
+            "Reanalise o projeto depois de aplicar os itens pra ter um score atualizado.",
+            "Confira o painel de Reconciliação na página do projeto pra ver itens aplicados vs. pendentes e o status dos quality gates.",
+            "Sem ciclo autônomo pra configurar — a reconciliação é calculada na hora, sempre atualizada.",
           ],
         },
       ],
@@ -408,19 +398,9 @@ export const DOCS_COPY = {
               "Permite consultar o plano e atualizar itens por protocolo MCP.",
             ],
             [
-              "Orquestração Manual",
+              "Reconciliação",
               "available",
-              "Executa o ciclo com checkpoints e retomada após a aplicação dos itens.",
-            ],
-            [
-              "Orquestração Supervisionada",
-              "available",
-              "Prossegue após uma aplicação bem-sucedida e para para revisão se algum item falhar ou se a nota regredir.",
-            ],
-            [
-              "Orquestração Autônoma",
-              "available",
-              "Prossegue dentro do limite de iterações até atingir os quality gates ou depender de aplicação externa.",
+              "Sem execução nem estado de run — calculada na hora na página do projeto, comparando a última análise com as Aplicações geradas a partir dela e checando o resultado contra os quality gates.",
             ],
           ],
         },
@@ -476,7 +456,7 @@ export const DOCS_COPY = {
       flowCards: [
         ["Analizar", "Encuentra y prioriza problemas."],
         ["Aplicar", "Convierte hallazgos en trabajo."],
-        ["Orquestar", "Repite el ciclo con control."],
+        ["Reconciliar", "Sabe de un vistazo qué ya se aplicó."],
       ],
       answerTitle: "Encuentra tu respuesta",
       sections: [
@@ -563,9 +543,9 @@ export const DOCS_COPY = {
           title: "Vuelve a analizar y acompaña",
           description: "Mide el resultado de los cambios y continúa el ciclo.",
           items: [
-            "La autonomía Manual mantiene los checkpoints bajo tu control.",
-            "La orquestación puede reanudarse cuando se completen los elementos del puente.",
-            "Los modos Supervisado y Autónomo respetan el límite de iteraciones y se detienen cuando una acción externa necesita revisión.",
+            "Vuelve a analizar el proyecto después de aplicar elementos para obtener un puntaje actualizado.",
+            "Revisa el panel de Reconciliación en la página del proyecto para ver ítems aplicados vs. pendientes y el estado de los quality gates.",
+            "Sin ciclo autónomo que configurar — la reconciliación se calcula al instante, siempre actualizada.",
           ],
         },
       ],
@@ -642,19 +622,9 @@ export const DOCS_COPY = {
               "Permite consultar el plan y actualizar elementos por MCP.",
             ],
             [
-              "Orquestación Manual",
+              "Reconciliación",
               "available",
-              "Ejecuta el ciclo con checkpoints y se reanuda después de aplicar elementos.",
-            ],
-            [
-              "Orquestación Supervisada",
-              "available",
-              "Continúa después de una aplicación correcta y se detiene para revisión si un elemento falla o la puntuación empeora.",
-            ],
-            [
-              "Orquestación Autónoma",
-              "available",
-              "Continúa dentro del límite de iteraciones hasta alcanzar los quality gates o depender de una aplicación externa.",
+              "Sin ejecución ni estado propio — se calcula al instante en la página del proyecto, comparando el último análisis con las Aplicaciones generadas a partir de él y verificando el resultado contra los quality gates.",
             ],
           ],
         },

@@ -5,9 +5,9 @@ import {
   Activity,
   ArrowRight,
   CalendarDays,
+  CheckCircle2,
   ExternalLink,
   FileSearch,
-  GitBranch,
   Globe2,
   Loader2,
   Settings2,
@@ -28,8 +28,34 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
-import { useProjectRemediationPlans } from "@/lib/queries";
+import { useProjectRemediationPlans, useReconciliation } from "@/lib/queries";
 import { cn, formatDuration, scoreColor, timeAgo } from "@/lib/utils";
+
+const RECONCILIATION_STATUS: Record<
+  string,
+  { label: string; className: string }
+> = {
+  no_analysis: {
+    label: "Sem análise ainda",
+    className: "border-muted-foreground/30 bg-muted text-muted-foreground",
+  },
+  no_plan: {
+    label: "Sem Aplicação gerada",
+    className: "border-amber-500/40 bg-amber-500/15 text-amber-300",
+  },
+  pending_items: {
+    label: "Itens pendentes",
+    className: "border-amber-500/40 bg-amber-500/15 text-amber-300",
+  },
+  applied_gate_failing: {
+    label: "Aplicado, mas abaixo do gate",
+    className: "border-red-500/40 bg-red-500/15 text-red-300",
+  },
+  all_applied: {
+    label: "Em dia",
+    className: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
+  },
+};
 
 const PLAN_STATUS: Record<string, { label: string; className: string }> = {
   PENDING: {
@@ -65,6 +91,8 @@ export default function ProjectDetailPage() {
     isError: remediationError,
     refetch: refetchRemediation,
   } = useProjectRemediationPlans(id);
+  const { data: reconciliation, isLoading: reconciliationLoading } =
+    useReconciliation(id);
 
   async function loadProject() {
     setLoading(true);
@@ -264,7 +292,6 @@ export default function ProjectDetailPage() {
             label: "Conexões",
             href: `/aplicacao?projectId=${id}&view=connections`,
           },
-          { label: "Orquestrações", href: `/orquestracao?projectId=${id}` },
         ]}
       />
 
@@ -312,6 +339,130 @@ export default function ProjectDetailPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-semibold">Reconciliação</h2>
+                <p className="text-xs text-muted-foreground">
+                  A última análise já foi aplicada de verdade?
+                </p>
+              </div>
+              {reconciliation && (
+                <Badge
+                  className={
+                    RECONCILIATION_STATUS[reconciliation.status]?.className
+                  }
+                >
+                  {RECONCILIATION_STATUS[reconciliation.status]?.label ??
+                    reconciliation.status}
+                </Badge>
+              )}
+            </div>
+
+            <div className="overflow-hidden rounded-lg border bg-card">
+              {reconciliationLoading ? (
+                <div className="flex items-center justify-center px-5 py-7">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              ) : !reconciliation || reconciliation.status === "no_analysis" ? (
+                <div className="flex items-center gap-4 px-5 py-7">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md border bg-muted">
+                    <FileSearch className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">
+                      Nenhuma análise concluída ainda
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Rode a primeira análise pra ter algo pra reconciliar.
+                    </p>
+                  </div>
+                  <Link href={`/analyses?projectId=${id}`}>
+                    <Button variant="outline" size="sm">
+                      Analisar
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-4 px-5 py-4">
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                    <span className="text-muted-foreground">
+                      Análise v{reconciliation.latestAnalysis?.version} ·{" "}
+                      {reconciliation.latestAnalysis?.daysSinceFinished === 0
+                        ? "hoje"
+                        : reconciliation.latestAnalysis?.daysSinceFinished === 1
+                          ? "há 1 dia"
+                          : `há ${reconciliation.latestAnalysis?.daysSinceFinished} dias`}
+                    </span>
+                    {reconciliation.latestAnalysis?.overallScore !== null && (
+                      <span
+                        className={cn(
+                          "font-semibold tabular",
+                          scoreColor(reconciliation.latestAnalysis?.overallScore ?? 0),
+                        )}
+                      >
+                        Score {reconciliation.latestAnalysis?.overallScore}
+                      </span>
+                    )}
+                    <span className="text-muted-foreground">
+                      {reconciliation.totalDone}/{reconciliation.totalItems} item(ns)
+                      aplicado(s)
+                    </span>
+                  </div>
+
+                  {reconciliation.status === "no_plan" && (
+                    <p className="flex items-center gap-2 text-xs text-amber-300">
+                      <ShieldAlert className="h-3.5 w-3.5 shrink-0" />
+                      Essa análise ainda não virou uma Aplicação — envie pra
+                      Aplicação pra começar a rastrear o que foi corrigido.
+                    </p>
+                  )}
+                  {reconciliation.status === "all_applied" && (
+                    <p className="flex items-center gap-2 text-xs text-emerald-300">
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                      Todos os itens da última análise já foram marcados como
+                      aplicados{reconciliation.gateEvaluation ? " e os quality gates passam." : "."}
+                    </p>
+                  )}
+                  {reconciliation.status === "applied_gate_failing" &&
+                    reconciliation.gateEvaluation && (
+                      <div className="space-y-1.5">
+                        <p className="flex items-center gap-2 text-xs text-red-300">
+                          <ShieldAlert className="h-3.5 w-3.5 shrink-0" />
+                          Todos os itens foram aplicados, mas o score ainda não
+                          bate os quality gates configurados.
+                        </p>
+                        <ul className="space-y-1 pl-5 text-xs text-muted-foreground">
+                          {reconciliation.gateEvaluation.details
+                            .filter((d) => !d.passed)
+                            .map((d, i) => (
+                              <li key={i} className="list-disc">
+                                {d.label ?? d.category ?? "Score geral"}: {d.actual}{" "}
+                                / mínimo {d.minScore}
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+
+                  <div className="flex gap-2 pt-1">
+                    {reconciliation.status === "no_plan" ? (
+                      <Link href={`/aplicacao?projectId=${id}`}>
+                        <Button size="sm">Enviar para Aplicação</Button>
+                      </Link>
+                    ) : (
+                      <Link href={`/analyses?projectId=${id}`}>
+                        <Button variant="outline" size="sm">
+                          Reanalisar
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
           <section>
             <div className="mb-3 flex items-center justify-between">
               <div>
@@ -505,12 +656,6 @@ export default function ProjectDetailPage() {
                   description: "Planos e conexões do projeto",
                   icon: Wrench,
                 },
-                {
-                  href: `/orquestracao?projectId=${id}`,
-                  label: "Abrir orquestração",
-                  description: "Automatizar o ciclo de qualidade",
-                  icon: GitBranch,
-                },
               ].map((item) => (
                 <Link
                   key={item.href}
@@ -539,12 +684,6 @@ export default function ProjectDetailPage() {
                     URL monitorada
                   </p>
                   <p className="mt-1 truncate">{project?.url ?? "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Autonomia</p>
-                  <p className="mt-1 capitalize">
-                    {project?.autonomyLevel?.toLowerCase() ?? "Manual"}
-                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Criado</p>

@@ -1638,6 +1638,140 @@ acordada em conversa, mas sem nenhum código escrito ainda. Precisa de um
 desenho concreto (o que exatamente essa tela mostra, que dado ela consome)
 antes de começar a implementar.
 
+## Sessão 09/08/2026 (continuação) — Orquestração → Reconciliação
+
+Depois de remover o Guardian e o usuário aprovar o deploy, seguimos com a
+segunda decisão da mesma conversa: o usuário perguntou se a Orquestração
+(ciclo autônomo analisar→avaliar gates→gerar plano→aplicar→reanalisar) era
+inútil, e propôs a alternativa de virar uma "checagem geral" — comparar o
+que foi aplicado com o que falta. Concordei com o diagnóstico: era o
+pilar mais over-engineered do produto (3 níveis de autonomia, máquina de
+estados de 11 status, eventos, checkpoints) sem evidência de uso real, e a
+proposta do usuário simplifica pra o que realmente importa — saber se a
+última análise foi de fato aplicada. **Decisões confirmadas com o usuário
+via AskUserQuestion:** escopo é só Análise↔Aplicação por enquanto (não
+Atualizar/Fluxos Críticos ainda); a tela vive em `/projects/[id]`, não
+numa rota separada; e os dados antigos (`OrchestrationRun`/
+`OrchestrationEvent`/`autonomyLevel`) foram apagados por completo, não
+retidos (mesmo espírito da decisão do Guardian — sem clientes reais).
+
+**Arquitetura da Reconciliação: sem execução, sem estado, sem fila.**
+Diferente de tudo que existia no orquestrador antigo, a Reconciliação não
+grava nada — é uma função pura calculada a cada request:
+`reconciliation.service.ts.getForProject()` pega a última `Analysis`
+`COMPLETED` do projeto, busca os `RemediationPlan`s (via
+`remediationService.list`) cujo `sourceType === "analysis"` e
+`sourceId` bate com essa análise, soma itens aplicados/pendentes
+(`RemediationSummary.itemCount`/`doneCount`, já existentes), e avalia os
+`ProjectQualityGate`s do projeto contra o score dessa análise reusando
+`evaluateQualityGates()` (`modules/analysis/quality-gates.ts` — já existia,
+usado antes pelo orquestrador, sem nenhuma mudança). Devolve um
+`ReconciliationStatus`: `no_analysis` (nunca rodou) → `no_plan` (análise
+sem Aplicação gerada) → `pending_items` (Aplicação com itens faltando) →
+`applied_gate_failing` (tudo aplicado mas score não bate o gate) →
+`all_applied` (em dia).
+
+- Schema: removidos por completo (sem retenção) — `model OrchestrationRun`,
+  `model OrchestrationEvent`, `enum OrchestrationRunStatus`, `enum
+  OrchestrationEventType`, `enum AutonomyLevel`, `Project.autonomyLevel`,
+  `Project.orchestrationRuns`. `ProjectQualityGate` foi mantido (agora
+  consumido pela Reconciliação). Tipos compartilhados: `orchestration.ts`
+  esvaziado até sobrar só `QualityGateEvaluation`/`QualityGateDetail`/
+  `ProjectQualityGate` (ainda em uso); tipo novo `reconciliation.ts`
+  (`ReconciliationResult`/`ReconciliationStatus`) adicionado ao barrel.
+- Backend: `orchestration.service.ts`, `orchestration.routes.ts` e
+  `infrastructure/queue/orchestration-runner.ts` esvaziados (`export {};`).
+  Novos: `application/reconciliation.service.ts` +
+  `presentation/routes/reconciliation.routes.ts`
+  (`GET /projects/:id/reconciliation`, única rota, só leitura).
+  `app.ts`/`main.ts` atualizados (rota trocada, `recoverStaleOrchestrationRuns`
+  removido do boot — sem execução, não há nada pra recuperar).
+  **Duas dependências cruzadas encontradas e corrigidas** (mesma lição do
+  Guardian — sempre fazer Grep de "quem mais usa isso" antes de apagar):
+  `remediation.service.ts` chamava `notifyOrchestrationOfPlanUpdate()` via
+  import dinâmico toda vez que um item de Aplicação mudava de status, pra
+  avisar um run parado — removida (a Reconciliação não tem run pra
+  retomar, é recalculada a cada leitura); `webhooks.routes.ts` chamava
+  `onObservation()` no evento de PR merged do GitHub — removida a chamada,
+  mas o webhook em si (validação de assinatura HMAC) foi mantido como base
+  pra uso futuro. `project.routes.ts`/`project.service.ts`/
+  `account.service.ts` perderam a rota/método/seleção de `autonomyLevel`.
+- Frontend: `/orquestracao` virou `redirect("/projects")` (mesmo padrão
+  Blueprint/Guardian). Item de menu "Orquestrações" removido de
+  `layout.tsx`. Nova seção "Reconciliação" em `/projects/[id]` (antes de
+  "Análises recentes"): badge de status, análise mais recente com score e
+  "há N dias", contagem de itens aplicados/pendentes, detalhamento de gate
+  reprovado quando aplicável, e botão contextual ("Enviar para Aplicação"
+  quando `no_plan`, "Reanalisar" nos demais casos). Campo "Autonomia"
+  removido do card "Sobre o projeto". `orchestration-panel.tsx` esvaziado
+  (não era mais importado por lugar nenhum depois da mudança).
+  `dashboard.tsx`: a seção "Histórico de orquestrações" (que listava runs)
+  virou um card simples linkando pra Reconciliação na página do projeto —
+  o dashboard consolidado não tenta replicar o cálculo, só aponta pra ele.
+  `workspace-search.tsx`: entrada "Orquestrações" removida.
+- Copy (`public-copy.ts`/`docs-copy.ts`, 3 locales): a aba "automatizar" no
+  `FeatureShowcase` **não foi removida** (ficaria só 4 abas de resultado
+  imediato + 1 de sistema) — foi **redefinida** pra Reconciliação, mesma
+  posição, com heading/description/outcomes novos; `sideNav`/tabelas de
+  `/docs/funcionalidades` perderam as 3 entradas de
+  "Orquestração Manual/Supervisionada/Autônoma" e ganharam uma entrada só
+  "Reconciliação"; `flowCards` de `/docs/guia` trocou "Orquestrar" por
+  "Reconciliar".
+
+**Não fiz:** não estendi a Reconciliação pra cobrir Atualizar (UpgradePlan)
+nem Fluxos Críticos — combinado com o usuário que o escopo inicial é só
+Análise↔Aplicação; dá pra generalizar depois se fizer sentido. Não criei
+nenhuma tela consolidada "todos os projetos reconciliados" — cada projeto
+mostra o próprio status em `/projects/[id]`, sem visão agregada ainda
+(o dashboard só linka pra lá). Não apaguei fisicamente os arquivos
+esvaziados nem a migration histórica `20260726000428_orchestration_core`
+(mesma limitação de sempre — sandbox sem `rm`; a migration é só registro
+histórico, sem efeito funcional).
+
+**Checklist de validação antes de subir isto:**
+```
+cd "C:\Users\woner\Desktop\Atlas QA"
+pnpm --filter @qa-ai/api exec prisma generate
+pnpm --filter @qa-ai/api exec prisma db push
+pnpm --filter @qa-ai/shared build
+pnpm --filter @qa-ai/api exec tsc --noEmit
+pnpm --filter @qa-ai/web build
+```
+O `db push` vai avisar que vai dropar `OrchestrationRun`/`OrchestrationEvent`
+e a coluna `Project.autonomyLevel` — esperado e autorizado (mesma decisão do
+Guardian: sem clientes reais usando o ciclo autônomo). Depois do `db push`,
+`git add` só dos arquivos específicos (nunca `-A`):
+`apps/api/prisma/schema.prisma`,
+`packages/shared/src/enums.ts`,
+`packages/shared/src/types/orchestration.ts`,
+`packages/shared/src/types/reconciliation.ts`,
+`packages/shared/src/types/project.ts`,
+`packages/shared/src/index.ts`,
+`apps/api/src/application/orchestration.service.ts`,
+`apps/api/src/presentation/routes/orchestration.routes.ts`,
+`apps/api/src/infrastructure/queue/orchestration-runner.ts`,
+`apps/api/src/application/reconciliation.service.ts`,
+`apps/api/src/presentation/routes/reconciliation.routes.ts`,
+`apps/api/src/presentation/app.ts`,
+`apps/api/src/main.ts`,
+`apps/api/src/application/remediation.service.ts`,
+`apps/api/src/presentation/routes/webhooks.routes.ts`,
+`apps/api/src/application/project.service.ts`,
+`apps/api/src/presentation/routes/project.routes.ts`,
+`apps/api/src/application/account.service.ts`,
+`apps/web/src/app/(app)/orquestracao/page.tsx`,
+`apps/web/src/app/(app)/projects/[id]/page.tsx`,
+`apps/web/src/app/(app)/layout.tsx`,
+`apps/web/src/app/(app)/dashboard/page.tsx`,
+`apps/web/src/components/orchestration-panel.tsx`,
+`apps/web/src/components/workspace-search.tsx`,
+`apps/web/src/components/feature-showcase.tsx`,
+`apps/web/src/lib/api.ts`,
+`apps/web/src/lib/queries.ts`,
+`apps/web/src/lib/public-copy.ts`,
+`apps/web/src/lib/docs-copy.ts`,
+`CLAUDE.md`.
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —
