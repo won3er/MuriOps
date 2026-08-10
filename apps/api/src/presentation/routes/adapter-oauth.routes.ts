@@ -47,10 +47,10 @@ export async function adapterOAuthRoutes(app: FastifyInstance): Promise<void> {
     try {
       return await githubOAuthService.listRepos(req.user.organizationId, id, session);
     } catch (err) {
-      if (err instanceof OAuthSessionExpiredError)
-        return reply
-          .status(400)
-          .send({ statusCode: 400, error: "OAuthSessionExpired", message: err.message });
+      if (err instanceof OAuthSessionExpiredError) {
+        const message: string = err.message;
+        return reply.status(400).send({ statusCode: 400, error: "OAuthSessionExpired", message });
+      }
       throw err;
     }
   });
@@ -70,14 +70,14 @@ export async function adapterOAuthRoutes(app: FastifyInstance): Promise<void> {
       );
       return reply.status(201).send(result);
     } catch (err) {
-      if (err instanceof OAuthSessionExpiredError)
-        return reply
-          .status(400)
-          .send({ statusCode: 400, error: "OAuthSessionExpired", message: err.message });
-      if (err instanceof NotFoundError)
-        return reply
-          .status(404)
-          .send({ statusCode: 404, error: "NotFound", message: err.message });
+      if (err instanceof OAuthSessionExpiredError) {
+        const message: string = err.message;
+        return reply.status(400).send({ statusCode: 400, error: "OAuthSessionExpired", message });
+      }
+      if (err instanceof NotFoundError) {
+        const message: string = err.message;
+        return reply.status(404).send({ statusCode: 404, error: "NotFound", message });
+      }
       throw err;
     }
   });
@@ -93,10 +93,10 @@ export async function adapterOAuthRoutes(app: FastifyInstance): Promise<void> {
     try {
       return await gitlabOAuthService.listProjects(req.user.organizationId, id, session);
     } catch (err) {
-      if (err instanceof OAuthSessionExpiredError)
-        return reply
-          .status(400)
-          .send({ statusCode: 400, error: "OAuthSessionExpired", message: err.message });
+      if (err instanceof OAuthSessionExpiredError) {
+        const message: string = err.message;
+        return reply.status(400).send({ statusCode: 400, error: "OAuthSessionExpired", message });
+      }
       throw err;
     }
   });
@@ -115,14 +115,14 @@ export async function adapterOAuthRoutes(app: FastifyInstance): Promise<void> {
       );
       return reply.status(201).send(result);
     } catch (err) {
-      if (err instanceof OAuthSessionExpiredError)
-        return reply
-          .status(400)
-          .send({ statusCode: 400, error: "OAuthSessionExpired", message: err.message });
-      if (err instanceof NotFoundError)
-        return reply
-          .status(404)
-          .send({ statusCode: 404, error: "NotFound", message: err.message });
+      if (err instanceof OAuthSessionExpiredError) {
+        const message: string = err.message;
+        return reply.status(400).send({ statusCode: 400, error: "OAuthSessionExpired", message });
+      }
+      if (err instanceof NotFoundError) {
+        const message: string = err.message;
+        return reply.status(404).send({ statusCode: 404, error: "NotFound", message });
+      }
       throw err;
     }
   });
