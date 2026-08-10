@@ -108,6 +108,34 @@ export async function remediationRoutes(app: FastifyInstance): Promise<void> {
     }
   });
 
+  // Aplica o item de verdade via GitHub/GitLab (abre branch+PR/MR com o
+  // checklist e, com chave de IA configurada, tenta o Auto-Fix).
+  app.post("/remediation-plans/:id/items/:itemId/apply-via-adapter", async (req, reply) => {
+    const { id, itemId } = z
+      .object({ id: z.string(), itemId: z.string() })
+      .parse(req.params);
+    const { kind } = z.object({ kind: z.enum(["GITHUB", "GITLAB"]) }).parse(req.body);
+    try {
+      const plan = await remediationService.applyItemViaAdapter(
+        req.user.organizationId,
+        id,
+        itemId,
+        kind,
+      );
+      return plan;
+    } catch (err) {
+      if (err instanceof NotFoundError)
+        return reply
+          .status(404)
+          .send({ statusCode: 404, error: "NotFound", message: err.message });
+      if (err instanceof Error)
+        return reply
+          .status(502)
+          .send({ statusCode: 502, error: "ApplyFailed", message: err.message });
+      throw err;
+    }
+  });
+
   // Pacote da ponte universal: markdown de instruções pra IA do ambiente
   // de dev (Claude Code, Windsurf, Codex...) com API de sincronização.
   app.get("/remediation-plans/:id/bridge.md", async (req, reply) => {

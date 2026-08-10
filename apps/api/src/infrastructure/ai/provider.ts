@@ -6,6 +6,7 @@ import type {
 } from "@qa-ai/shared";
 import type { RemediationDesignInput } from "./remediation-prompt.js";
 import type { UpgradeDesignInput } from "./upgrade-prompt.js";
+import type { CodeFixInput, CodeFixResult } from "./code-fix-prompt.js";
 
 /** Um problema bruto detectado pelos módulos, entregue à IA para enriquecer. */
 export interface AiIssueInput {
@@ -62,4 +63,12 @@ export interface AiProvider {
    * (pilar Atualizar) — risco, breaking changes e passo a passo por pacote.
    */
   buildUpgradePlan(input: UpgradeDesignInput): Promise<UpgradeResult>;
+  /**
+   * Auto-Fix [10/08/2026]: dado um item de remediação e o conteúdo atual do
+   * arquivo alvo, tenta gerar o arquivo inteiro já corrigido. Devolve null
+   * quando não há confiança suficiente pra corrigir com segurança — nunca
+   * lança por "não saber corrigir", só por falha real de infraestrutura
+   * (chave inválida, rede etc.), que o chamador trata como best-effort.
+   */
+  generateCodeFix(input: CodeFixInput): Promise<CodeFixResult | null>;
 }

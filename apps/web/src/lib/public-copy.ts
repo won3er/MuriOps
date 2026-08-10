@@ -86,7 +86,7 @@ export const LANDING_COPY = {
         ],
         [
           "Security scan via GitHub or GitLab",
-          "Scans a connected repository for known-vulnerable dependencies (CVEs), insecure code patterns, committed secrets and Dockerfile misconfigurations, without touching the live site. Connecting a repository is required to run any analysis.",
+          "Scans a connected repository for known-vulnerable dependencies (CVEs), insecure code patterns, committed secrets and misconfigurations in Dockerfiles, Terraform and Kubernetes manifests, without touching the live site. Connecting a repository is required to run any analysis.",
         ],
         ["Version comparison", "What was fixed, introduced or remains."],
       ],
@@ -99,7 +99,7 @@ export const LANDING_COPY = {
       items: [
         [
           "GitHub or GitLab",
-          "Connect a repository (via personal access token) to apply the remediation plan through a pull/merge request, or use it as a source for Security Analysis (CVE-flagged dependencies, insecure patterns, secrets, Dockerfile checks) and Update (detects dependency manifests and generates an upgrade plan). Connecting one of the two is required before running any analysis.",
+          "Connect a repository (via personal access token) to apply the remediation plan through a pull/merge request, or use it as a source for Security Analysis (CVE-flagged dependencies, insecure patterns, secrets, Dockerfile/Terraform/Kubernetes checks) and Update (detects dependency manifests and generates an upgrade plan). Connecting one of the two is required before running any analysis.",
         ],
         [
           "Your development AI",
@@ -201,7 +201,7 @@ export const LANDING_COPY = {
         ],
         [
           "Análise de segurança via GitHub ou GitLab",
-          "Varre um repositório conectado em busca de dependências com CVE conhecida, padrões de código inseguro, segredos commitados e configurações inseguras de Dockerfile, sem tocar no site em produção. Conectar um repositório é obrigatório para rodar qualquer análise.",
+          "Varre um repositório conectado em busca de dependências com CVE conhecida, padrões de código inseguro, segredos commitados e configurações inseguras de Dockerfile, Terraform e manifests Kubernetes, sem tocar no site em produção. Conectar um repositório é obrigatório para rodar qualquer análise.",
         ],
         ["Comparação de versões", "O que foi corrigido, surgiu ou persiste."],
       ],
@@ -214,7 +214,7 @@ export const LANDING_COPY = {
       items: [
         [
           "GitHub ou GitLab",
-          "Conecta um repositório (via token de acesso pessoal) para aplicar o plano de correção via pull/merge request, ou para servir de fonte da Análise de Segurança (dependências com CVE, padrões inseguros, segredos, checagens de Dockerfile) e da Atualização (detecta manifestos de dependências e gera plano de upgrade). Conectar um dos dois é obrigatório antes de rodar qualquer análise.",
+          "Conecta um repositório (via token de acesso pessoal) para aplicar o plano de correção via pull/merge request, ou para servir de fonte da Análise de Segurança (dependências com CVE, padrões inseguros, segredos, checagens de Dockerfile/Terraform/Kubernetes) e da Atualização (detecta manifestos de dependências e gera plano de upgrade). Conectar um dos dois é obrigatório antes de rodar qualquer análise.",
         ],
         [
           "Sua IA de desenvolvimento",
@@ -323,7 +323,7 @@ export const LANDING_COPY = {
         ],
         [
           "Análisis de seguridad vía GitHub o GitLab",
-          "Escanea un repositorio conectado en busca de dependencias con CVE conocida, patrones de código inseguro, secretos confirmados en el código y configuraciones inseguras de Dockerfile, sin tocar el sitio en producción. Conectar un repositorio es obligatorio para ejecutar cualquier análisis.",
+          "Escanea un repositorio conectado en busca de dependencias con CVE conocida, patrones de código inseguro, secretos confirmados en el código y configuraciones inseguras de Dockerfile, Terraform y manifiestos de Kubernetes, sin tocar el sitio en producción. Conectar un repositorio es obligatorio para ejecutar cualquier análisis.",
         ],
         ["Comparación de versiones", "Qué se corrigió, apareció o permanece."],
       ],
@@ -336,7 +336,7 @@ export const LANDING_COPY = {
       items: [
         [
           "GitHub o GitLab",
-          "Conecta un repositorio (vía token de acceso personal) para aplicar el plan de remediación mediante pull/merge request, o para usarlo como fuente del Análisis de Seguridad (dependencias con CVE, patrones inseguros, secretos, verificaciones de Dockerfile) y de Actualización (detecta manifiestos de dependencias y genera un plan de actualización). Conectar uno de los dos es obligatorio antes de ejecutar cualquier análisis.",
+          "Conecta un repositorio (vía token de acceso personal) para aplicar el plan de remediación mediante pull/merge request, o para usarlo como fuente del Análisis de Seguridad (dependencias con CVE, patrones inseguros, secretos, verificaciones de Dockerfile/Terraform/Kubernetes) y de Actualización (detecta manifiestos de dependencias y genera un plan de actualización). Conectar uno de los dos es obligatorio antes de ejecutar cualquier análisis.",
         ],
         [
           "Tu IA de desarrollo",

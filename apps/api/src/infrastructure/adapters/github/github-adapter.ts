@@ -1,5 +1,6 @@
 import type {
   Adapter,
+  AdapterApplyOptions,
   AdapterApplyResult,
   AdapterCapabilityName,
   AdapterProjectState,
@@ -47,7 +48,7 @@ export class GithubAdapter implements Adapter {
     };
   }
 
-  async apply(item: RemediationItem): Promise<AdapterApplyResult> {
+  async apply(item: RemediationItem, options?: AdapterApplyOptions): Promise<AdapterApplyResult> {
     const repo = await this.get<GithubRepo>(`/repos/${this.owner}/${this.repo}`);
     const defaultBranch = repo.default_branch;
     const baseSha = await this.getBranchSha(defaultBranch);
@@ -56,15 +57,70 @@ export class GithubAdapter implements Adapter {
     await this.ensureBranch(branch, baseSha);
 
     const path = `.muriops/remediation/${slugify(item.id)}.md`;
-    await this.upsertFile(branch, path, renderChecklist(item));
 
-    const pr = await this.findOrCreatePr(branch, defaultBranch, item);
+    // Auto-Fix [10/08/2026]: tenta ANTES de escrever o checklist, pra já
+    // poder mencionar no próprio checklist se a correção real foi aplicada
+    // ou não. Best-effort — qualquer falha aqui não impede o checklist/PR.
+    const autoFixApplied = options?.generateFix
+      ? await this.tryAutoFix(branch, item, options.generateFix)
+      : false;
+
+    await this.upsertFile(branch, path, renderChecklist(item, autoFixApplied));
+
+    const pr = await this.findOrCreatePr(branch, defaultBranch, item, autoFixApplied);
 
     return {
       reference: pr.html_url,
       requiresApproval: true,
-      message: `PR aberta em ${pr.html_url} — aguardando revisão e merge manual. O MuriOps nunca faz merge sozinho.`,
+      message: autoFixApplied
+        ? `PR aberta em ${pr.html_url} com uma sugestão de correção real já commitada na branch — revise com atenção antes do merge. O MuriOps nunca faz merge sozinho.`
+        : `PR aberta em ${pr.html_url} — aguardando revisão e merge manual. O MuriOps nunca faz merge sozinho.`,
+      autoFixApplied,
     };
+  }
+
+  /**
+   * Auto-Fix: só tenta corrigir um arquivo que JÁ EXISTE no repositório
+   * (nunca cria arquivo novo por adivinhação da IA). Qualquer falha —
+   * arquivo não encontrado, IA sem confiança, erro de rede — é engolida
+   * aqui e devolve `false`; o checklist/PR sempre sai, com ou sem Auto-Fix.
+   */
+  private async tryAutoFix(
+    branch: string,
+    item: RemediationItem,
+    generateFix: NonNullable<AdapterApplyOptions["generateFix"]>,
+  ): Promise<boolean> {
+    if (!item.filePath) return false;
+    try {
+      const current = await this.getFileContent(item.filePath, branch);
+      if (current === null) return false;
+      const fix = await generateFix(current);
+      if (!fix?.newContent || fix.newContent === current) return false;
+      await this.upsertFile(branch, item.filePath, fix.newContent);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Lê o conteúdo de um arquivo do repositório numa branch/ref específica — null se não existir. */
+  async getFileContent(path: string, ref: string): Promise<string | null> {
+    try {
+      const res = await fetch(
+        `${API_BASE}/repos/${this.owner}/${this.repo}/contents/${path
+          .split("/")
+          .map(encodeURIComponent)
+          .join("/")}?ref=${encodeURIComponent(ref)}`,
+        { headers: this.headers() },
+      );
+      if (!res.ok) return null;
+      const data = (await res.json()) as { content?: string; encoding?: string };
+      if (!data.content) return null;
+      if (data.encoding && data.encoding !== "base64") return null;
+      return Buffer.from(data.content, "base64").toString("utf8");
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -119,6 +175,7 @@ export class GithubAdapter implements Adapter {
     branch: string,
     base: string,
     item: RemediationItem,
+    autoFixApplied: boolean,
   ): Promise<GithubPr> {
     const existing = await this.get<GithubPr[]>(
       `/repos/${this.owner}/${this.repo}/pulls?head=${this.owner}:${branch}&state=all`,
@@ -129,7 +186,7 @@ export class GithubAdapter implements Adapter {
       title: `MuriOps: ${item.title}`,
       head: branch,
       base,
-      body: renderChecklist(item),
+      body: renderChecklist(item, autoFixApplied),
     });
   }
 
@@ -163,13 +220,16 @@ function slugify(id: string): string {
   return id.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 60) || "item";
 }
 
-function renderChecklist(item: RemediationItem): string {
+function renderChecklist(item: RemediationItem, autoFixApplied = false): string {
   return [
     `# ${item.title}`,
     "",
     `**Categoria:** ${item.category} · **Severidade:** ${item.severity}`,
     item.filePath ? `**Arquivo sugerido:** \`${item.filePath}\`` : "",
     "",
+    autoFixApplied
+      ? "🤖 **Auto-Fix:** uma sugestão de correção real foi gerada pela IA e já está commitada nesta branch (veja o diff da PR). Revise com atenção — é uma sugestão, não uma correção confirmada — antes do merge."
+      : "",
     "## Descrição",
     item.description,
     "",

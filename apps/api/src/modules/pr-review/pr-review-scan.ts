@@ -9,12 +9,15 @@ import {
   scanDockerfile,
   scanForInsecurePatterns,
   scanForSecrets,
+  scanKubernetes,
+  scanTerraform,
 } from "../analysis/analyzers/source-security-scan/source-security-scan.js";
 import { isDockerfilePath } from "../analysis/analyzers/source-security-scan/dockerfile-patterns.js";
 import {
   compareSemverLike,
   KNOWN_VULNERABLE_PACKAGES,
 } from "../analysis/analyzers/source-security-scan/vulnerable-packages.js";
+import { isKubernetesManifest, isTerraformPath } from "../analysis/analyzers/source-security-scan/infra-patterns.js";
 
 /**
  * "PR Security Reviews automático" — deliberadamente separado de
@@ -38,7 +41,7 @@ const MAX_FILE_SIZE_BYTES = 300_000;
 const CODE_EXTENSIONS = [
   ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs",
   ".py", ".rb", ".php", ".java", ".go", ".cs",
-  ".env", ".env.example", ".yml", ".yaml", ".json", ".toml",
+  ".env", ".env.example", ".yml", ".yaml", ".json", ".toml", ".tf",
 ];
 
 function hasScannableExtension(path: string): boolean {
@@ -69,6 +72,12 @@ function scanFiles(files: { path: string; content: string }[]): DetectedIssue[] 
     scanForInsecurePatterns(file.path, file.content, insecureHits);
     if (isDockerfilePath(file.path)) {
       scanDockerfile(file.path, file.content, insecureHits);
+    }
+    if (isTerraformPath(file.path)) {
+      scanTerraform(file.path, file.content, insecureHits);
+    }
+    if (isKubernetesManifest(file.path, file.content)) {
+      scanKubernetes(file.path, file.content, insecureHits);
     }
     const fileName = file.path.split("/").pop() ?? file.path;
     if (MANIFEST_FILE_NAMES.has(fileName.toLowerCase())) {

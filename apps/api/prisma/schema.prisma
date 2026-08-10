@@ -459,6 +459,11 @@ model AdapterConnection {
   bridgeToken    String?             @unique
   // Segredo de verificação de webhook (Fase 2 em diante), via secret-box.ts.
   webhookSecretEncrypted String?
+  // [10/08/2026] PR Security Reviews automático: liga/desliga sem precisar
+  // remover o webhook do lado do GitHub/GitLab nem desconectar o repositório
+  // inteiro (que também pararia Aplicação). Default true — quem já configurou
+  // o webhook manualmente já deu o opt-in; este campo é só um controle extra.
+  prReviewsEnabled Boolean            @default(true)
   isActive       Boolean             @default(true)
   createdById    String
   createdAt      DateTime            @default(now())

@@ -13,6 +13,12 @@ import {
   compareSemverLike,
   KNOWN_VULNERABLE_PACKAGES,
 } from "./vulnerable-packages.js";
+import {
+  isKubernetesManifest,
+  isTerraformPath,
+  KUBERNETES_PATTERNS,
+  TERRAFORM_PATTERNS,
+} from "./infra-patterns.js";
 
 /**
  * Análise de Segurança via GitHub (SOURCE_SECURITY_SCAN) — opt-in, só roda
@@ -71,6 +77,7 @@ const CODE_EXTENSIONS = [
   ".yaml",
   ".json",
   ".toml",
+  ".tf",
 ];
 
 export const MANIFEST_FILE_NAMES = new Set([
@@ -214,6 +221,12 @@ export async function runSourceSecurityScan(
       scanForInsecurePatterns(entry.path, content, insecureHits);
       if (isDockerfilePath(entry.path)) {
         scanDockerfile(entry.path, content, insecureHits);
+      }
+      if (isTerraformPath(entry.path)) {
+        scanTerraform(entry.path, content, insecureHits);
+      }
+      if (isKubernetesManifest(entry.path, content)) {
+        scanKubernetes(entry.path, content, insecureHits);
       }
 
       if (MANIFEST_FILE_NAMES.has(fileName.toLowerCase())) {
@@ -365,6 +378,58 @@ export function scanDockerfile(
                 ? Severity.MEDIUM
                 : Severity.LOW,
         fingerprintExtra: [`dockerfile:${pattern.id}:${path}`],
+      }),
+    );
+  }
+}
+
+export function scanTerraform(
+  path: string,
+  content: string,
+  out: DetectedIssue[],
+): void {
+  for (const pattern of TERRAFORM_PATTERNS) {
+    if (!pattern.test(content)) continue;
+    out.push(
+      issue({
+        title: `Terraform inseguro — ${pattern.label}`,
+        description: `${pattern.description} Encontrado em ${path}.`,
+        category: AnalysisCategory.SOURCE_SECURITY_SCAN,
+        severity:
+          pattern.severity === "CRITICAL"
+            ? Severity.CRITICAL
+            : pattern.severity === "HIGH"
+              ? Severity.HIGH
+              : pattern.severity === "MEDIUM"
+                ? Severity.MEDIUM
+                : Severity.LOW,
+        fingerprintExtra: [`terraform:${pattern.id}:${path}`],
+      }),
+    );
+  }
+}
+
+export function scanKubernetes(
+  path: string,
+  content: string,
+  out: DetectedIssue[],
+): void {
+  for (const pattern of KUBERNETES_PATTERNS) {
+    if (!pattern.test(content)) continue;
+    out.push(
+      issue({
+        title: `Kubernetes inseguro — ${pattern.label}`,
+        description: `${pattern.description} Encontrado em ${path}.`,
+        category: AnalysisCategory.SOURCE_SECURITY_SCAN,
+        severity:
+          pattern.severity === "CRITICAL"
+            ? Severity.CRITICAL
+            : pattern.severity === "HIGH"
+              ? Severity.HIGH
+              : pattern.severity === "MEDIUM"
+                ? Severity.MEDIUM
+                : Severity.LOW,
+        fingerprintExtra: [`kubernetes:${pattern.id}:${path}`],
       }),
     );
   }

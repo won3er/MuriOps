@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ClipboardCopy, GitBranch, Loader2, Pencil } from "lucide-react";
+import { ClipboardCopy, GitBranch, Loader2, Pause, Pencil, Play } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ConnectionQueryState } from "@/components/connection-query-state";
 import { ActionError } from "@/components/action-error";
-import { useConnectGitlab, useGitlabConnection } from "@/lib/queries";
+import { useConnectGitlab, useGitlabConnection, useSetPrReviewsEnabled } from "@/lib/queries";
 
 /**
  * Painel "Conectar GitLab" — mesmo padrão push do GitHub (token PAT colado),
@@ -18,6 +18,7 @@ import { useConnectGitlab, useGitlabConnection } from "@/lib/queries";
 export function GitlabConnectionPanel({ projectId }: { projectId: string }) {
   const { data, isLoading, isError } = useGitlabConnection(projectId);
   const connect = useConnectGitlab(projectId);
+  const setPrReviewsEnabled = useSetPrReviewsEnabled(projectId);
   const [projectPath, setProjectPath] = useState("");
   const [token, setToken] = useState("");
   const [editing, setEditing] = useState(false);
@@ -87,13 +88,31 @@ export function GitlabConnectionPanel({ projectId }: { projectId: string }) {
                 Configuração salva · token{" "}
                 <span className="font-mono">{connection.maskedToken}</span>
               </p>
-              <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-                <Pencil className="h-3.5 w-3.5" /> Atualizar conexão
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={setPrReviewsEnabled.isPending}
+                  onClick={() =>
+                    setPrReviewsEnabled.mutate({ kind: "GITLAB", enabled: !connection.prReviewsEnabled })
+                  }
+                >
+                  {connection.prReviewsEnabled ? (
+                    <Pause className="h-3.5 w-3.5" />
+                  ) : (
+                    <Play className="h-3.5 w-3.5" />
+                  )}
+                  {connection.prReviewsEnabled ? "Pausar PR Reviews" : "Retomar PR Reviews"}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+                  <Pencil className="h-3.5 w-3.5" /> Atualizar conexão
+                </Button>
+              </div>
             </div>
             <p className="text-xs text-muted-foreground">
               Use esta opção se o repositório mudou, o token expirou ou o
               GitLab devolveu erro de acesso.
+              {!connection.prReviewsEnabled && " PR Security Reviews está pausado — nenhuma MR recebe comentário automático até retomar."}
             </p>
             {justConnected && (
               <div className="space-y-2 rounded-md border bg-muted/30 p-3">

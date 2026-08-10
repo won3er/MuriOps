@@ -272,6 +272,27 @@ export function useUpdateRemediationItem(planId: string) {
   });
 }
 
+/** Aplica um item via GitHub/GitLab de verdade (abre PR/MR, tenta Auto-Fix). */
+export function useApplyRemediationItemViaAdapter(planId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ itemId, kind }: { itemId: string; kind: "GITHUB" | "GITLAB" }) =>
+      api.applyRemediationItemViaAdapter(planId, itemId, kind),
+    onSuccess: (plan, { kind }) => {
+      qc.setQueryData<RemediationPlan>(qk.remediationPlan(planId), plan);
+      toast.success(
+        kind === "GITHUB"
+          ? "PR aberta no GitHub — aguardando revisão"
+          : "Merge Request aberto no GitLab — aguardando revisão",
+      );
+    },
+    onError: (err) =>
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao aplicar via repositório",
+      ),
+  });
+}
+
 export function useDeleteRemediationPlan() {
   const qc = useQueryClient();
   return useMutation({
@@ -569,6 +590,35 @@ export function useAdapterConnections(projectId: string) {
     queryKey: qk.adapterConnections(projectId),
     queryFn: () => api.listAdapterConnections(projectId),
     enabled: !!projectId,
+  });
+}
+
+export function useSetPrReviewsEnabled(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ kind, enabled }: { kind: "GITHUB" | "GITLAB"; enabled: boolean }) =>
+      api.setPrReviewsEnabled(projectId, kind, enabled),
+    onSuccess: (connection) => {
+      if (connection.kind === "GITHUB") {
+        qc.setQueryData(qk.githubConnection(projectId), (old: unknown) =>
+          old && typeof old === "object" ? { ...old, ...connection } : old,
+        );
+      } else if (connection.kind === "GITLAB") {
+        qc.setQueryData(qk.gitlabConnection(projectId), (old: unknown) =>
+          old && typeof old === "object" ? { ...old, ...connection } : old,
+        );
+      }
+      qc.invalidateQueries({ queryKey: qk.adapterConnections(projectId) });
+      toast.success(
+        connection.prReviewsEnabled
+          ? "PR Security Reviews ativado"
+          : "PR Security Reviews pausado",
+      );
+    },
+    onError: (err) =>
+      toast.error(
+        err instanceof Error ? err.message : "Falha ao atualizar PR Security Reviews",
+      ),
   });
 }
 

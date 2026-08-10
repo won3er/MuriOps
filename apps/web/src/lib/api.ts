@@ -222,6 +222,15 @@ export const api = {
   // ---- conexões do projeto ----
   listAdapterConnections: (projectId: string) =>
     request<AdapterConnection[]>(`/projects/${projectId}/adapter-connections`),
+  setPrReviewsEnabled: (
+    projectId: string,
+    kind: "GITHUB" | "GITLAB",
+    enabled: boolean,
+  ) =>
+    request<AdapterConnection>(
+      `/projects/${projectId}/adapter-connections/${kind}/pr-reviews`,
+      { method: "PATCH", body: JSON.stringify({ enabled }) },
+    ),
 
   // ---- quality gates (Fase 3) ----
   listQualityGates: (projectId: string) =>
@@ -374,6 +383,21 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ status }),
     }),
+  /** Aplica o item de verdade via GitHub/GitLab — abre branch+PR/MR com o
+   * checklist e, com chave de IA configurada, tenta o Auto-Fix (correção
+   * real de código já commitada na branch). */
+  applyRemediationItemViaAdapter: (
+    id: string,
+    itemId: string,
+    kind: "GITHUB" | "GITLAB",
+  ) =>
+    request<RemediationPlan>(
+      `/remediation-plans/${id}/items/${itemId}/apply-via-adapter`,
+      {
+        method: "POST",
+        body: JSON.stringify({ kind }),
+      },
+    ),
   deleteRemediationPlan: (id: string) =>
     request<void>(`/remediation-plans/${id}`, { method: "DELETE" }),
   /** Texto do pacote da ponte universal (markdown p/ IA de dev). */

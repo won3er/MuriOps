@@ -17,6 +17,14 @@ import {
   parseUpgradeJson,
   type UpgradeDesignInput,
 } from "./upgrade-prompt.js";
+import {
+  buildCodeFixUserPrompt,
+  CODE_FIX_SYSTEM_PROMPT,
+  normalizeCodeFix,
+  parseCodeFixJson,
+  type CodeFixInput,
+  type CodeFixResult,
+} from "./code-fix-prompt.js";
 
 /** Provider alternativo via OpenAI (mesma interface do engine). */
 export class OpenAiProvider implements AiProvider {
@@ -69,5 +77,19 @@ export class OpenAiProvider implements AiProvider {
 
     const text = completion.choices[0]?.message?.content ?? "{}";
     return normalizeUpgrade(parseUpgradeJson(text), input.ecosystem, input.manifestFile);
+  }
+
+  async generateCodeFix(input: CodeFixInput): Promise<CodeFixResult | null> {
+    const completion = await this.client.chat.completions.create({
+      model: env.OPENAI_MODEL,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: CODE_FIX_SYSTEM_PROMPT },
+        { role: "user", content: buildCodeFixUserPrompt(input) },
+      ],
+    });
+
+    const text = completion.choices[0]?.message?.content ?? "{}";
+    return normalizeCodeFix(parseCodeFixJson(text));
   }
 }

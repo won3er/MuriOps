@@ -16,6 +16,14 @@ import {
   parseUpgradeJson,
   type UpgradeDesignInput,
 } from "./upgrade-prompt.js";
+import {
+  buildCodeFixUserPrompt,
+  CODE_FIX_SYSTEM_PROMPT,
+  normalizeCodeFix,
+  parseCodeFixJson,
+  type CodeFixInput,
+  type CodeFixResult,
+} from "./code-fix-prompt.js";
 
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
@@ -159,5 +167,10 @@ export class GeminiProvider implements AiProvider {
       buildUpgradeUserPrompt(input),
     );
     return normalizeUpgrade(parseUpgradeJson(text), input.ecosystem, input.manifestFile);
+  }
+
+  async generateCodeFix(input: CodeFixInput): Promise<CodeFixResult | null> {
+    const text = await this.generate(CODE_FIX_SYSTEM_PROMPT, buildCodeFixUserPrompt(input));
+    return normalizeCodeFix(parseCodeFixJson(text));
   }
 }

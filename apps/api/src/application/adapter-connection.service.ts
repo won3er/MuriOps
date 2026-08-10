@@ -91,6 +91,30 @@ export const adapterConnectionService = {
     return rows.map(toDto);
   },
 
+  /**
+   * Liga/desliga PR Security Reviews automático sem desconectar o
+   * repositório inteiro (que também pararia Aplicação). Só faz sentido pra
+   * GITHUB/GITLAB — as outras conexões (MCP) não têm webhook nenhum.
+   */
+  async setPrReviewsEnabled(
+    organizationId: string,
+    projectId: string,
+    kind: "GITHUB" | "GITLAB",
+    enabled: boolean,
+  ): Promise<AdapterConnection> {
+    const existing = await prisma.adapterConnection.findUnique({
+      where: { projectId_kind: { projectId, kind } },
+    });
+    if (!existing || existing.organizationId !== organizationId) {
+      throw new NotFoundError("Conexão não encontrada");
+    }
+    const row = await prisma.adapterConnection.update({
+      where: { id: existing.id },
+      data: { prReviewsEnabled: enabled },
+    });
+    return toDto(row);
+  },
+
   async getByProjectAndKind(
     organizationId: string,
     projectId: string,
@@ -352,6 +376,7 @@ function toDto(row: {
   mode: string;
   config: unknown;
   bridgeToken: string | null;
+  prReviewsEnabled: boolean;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -364,6 +389,7 @@ function toDto(row: {
     mode: row.mode as AdapterConnection["mode"],
     config: (row.config as Record<string, unknown> | null) ?? null,
     bridgeToken: row.bridgeToken,
+    prReviewsEnabled: row.prReviewsEnabled,
     isActive: row.isActive,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

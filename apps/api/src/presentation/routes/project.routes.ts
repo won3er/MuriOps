@@ -35,6 +35,10 @@ const gitlabConnectionSchema = z.object({
   token: z.string().min(10),
 });
 
+const prReviewsEnabledSchema = z.object({
+  enabled: z.boolean(),
+});
+
 const createGateSchema = z.object({
   category: z
     .enum(["UI", "UX", "PERFORMANCE", "SEO", "ACCESSIBILITY", "SECURITY", "CONSOLE", "NETWORK", "DEEP_SECURITY", "ACTIVE_SECURITY_TEST", "SOURCE_SECURITY_SCAN"])
@@ -240,6 +244,29 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
       ...connection,
       webhookUrl: connection.webhookUrl ? `${apiBaseUrl(req)}${connection.webhookUrl}` : null,
     };
+  });
+
+  // Liga/desliga PR Security Reviews automático sem desconectar o repositório.
+  app.patch("/projects/:id/adapter-connections/:kind/pr-reviews", async (req, reply) => {
+    const { id, kind } = z
+      .object({ id: z.string(), kind: z.enum(["GITHUB", "GITLAB"]) })
+      .parse(req.params);
+    const { enabled } = prReviewsEnabledSchema.parse(req.body);
+    try {
+      const connection = await adapterConnectionService.setPrReviewsEnabled(
+        req.user.organizationId,
+        id,
+        kind,
+        enabled,
+      );
+      return connection;
+    } catch (err) {
+      if (err instanceof NotFoundError)
+        return reply
+          .status(404)
+          .send({ statusCode: 404, error: "NotFound", message: err.message });
+      throw err;
+    }
   });
 
   // Lista todas as conexões do projeto — seletor de "qual conexão usar" na Orquestração.

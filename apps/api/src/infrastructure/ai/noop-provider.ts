@@ -7,6 +7,7 @@ import type {
 } from "./provider.js";
 import type { RemediationDesignInput } from "./remediation-prompt.js";
 import type { UpgradeDesignInput } from "./upgrade-prompt.js";
+import type { CodeFixInput, CodeFixResult } from "./code-fix-prompt.js";
 
 /**
  * Provider sem IA — usado quando nenhuma chave está configurada.
@@ -119,5 +120,10 @@ export class NoopProvider implements AiProvider {
             ]
           : [],
     };
+  }
+
+  /** Sem IA, nunca gera correção de código real — Auto-Fix fica desligado, o checklist continua funcionando normalmente. */
+  async generateCodeFix(_input: CodeFixInput): Promise<CodeFixResult | null> {
+    return null;
   }
 }

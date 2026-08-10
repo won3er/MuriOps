@@ -26,6 +26,7 @@ export const prReviewService = {
   async reviewGithubPullRequest(connectionId: string, prNumber: number): Promise<void> {
     const connection = await prisma.adapterConnection.findUnique({ where: { id: connectionId } });
     if (!connection || connection.kind !== "GITHUB" || !connection.credentialEncrypted) return;
+    if (!connection.prReviewsEnabled) return;
 
     const config = connection.config as { owner?: string; repo?: string } | null;
     if (!config?.owner || !config?.repo) return;
@@ -41,6 +42,7 @@ export const prReviewService = {
   async reviewGitlabMergeRequest(connectionId: string, mrIid: number): Promise<void> {
     const connection = await prisma.adapterConnection.findUnique({ where: { id: connectionId } });
     if (!connection || connection.kind !== "GITLAB" || !connection.credentialEncrypted) return;
+    if (!connection.prReviewsEnabled) return;
 
     const config = connection.config as { projectPath?: string } | null;
     if (!config?.projectPath) return;

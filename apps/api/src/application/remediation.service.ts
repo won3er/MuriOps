@@ -20,6 +20,7 @@ import {
 import type { RemediationDesignInput } from "../infrastructure/ai/remediation-prompt.js";
 import { decryptSecret } from "../infrastructure/crypto/secret-box.js";
 import { prisma } from "../infrastructure/database/prisma.js";
+import { createAdapterFor } from "../infrastructure/adapters/index.js";
 import { NotFoundError } from "./analysis.service.js";
 
 export const remediationService = {
@@ -117,6 +118,86 @@ export const remediationService = {
       data: {
         result: { ...result, items } as unknown as Prisma.InputJsonValue,
       },
+    });
+    return toDto(updated);
+  },
+
+  /**
+   * [10/08/2026] Aplica um item via GitHub/GitLab de verdade: abre
+   * branch+PR/MR com o checklist (mesmo adapter.apply() que já existia mas
+   * nunca era chamado por ninguém — ver nota no CLAUDE.md desta sessão) e,
+   * se a organização tiver chave de IA configurada, tenta o Auto-Fix
+   * (commitar uma correção de código real na mesma branch, best-effort).
+   * Nunca faz merge sozinho — a PR/MR é o checkpoint de aprovação humana.
+   */
+  async applyItemViaAdapter(
+    organizationId: string,
+    id: string,
+    itemId: string,
+    kind: "GITHUB" | "GITLAB",
+  ): Promise<RemediationPlan> {
+    const row = await prisma.remediationPlan.findFirst({ where: { id, organizationId } });
+    if (!row) throw new NotFoundError("Aplicação não encontrada");
+    if (!row.projectId)
+      throw new NotFoundError(
+        "Esta aplicação não está vinculada a um projeto — não há repositório para aplicar.",
+      );
+    const result = row.result as unknown as RemediationResult | null;
+    if (!result) throw new NotFoundError("O plano ainda não foi gerado");
+    const item = result.items.find((it) => it.id === itemId);
+    if (!item) throw new NotFoundError(`Item "${itemId}" não existe neste plano`);
+
+    const connection = await prisma.adapterConnection.findFirst({
+      where: { projectId: row.projectId, organizationId, kind },
+    });
+    if (!connection) {
+      throw new NotFoundError(
+        `Este projeto não tem uma conexão ${kind === "GITHUB" ? "GitHub" : "GitLab"} ativa — conecte em Aplicação → Conexões e integrações.`,
+      );
+    }
+
+    const adapter = createAdapterFor(connection);
+    if (!adapter.apply) {
+      throw new NotFoundError("Este tipo de conexão não suporta aplicação automática.");
+    }
+
+    // Auto-Fix: sem chave de IA própria configurada, createAiProviderFor já
+    // degrada pro NoopProvider (generateCodeFix sempre devolve null) — não
+    // precisa de um branch condicional separado aqui, o comportamento certo
+    // já é o padrão.
+    const providerName = (
+      AI_PROVIDER_NAMES.includes(row.provider as never) ? row.provider : "claude"
+    ) as AiProviderName;
+    const override = await loadAiOverride(organizationId);
+    const ai = createAiProviderFor(providerName, override);
+
+    const applyResult = await adapter.apply(item, {
+      generateFix: (currentFileContent) =>
+        ai
+          .generateCodeFix({ item, currentFileContent })
+          .catch(() => null),
+    });
+
+    // Não marca o item como "done" aqui: abrir a PR/MR não é o mesmo que
+    // aplicar de verdade (o adapter nunca faz merge sozinho — ver
+    // `requiresApproval`/mensagem do `apply()`). Marcar como concluído
+    // automaticamente deixaria o item esmaecido/riscado na tela como se
+    // já estivesse resolvido, quando na real ele só está "aguardando
+    // revisão humana". Só gravamos a referência e se o Auto-Fix rodou;
+    // o usuário (ou quem revisar a PR/MR) marca "Feito" manualmente
+    // depois do merge, do mesmo jeito que já faz para o resto do checklist.
+    const items = result.items.map((it) =>
+      it.id === itemId
+        ? {
+            ...it,
+            appliedReference: applyResult.reference,
+            autoFixApplied: applyResult.autoFixApplied ?? false,
+          }
+        : it,
+    );
+    const updated = await prisma.remediationPlan.update({
+      where: { id },
+      data: { result: { ...result, items } as unknown as Prisma.InputJsonValue },
     });
     return toDto(updated);
   },

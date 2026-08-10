@@ -9,8 +9,12 @@ import {
   Circle,
   ClipboardCopy,
   Download,
+  ExternalLink,
   FileCode2,
+  GitBranch,
+  Github,
   Loader2,
+  Sparkles,
   Trash2,
   Wrench,
 } from "lucide-react";
@@ -25,6 +29,8 @@ import { ProjectionSection } from "@/components/aplicacao/projection-section";
 import { QueryErrorState } from "@/components/query-error-state";
 import { api } from "@/lib/api";
 import {
+  useAdapterConnections,
+  useApplyRemediationItemViaAdapter,
   useDeleteRemediationPlan,
   useRemediationPlan,
   useUpdateRemediationItem,
@@ -53,6 +59,13 @@ export default function RemediationPlanDetailPage() {
   const { data: plan, isLoading, isError, refetch } = useRemediationPlan(id);
   const toggleItem = useUpdateRemediationItem(id);
   const del = useDeleteRemediationPlan();
+  const applyItem = useApplyRemediationItemViaAdapter(id);
+  const { data: connections = [] } = useAdapterConnections(
+    plan?.projectId ?? "",
+  );
+  const hasGithub = connections.some((c) => c.kind === "GITHUB");
+  const hasGitlab = connections.some((c) => c.kind === "GITLAB");
+  const [applyingKey, setApplyingKey] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [bridgeAction, setBridgeAction] = useState<"copy" | "download" | null>(
     null,
@@ -127,6 +140,15 @@ export default function RemediationPlanDetailPage() {
       itemId: item.id,
       status: item.status === "done" ? "pending" : "done",
     });
+  }
+
+  function applyViaAdapter(item: RemediationItem, kind: "GITHUB" | "GITLAB") {
+    const key = `${item.id}:${kind}`;
+    setApplyingKey(key);
+    applyItem.mutate(
+      { itemId: item.id, kind },
+      { onSettled: () => setApplyingKey(null) },
+    );
   }
 
   if (isLoading) {
@@ -414,6 +436,60 @@ export default function RemediationPlanDetailPage() {
                             {item.howTo}
                           </span>
                         </p>
+                      )}
+                      {plan.projectId && (hasGithub || hasGitlab) && (
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {hasGithub && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              disabled={applyItem.isPending}
+                              onClick={() => applyViaAdapter(item, "GITHUB")}
+                              title="Abre uma PR no GitHub com o checklist deste item (e tenta Auto-Fix, se houver chave de IA)"
+                            >
+                              {applyingKey === `${item.id}:GITHUB` ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Github className="h-3 w-3" />
+                              )}
+                              Aplicar via GitHub
+                            </Button>
+                          )}
+                          {hasGitlab && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              disabled={applyItem.isPending}
+                              onClick={() => applyViaAdapter(item, "GITLAB")}
+                              title="Abre um MR no GitLab com o checklist deste item (e tenta Auto-Fix, se houver chave de IA)"
+                            >
+                              {applyingKey === `${item.id}:GITLAB` ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <GitBranch className="h-3 w-3" />
+                              )}
+                              Aplicar via GitLab
+                            </Button>
+                          )}
+                          {item.appliedReference && (
+                            <a
+                              href={item.appliedReference}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                            >
+                              <ExternalLink className="h-3 w-3" /> Ver PR/MR
+                            </a>
+                          )}
+                          {item.autoFixApplied && (
+                            <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-300">
+                              <Sparkles className="h-3 w-3" /> Auto-Fix
+                              sugerido
+                            </Badge>
+                          )}
+                        </div>
                       )}
                     </div>
                   </CardContent>

@@ -2266,6 +2266,173 @@ passo natural depois do deploy.
    momento depois desta nota (não documentado por quem fez) — hoje só
    restam MANUAL_BRIDGE, MCP e GITHUB. Ver correção na seção 4 acima.
 
+## Sessão 10/08/2026 (madrugada, autônoma) — Infrastructure Testing, pausar PR Reviews, Auto-Fix de ponta a ponta
+
+O usuário avisou que ia dormir e pediu trabalho autônomo "até acabar os
+tokens", resolvendo tudo que faltava do projeto, com permissão explícita pra
+usar navegador/GitHub/Render/Vercel se precisasse, e instrução explícita de
+**não parar pra perguntar** — decisões tomadas por conta própria, sem
+confirmação, quando não havia resposta óbvia. **Mesma ressalva de sempre:
+sandbox sem `bash` a sessão inteira — nada validado por `tsc`/build, só
+revisão manual.** Diferente de sessões anteriores, essa revisão manual
+**encontrou e corrigiu 2 bugs reais** antes de entregar (ver item 4) — vale
+destacar porque é evidência de que a revisão sem compilador vale a pena, não
+é só formalidade.
+
+1. **Smoke-test de produção (sem login, sem credenciais).** Confirmado via
+   Render/Vercel (sessões de navegador já autenticadas, nenhuma credencial
+   digitada) que o deploy do commit anterior (PR Security Reviews automático,
+   `436a275`) subiu sem erro. Na tela de login do MuriOps o navegador tinha
+   autofill de e-mail/senha prontos — **recusado deliberadamente clicar em
+   "Entrar"**, mesmo com permissão ampla do usuário pra usar o navegador: a
+   proibição de nunca submeter senha/credencial vale mesmo quando é autofill
+   (não foi eu quem digitou) e mesmo com autorização explícita do usuário —
+   é uma trava que o usuário não pode desligar pedindo.
+2. **Infrastructure Testing — Terraform/Kubernetes** (`infra-patterns.ts`,
+   novo): mesma filosofia heurística leve do resto do módulo (sem parser
+   HCL/YAML de verdade, sem chamar API de nuvem) — 6 padrões Terraform
+   (ingress liberado pra `0.0.0.0/0`, todas as portas abertas, bucket S3
+   público, IAM com `Action`/`Resource` coringa, RDS publicamente acessível,
+   backend S3 sem `encrypt = true`) e 6 padrões Kubernetes (container
+   privileged, `hostNetwork`, `hostPID`, `runAsUser: 0`, Deployment/Pod sem
+   `resources.limits`, manifest `kind: Secret` commitado). Wired em dois
+   scanners: o de repositório inteiro (`SOURCE_SECURITY_SCAN`,
+   `source-security-scan.ts`) e o escopado a PR/MR (`pr-review-scan.ts`, ver
+   item 3) — os dois chamam as mesmas funções exportadas
+   (`scanTerraform`/`scanKubernetes`/`isTerraformPath`/`isKubernetesManifest`),
+   sem duplicar regra.
+3. **PR Reviews: toggle `prReviewsEnabled`** (schema aditivo em
+   `AdapterConnection`, default `true`) — pausa o comentário automático em
+   PR/MR sem precisar desconectar o repositório inteiro (o que também
+   pararia Aplicação) nem remover o webhook manualmente do lado do
+   GitHub/GitLab. `adapter-connection.service.ts.setPrReviewsEnabled()`
+   (escopado por organização — segue a mesma lição de nunca confiar num id
+   cru sem checar dono, da rodada 2 da revisão de segurança de 29/07),
+   rota `PATCH /projects/:id/adapter-connections/:kind/pr-reviews`,
+   `pr-review.service.ts` checa o campo antes de scanear/comentar, botões
+   Pausar/Retomar nos dois painéis de conexão (GitHub/GitLab).
+4. **Auto-Fix — ponta a ponta, incluindo uma descoberta importante.**
+   Investigando onde conectar o Auto-Fix, descobri que **`adapter.apply()`
+   (abrir PR/MR real a partir de um item de remediação) estava
+   completamente desconectado do resto do app** — `createAdapterFor` só era
+   importado dentro do próprio módulo de adapters, nenhum service/rota
+   chamava. Quase certamente efeito colateral da sessão de remoção da
+   Orquestração (09/08/2026), que apagou `applyViaAdapter` sem repor o
+   caminho equivalente em Aplicação. Tratei religar isso como pré-requisito
+   do Auto-Fix (sem isso, Auto-Fix não teria por onde ser acionado) e fiz os
+   dois juntos:
+   - `AiProvider.generateCodeFix(input): Promise<CodeFixResult | null>` novo
+     nos 4 providers (`code-fix-prompt.ts`: pede o ARQUIVO INTEIRO já
+     corrigido, não um diff — decisão de segurança deliberada, aplicar diff
+     exige casar linha exata sem compilador pra validar, sobrescrever o
+     arquivo inteiro é o mesmo formato que a API do GitHub/GitLab já espera;
+     `NoopProvider` sempre devolve `null`, Auto-Fix desligado sem chave de
+     IA configurada, resto do fluxo intacto).
+   - `GithubAdapter`/`GitlabAdapter` ganharam `getFileContent(path, ref)` e
+     `apply()` passou a aceitar `options?: AdapterApplyOptions` com
+     `generateFix` opcional (injetado por quem chama, nunca importado direto
+     pelo adapter — mantém o adapter desacoplado de qual provider de IA está
+     em uso). Só tenta corrigir arquivo que **já existe** no repositório
+     (nunca cria arquivo novo por adivinhação da IA); qualquer falha é
+     engolida e o checklist/PR sai do mesmo jeito, com ou sem Auto-Fix.
+   - `remediation.service.ts.applyItemViaAdapter()` (novo) + rota
+     `POST /remediation-plans/:id/items/:itemId/apply-via-adapter` — busca a
+     conexão GITHUB/GITLAB do projeto do plano, chama `adapter.apply()`
+     injetando `generateFix` (que chama `ai.generateCodeFix`, com fallback
+     automático pro `NoopProvider` quando a organização não tem chave — sem
+     branch condicional separado pra isso, o comportamento certo já é o
+     padrão), grava `appliedReference`/`autoFixApplied` no item.
+   - Frontend: botões "Aplicar via GitHub"/"Aplicar via GitLab" por item em
+     `/aplicacao/[id]`, visíveis só quando o plano tem projeto vinculado E o
+     projeto tem a conexão correspondente (`useAdapterConnections`); link
+     "Ver PR/MR" quando `appliedReference` existe; badge "Auto-Fix sugerido"
+     quando `autoFixApplied` é `true`.
+   - **Bug pego no self-review, corrigido antes de documentar:** a primeira
+     versão do `applyItemViaAdapter` marcava o item como `status: "done"`
+     assim que a PR/MR era aberta — errado, porque abrir a PR/MR não é
+     aplicar de verdade (o adapter nunca faz merge sozinho, é só o
+     checkpoint de aprovação humana). Isso deixaria o item esmaecido/riscado
+     na tela como se já estivesse resolvido antes de qualquer revisão
+     acontecer. Corrigido: `applyItemViaAdapter` grava só
+     `appliedReference`/`autoFixApplied`, o `status` continua controlado
+     manualmente (mesmo toggle que já existia) — o usuário marca "Feito"
+     depois de confirmar o merge, igual ao resto do checklist.
+5. **Segundo bug pego no self-review, mais grave (quebraria o build
+   inteiro):** `source-security-scan.ts` tinha `export export function
+   scanTerraform(...)` — `export` duplicado, erro de sintaxe TypeScript que
+   faria `tsc --noEmit`/`next build` falharem de cara. Corrigido pra
+   `export function scanTerraform(...)`. Como não há `tsc` neste sandbox,
+   esse tipo de erro só aparece na revisão manual linha a linha — reforça
+   por que a tarefa de self-review (que quase foi pulada por pressa) importa
+   de verdade, não é só formalidade da rotina do projeto.
+6. **Revisão de segurança própria feita nesta sessão (task de self-review),
+   sem mais achados além dos dois acima:** reli
+   `pr-review-scan.ts`/`render-comment.ts`/`pr-review.service.ts`,
+   `webhooks.routes.ts` (assinatura HMAC do GitHub e token cru do GitLab,
+   ambos comparados com `timingSafeEqual`), `adapter-connection.service.ts`
+   (`setPrReviewsEnabled` escopado por organização), `infra-patterns.ts`,
+   `code-fix-prompt.ts` e os 4 providers de IA — sem outros bugs
+   encontrados. Não achei nenhum vazamento de segredo em log, path
+   traversal novo, nem SSRF novo introduzido por este trabalho.
+
+**Checklist de validação antes de subir isto (a mais arriscada desta
+madrugada por causa do Auto-Fix escrever em repositório real do usuário —
+recomendo testar num repositório de teste antes de usar em produção com
+código real):**
+```
+cd "C:\Users\woner\Desktop\Atlas QA"
+pnpm --filter @qa-ai/api exec prisma generate
+pnpm --filter @qa-ai/api exec prisma db push
+pnpm --filter @qa-ai/shared build
+pnpm --filter @qa-ai/api exec tsc --noEmit
+pnpm --filter @qa-ai/web build
+```
+Schema novo: só `AdapterConnection.prReviewsEnabled` (Boolean, default
+`true`) — aditivo, sem risco de perda de dado. **Atenção ao `tsc --noEmit`
+do `api`:** o bug do `export export` foi corrigido nesta sessão, mas como
+nada rodou por compilador de verdade, vale rodar esse comando primeiro e
+conferir que não sobra nenhum outro erro de sintaxe antes de seguir pros
+próximos passos. Depois, `git add` só dos arquivos específicos (nunca
+`-A`):
+`apps/api/prisma/schema.prisma`,
+`packages/shared/src/types/adapter.ts`,
+`packages/shared/src/types/remediation.ts`,
+`apps/api/src/modules/analysis/analyzers/source-security-scan/infra-patterns.ts`,
+`apps/api/src/modules/analysis/analyzers/source-security-scan/source-security-scan.ts`,
+`apps/api/src/modules/pr-review/pr-review-scan.ts`,
+`apps/api/src/application/adapter-connection.service.ts`,
+`apps/api/src/application/pr-review.service.ts`,
+`apps/api/src/application/remediation.service.ts`,
+`apps/api/src/presentation/routes/project.routes.ts`,
+`apps/api/src/presentation/routes/remediation.routes.ts`,
+`apps/api/src/infrastructure/ai/code-fix-prompt.ts`,
+`apps/api/src/infrastructure/ai/provider.ts`,
+`apps/api/src/infrastructure/ai/claude-provider.ts`,
+`apps/api/src/infrastructure/ai/openai-provider.ts`,
+`apps/api/src/infrastructure/ai/gemini-provider.ts`,
+`apps/api/src/infrastructure/ai/noop-provider.ts`,
+`apps/api/src/infrastructure/adapters/github/github-adapter.ts`,
+`apps/api/src/infrastructure/adapters/gitlab/gitlab-adapter.ts`,
+`apps/web/src/components/github-connection-panel.tsx`,
+`apps/web/src/components/gitlab-connection-panel.tsx`,
+`apps/web/src/lib/api.ts`,
+`apps/web/src/lib/queries.ts`,
+`apps/web/src/app/(app)/aplicacao/[id]/page.tsx`,
+`apps/web/src/lib/docs-copy.ts`,
+`apps/web/src/lib/public-copy.ts`,
+`CLAUDE.md`.
+
+**Não fiz / pendências:** teste ponta a ponta em produção do fluxo completo
+(webhook real recebido, PR de teste comentada, Auto-Fix commitando de
+verdade num repositório) — segue como parte da mesma pendência #23 de
+sempre ("testar ponta a ponta em produção"), agora ainda maior porque cobre
+mais superfície nova. Sem toggle de "pausar PR reviews" que sobreviva a uma
+reconexão do zero (é por conexão, não por projeto — reconectar recria com
+`prReviewsEnabled: true` de novo, comportamento aceitável mas não
+documentado até agora). Infrastructure Testing não tem teste automatizado
+nenhum rodado contra Terraform/Kubernetes real — só revisão de regex por
+leitura.
+
 ## Convenções
 
 - Copy em pt-BR em toda a UI.

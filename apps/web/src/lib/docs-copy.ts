@@ -141,7 +141,7 @@ export const DOCS_COPY = {
             [
               "Security scan via GitHub or GitLab",
               "available",
-              "Scans a connected repository (GitHub or GitLab) for known-vulnerable dependencies (CVEs), insecure code patterns, committed secrets and Dockerfile misconfigurations, without touching the live site. Connecting GitHub or GitLab is now required to run any analysis on a project.",
+              "Scans a connected repository (GitHub or GitLab) for known-vulnerable dependencies (CVEs), insecure code patterns, committed secrets, and misconfigurations in Dockerfiles, Terraform, and Kubernetes manifests, without touching the live site. Connecting GitHub or GitLab is now required to run any analysis on a project.",
             ],
           ],
         },
@@ -365,7 +365,7 @@ export const DOCS_COPY = {
             [
               "Análise de segurança via GitHub ou GitLab",
               "available",
-              "Varre um repositório conectado (GitHub ou GitLab) em busca de dependências com CVE conhecida, padrões de código inseguro, segredos commitados e configurações inseguras de Dockerfile, sem tocar no site em produção. Conectar GitHub ou GitLab agora é obrigatório para rodar qualquer análise no projeto.",
+              "Varre um repositório conectado (GitHub ou GitLab) em busca de dependências com CVE conhecida, padrões de código inseguro, segredos commitados e configurações inseguras de Dockerfile, Terraform e manifests Kubernetes, sem tocar no site em produção. Conectar GitHub ou GitLab agora é obrigatório para rodar qualquer análise no projeto.",
             ],
           ],
         },
@@ -589,7 +589,7 @@ export const DOCS_COPY = {
             [
               "Análisis de seguridad vía GitHub o GitLab",
               "available",
-              "Escanea un repositorio conectado (GitHub o GitLab) en busca de dependencias con CVE conocida, patrones de código inseguros, secretos confirmados en el código y configuraciones inseguras de Dockerfile, sin tocar el sitio en producción. Conectar GitHub o GitLab ahora es obligatorio para ejecutar cualquier análisis en el proyecto.",
+              "Escanea un repositorio conectado (GitHub o GitLab) en busca de dependencias con CVE conocida, patrones de código inseguros, secretos confirmados en el código y configuraciones inseguras de Dockerfile, Terraform y manifiestos de Kubernetes, sin tocar el sitio en producción. Conectar GitHub o GitLab ahora es obligatorio para ejecutar cualquier análisis en el proyecto.",
             ],
           ],
         },

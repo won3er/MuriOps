@@ -1,8 +1,12 @@
 /**
- * Aplicação (RemediationPlan) — transforma os achados de uma Análise QA ou
- * de um Blueprint num plano de ação concreto: o que mudar, onde, e como.
- * Fase 1 (manual): a IA não altera o código do usuário, só instrui — ele
- * marca cada item como feito conforme aplica as mudanças.
+ * Aplicação (RemediationPlan) — transforma os achados de uma Análise QA num
+ * plano de ação concreto: o que mudar, onde, e como. Fase 1 (manual): a IA
+ * não altera o código do usuário, só instrui — ele marca cada item como
+ * feito conforme aplica as mudanças.
+ *
+ * [06/08/2026] "blueprint" continua no union por compatibilidade com planos
+ * antigos já gravados (o pilar Blueprint/Projetar foi removido — ver
+ * CLAUDE.md), mas nenhum código novo cria planos com essa origem.
  */
 
 export type RemediationSourceType = "analysis" | "blueprint" | "project" | "upgrade";
@@ -29,6 +33,10 @@ export interface RemediationItem {
   /** Passo a passo de como aplicar a mudança. */
   howTo: string;
   status: RemediationItemStatus;
+  /** Referência da aplicação via adapter push (URL da PR/MR), quando aplicado por GitHub/GitLab. */
+  appliedReference?: string | null;
+  /** true quando o Auto-Fix conseguiu commitar uma correção de código real na branch, além do checklist. */
+  autoFixApplied?: boolean;
 }
 
 export interface RemediationResult {

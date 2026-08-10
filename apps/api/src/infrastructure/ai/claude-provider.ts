@@ -17,6 +17,14 @@ import {
   parseUpgradeJson,
   type UpgradeDesignInput,
 } from "./upgrade-prompt.js";
+import {
+  buildCodeFixUserPrompt,
+  CODE_FIX_SYSTEM_PROMPT,
+  normalizeCodeFix,
+  parseCodeFixJson,
+  type CodeFixInput,
+  type CodeFixResult,
+} from "./code-fix-prompt.js";
 
 /**
  * Provider Claude usando o modelo Fable 5 (mais capaz).
@@ -112,4 +120,27 @@ export class ClaudeProvider implements AiProvider {
     return normalizeUpgrade(parseUpgradeJson(text), input.ecosystem, input.manifestFile);
   }
 
+  async generateCodeFix(input: CodeFixInput): Promise<CodeFixResult | null> {
+    const response = (await this.client.beta.messages.create({
+      model: env.CLAUDE_MODEL,
+      max_tokens: 16000,
+      stream: false,
+      betas: ["server-side-fallback-2026-06-01"],
+      fallbacks: [{ model: env.CLAUDE_FALLBACK_MODEL }],
+      output_config: { effort: "high" },
+      system: CODE_FIX_SYSTEM_PROMPT,
+      messages: [{ role: "user", content: buildCodeFixUserPrompt(input) }],
+    } as Parameters<
+      typeof this.client.beta.messages.create
+    >[0])) as Anthropic.Beta.Messages.BetaMessage;
+
+    if ((response.stop_reason as string) === "refusal") return null;
+
+    const text = response.content
+      .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
+      .map((b) => b.text)
+      .join("\n");
+
+    return normalizeCodeFix(parseCodeFixJson(text));
+  }
 }
