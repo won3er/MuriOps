@@ -1972,6 +1972,148 @@ pnpm --filter @qa-ai/web build
 ```
 Sem mudança de schema — não precisa de `db push`.
 
+**Nota retroativa (não documentada na hora):** commit `2884979` ("Pausar/retomar
+agendamentos e fluxos criticos", entre a sessão do Continuous Coverage e a do
+Relatório de compliance) adicionou toggle Pausar/Retomar em `ScheduleRow`
+(`/analyses`) e `FlowCard` (`/monitoramento`), usando `useUpdateAnalysisSchedule`/
+`useUpdateCriticalFlow` (endpoints `PATCH` que já existiam sem UI). Registrando
+aqui só pra fechar o buraco na documentação — sem código pendente disso.
+
+## Sessão 10/08/2026 (continuação, 2ª) — PR Security Reviews automático
+
+Item 6 da lista de pedidos originais desta sessão, priorizado pelo usuário via
+`AskUserQuestion` junto com Auto-Fix/redesign/Infra Testing/relatório de
+compliance. Comentário automático de segurança em toda PR (GitHub) ou MR
+(GitLab) aberta ou atualizada — mesmo espírito do "PR Security Reviews" do
+Strix. Ao contrário do que eu tinha avisado ao usuário como bloqueio de "não
+cabe em 10 minutos", boa parte da infraestrutura necessária **já existia**
+de uma sessão anterior (07-08/08/2026, gate obrigatório GitHub/GitLab):
+`AdapterConnection.webhookSecretEncrypted` já era gerado e exibido na tela
+pro GitHub (só faltava paridade no GitLab), e o webhook do GitHub já validava
+assinatura HMAC de verdade — só não acionava nada. **Mesma ressalva de
+sempre: sandbox sem `bash` — nada validado por `tsc`/build, só revisão
+manual.**
+
+**Decisão de escopo deliberada — scan por arquivo alterado, não por diff de
+linha, e não o repositório inteiro.** Diferente de `SOURCE_SECURITY_SCAN`
+(varre a árvore inteira na branch padrão), o novo scanner busca só os
+arquivos que a PR/MR alterou (`GET /pulls/:n/files` no GitHub,
+`GET /merge_requests/:iid/changes` no GitLab) e lê o conteúdo INTEIRO de
+cada um desses arquivos no branch de origem — não só as linhas do diff/patch
+— porque as heurísticas existentes (regex de segredo, padrão de código
+inseguro) precisam de contexto de arquivo completo pra não dar falso
+negativo num padrão que abre e fecha fora das linhas exatas alteradas.
+Teto de 40 arquivos por execução (`MAX_PR_FILES`) — folgado o bastante pra
+não truncar o caso comum, já que PRs tendem a ser bem menores que o
+repositório inteiro.
+
+**Reaproveitamento em vez de duplicação de regra:** em vez de copiar as
+heurísticas de `source-security-scan.ts` pra um scanner novo (risco de
+divergência — corrigir um padrão lá e esquecer de corrigir aqui),
+`scanForSecrets`/`scanForInsecurePatterns`/`scanDockerfile`/
+`MANIFEST_FILE_NAMES` ganharam `export` (mudança aditiva, comportamento do
+scan existente de `SOURCE_SECURITY_SCAN` não muda em nada) e são chamadas
+diretamente pelo novo `apps/api/src/modules/pr-review/pr-review-scan.ts`
+(`scanGithubPullRequestFiles`/`scanGitlabMergeRequestFiles`), que só cuida
+da parte específica de PR/MR: descobrir quais arquivos mudaram, baixar o
+conteúdo de cada um no branch certo, e formatar `DetectedIssue[]` (campos
+neutros de `category`/`fingerprint`, já que isso nunca persiste numa
+`Analysis` — é só insumo pro comentário).
+
+**Arquivos novos:**
+- `apps/api/src/modules/pr-review/pr-review-scan.ts` — os dois scanners
+  acima + `PrScanResult`.
+- `apps/api/src/modules/pr-review/render-comment.ts` — `renderPrReviewComment()`,
+  markdown agrupado por severidade (🔴 Crítico/🟠 Alto/🟡 Médio/🔵 Baixo),
+  aviso explícito de que é heurística/indício, não confirmação de exploit —
+  mesma cautela já usada em Teste Ativo Autorizado.
+- `apps/api/src/application/pr-review.service.ts` — `reviewGithubPullRequest`/
+  `reviewGitlabMergeRequest`: decripta o token da conexão, roda o scanner,
+  posta o comentário via adapter.
+
+**Adapters ganharam capacidade de comentário** (antes só tinham
+`analyze()`/`apply()`): `GithubAdapter.commentOnPullRequest()` (API de
+Issues — GitHub trata PR como Issue pra fins de comentário) e
+`GitlabAdapter.commentOnMergeRequest()` (API de Notes).
+
+**Webhooks:** `webhooks.routes.ts` (arquivo já existia, antes inerte) ganhou
+duas mudanças: (1) o handler do GitHub agora dispara
+`prReviewService.reviewGithubPullRequest()` em `pull_request` com action
+`opened`/`synchronize`/`reopened`, sempre em background (`void ...
+.catch(log)`) — não aguarda antes de responder 202, porque um scan pode
+levar mais que o timeout de entrega de webhook (~10s do GitHub); (2) rota
+nova `POST /webhooks/gitlab/:connectionId`, autenticação por
+`X-Gitlab-Token` comparado com `timingSafeEqual` (GitLab não assina o corpo
+como o GitHub — é um token compartilhado cru no header, mais simples),
+disparando `reviewGitlabMergeRequest()` em `merge_request` com action
+`open`/`update`/`reopen` (GitLab usa esses nomes sem "-ed", diferente do
+GitHub).
+
+**GitLab ganhou paridade de webhook secret com o GitHub:**
+`upsertGitlabConnection` agora gera/preserva `webhookSecretEncrypted` (mesma
+lógica de `upsertGithubConnection`: gera na primeira conexão, preserva em
+atualizações seguintes pra não invalidar um webhook já configurado),
+retorna `webhookSecret`+`webhookUrl` na resposta de conexão, e
+`getGitlabConnectionMasked` expõe `webhookUrl` (nunca o secret de novo)
+pra requests seguintes. `GitlabConnectionPanel` ganhou o mesmo bloco visual
+de "copie a URL e o secret" que `GithubConnectionPanel` já tinha, com
+o aviso de que isso ativa comentário automático em MRs.
+
+**Consentimento — decisão deliberada de não criar um toggle novo separado.**
+Diferente de Teste Ativo Autorizado (que tem um checkbox de consentimento
+próprio no schema), aqui o ato de o usuário copiar a URL+secret e colar nas
+configurações de webhook do GitHub/GitLab **é o próprio gesto de opt-in** —
+sem isso configurado manualmente do lado do GitHub/GitLab, nenhum evento
+chega no MuriOps. A copy nos dois painéis agora deixa explícito o que
+acontece ("toda PR aberta ou atualizada recebe um comentário automático")
+antes do usuário colar o webhook, pra decisão informada.
+
+**Não fiz:**
+- **Não edita/substitui um comentário anterior** — cada evento
+  (`opened`/`synchronize`) posta um comentário NOVO, sem tentar achar e
+  atualizar o comentário da rodada anterior (isso exigiria guardar um id de
+  comentário por PR e uma chamada a mais pra buscar comentários existentes).
+  `PR_REVIEW_COMMENT_MARKER` (`<!-- muriops-pr-security-review -->`) já fica
+  no topo de cada comentário, preparado pra uma versão futura que queira
+  localizar e editar em vez de duplicar.
+- **Sem toggle de "pausar PR reviews sem desconectar o repositório"** — hoje
+  a única forma de desativar é remover o webhook do lado do GitHub/GitLab
+  (ou desconectar a conexão inteira, o que também para a Aplicação). Se
+  virar um pedido real, o campo natural seria um `prReviewsEnabled Boolean`
+  em `AdapterConnection` checado antes de chamar `prReviewService`.
+- **Sem infra scanning nem confirmação de exploit** — fora de escopo desta
+  tarefa especificamente (itens próprios na lista de prioridades do
+  usuário, ver comparativo Strix x MuriOps).
+
+**Checklist de validação antes de subir isto:**
+```
+cd "C:\Users\woner\Desktop\Atlas QA"
+pnpm --filter @qa-ai/shared build
+pnpm --filter @qa-ai/api exec tsc --noEmit
+pnpm --filter @qa-ai/web build
+```
+Sem mudança de schema (`webhookSecretEncrypted` já existia na
+`AdapterConnection` desde a sessão do gate GitHub/GitLab) — não precisa de
+`db push`. Depois, `git add` só dos arquivos específicos (nunca `-A`):
+`apps/api/src/modules/pr-review/pr-review-scan.ts`,
+`apps/api/src/modules/pr-review/render-comment.ts`,
+`apps/api/src/application/pr-review.service.ts`,
+`apps/api/src/application/adapter-connection.service.ts`,
+`apps/api/src/infrastructure/adapters/github/github-adapter.ts`,
+`apps/api/src/infrastructure/adapters/gitlab/gitlab-adapter.ts`,
+`apps/api/src/modules/analysis/analyzers/source-security-scan/source-security-scan.ts`,
+`apps/api/src/presentation/routes/webhooks.routes.ts`,
+`apps/api/src/presentation/routes/project.routes.ts`,
+`apps/web/src/components/github-connection-panel.tsx`,
+`apps/web/src/components/gitlab-connection-panel.tsx`,
+`apps/web/src/lib/api.ts`,
+`CLAUDE.md`.
+
+**Teste ponta a ponta em produção ainda não feito** (mesma pendência #23 de
+sempre) — validar de verdade exige um repositório real com o webhook
+configurado à mão no GitHub/GitLab e uma PR/MR de teste. Fica como próximo
+passo natural depois do deploy.
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —

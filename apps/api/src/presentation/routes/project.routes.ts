@@ -212,7 +212,10 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
         req.user.sub,
         body,
       );
-      return reply.status(201).send(connection);
+      return reply.status(201).send({
+        ...connection,
+        webhookUrl: `${apiBaseUrl(req)}${connection.webhookUrl}`,
+      });
     } catch (err) {
       if (err instanceof NotFoundError)
         return reply
@@ -233,7 +236,10 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
       id,
     );
     if (!connection) return { configured: false };
-    return connection;
+    return {
+      ...connection,
+      webhookUrl: connection.webhookUrl ? `${apiBaseUrl(req)}${connection.webhookUrl}` : null,
+    };
   });
 
   // Lista todas as conexões do projeto — seletor de "qual conexão usar" na Orquestração.

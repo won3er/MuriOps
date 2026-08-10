@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GitBranch, Loader2, Pencil } from "lucide-react";
+import { ClipboardCopy, GitBranch, Loader2, Pencil } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +21,10 @@ export function GitlabConnectionPanel({ projectId }: { projectId: string }) {
   const [projectPath, setProjectPath] = useState("");
   const [token, setToken] = useState("");
   const [editing, setEditing] = useState(false);
+  const [justConnected, setJustConnected] = useState<{
+    webhookSecret: string;
+    webhookUrl: string;
+  } | null>(null);
 
   const connection = data && "id" in data ? data : null;
 
@@ -34,12 +39,21 @@ export function GitlabConnectionPanel({ projectId }: { projectId: string }) {
     connect.mutate(
       { projectPath: projectPath.trim(), token: token.trim() },
       {
-        onSuccess: () => {
+        onSuccess: (res) => {
+          setJustConnected({
+            webhookSecret: res.webhookSecret,
+            webhookUrl: res.webhookUrl,
+          });
           setToken("");
           setEditing(false);
         },
       },
     );
+  }
+
+  async function copy(text: string, label: string) {
+    await navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado(a)`);
   }
 
   return (
@@ -81,6 +95,51 @@ export function GitlabConnectionPanel({ projectId }: { projectId: string }) {
               Use esta opção se o repositório mudou, o token expirou ou o
               GitLab devolveu erro de acesso.
             </p>
+            {justConnected && (
+              <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+                <p className="text-xs font-medium">
+                  Opcional — ative PR Security Reviews automático: configure
+                  este webhook no GitLab (Settings → Webhooks → Add new
+                  webhook):
+                </p>
+                <div className="flex min-w-0 items-center gap-2 font-mono text-xs">
+                  <span className="min-w-0 flex-1 break-all">
+                    {justConnected.webhookUrl}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      copy(justConnected.webhookUrl, "URL do webhook")
+                    }
+                  >
+                    <ClipboardCopy className="h-3 w-3" />
+                  </Button>
+                </div>
+                <p className="text-xs font-medium">
+                  Secret Token (cole em "Secret Token" no GitLab):
+                </p>
+                <div className="flex min-w-0 items-center gap-2 font-mono text-xs">
+                  <span className="min-w-0 flex-1 break-all">
+                    {justConnected.webhookSecret}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copy(justConnected.webhookSecret, "Secret Token")}
+                  >
+                    <ClipboardCopy className="h-3 w-3" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Marque o evento "Merge request events". Uma vez configurado,
+                  toda MR aberta ou atualizada recebe um comentário automático
+                  do MuriOps com achados de segurança dos arquivos alterados.
+                  Esse secret só aparece agora — se perder, atualize a conexão
+                  de novo.
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">

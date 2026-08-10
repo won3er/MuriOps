@@ -181,7 +181,7 @@ export const adapterConnectionService = {
     projectId: string,
     userId: string,
     input: { projectPath: string; token: string },
-  ): Promise<AdapterConnection> {
+  ): Promise<AdapterConnection & { webhookSecret: string; webhookUrl: string }> {
     const project = await prisma.project.findFirst({
       where: { id: projectId, organizationId },
       select: { id: true },
@@ -194,6 +194,15 @@ export const adapterConnectionService = {
       where: { projectId_kind: { projectId, kind: "GITLAB" } },
     });
 
+    // Mesmo padrão do GitHub (ver upsertGithubConnection): gera o segredo do
+    // webhook na primeira conexão, preserva o mesmo em atualizações
+    // seguintes (senão o webhook já configurado no GitLab pararia de bater
+    // a assinatura). Habilita PR Security Reviews automático quando o
+    // usuário colar esta URL+secret nas Webhooks do projeto GitLab.
+    const webhookSecret = existing?.webhookSecretEncrypted
+      ? decryptSecret(existing.webhookSecretEncrypted)
+      : randomBytes(24).toString("base64url");
+
     const data = {
       projectId,
       organizationId,
@@ -202,6 +211,7 @@ export const adapterConnectionService = {
       mode: "push",
       config: { projectPath: input.projectPath },
       credentialEncrypted: encryptSecret(input.token),
+      webhookSecretEncrypted: encryptSecret(webhookSecret),
       createdById: userId,
     };
 
@@ -209,14 +219,18 @@ export const adapterConnectionService = {
       ? await prisma.adapterConnection.update({ where: { id: existing.id }, data })
       : await prisma.adapterConnection.create({ data });
 
-    return toDto(row);
+    return {
+      ...toDto(row),
+      webhookSecret,
+      webhookUrl: `/webhooks/gitlab/${row.id}`,
+    };
   },
 
   /** Conexão GitLab com o token mascarado — pra exibir na tela sem reexibir o valor real. */
   async getGitlabConnectionMasked(
     organizationId: string,
     projectId: string,
-  ): Promise<(AdapterConnection & { maskedToken: string | null }) | null> {
+  ): Promise<(AdapterConnection & { maskedToken: string | null; webhookUrl: string | null }) | null> {
     const row = await prisma.adapterConnection.findFirst({
       where: { projectId, organizationId, kind: "GITLAB" },
     });
@@ -227,7 +241,11 @@ export const adapterConnectionService = {
     } catch {
       maskedToken = "••••";
     }
-    return { ...toDto(row), maskedToken };
+    return {
+      ...toDto(row),
+      maskedToken,
+      webhookUrl: row.webhookSecretEncrypted ? `/webhooks/gitlab/${row.id}` : null,
+    };
   },
 
 };

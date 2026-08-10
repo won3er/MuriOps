@@ -207,17 +207,17 @@ export const api = {
   // ---- adapter GitLab (mesmo padrão push do GitHub) ----
   getGitlabConnection: (projectId: string) =>
     request<
-      | (AdapterConnection & { maskedToken: string | null })
+      | (AdapterConnection & { maskedToken: string | null; webhookUrl: string | null })
       | { configured: false }
     >(`/projects/${projectId}/gitlab-connection`),
   connectGitlab: (
     projectId: string,
     body: { projectPath: string; token: string },
   ) =>
-    request<AdapterConnection>(`/projects/${projectId}/gitlab-connection`, {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
+    request<AdapterConnection & { webhookSecret: string; webhookUrl: string }>(
+      `/projects/${projectId}/gitlab-connection`,
+      { method: "POST", body: JSON.stringify(body) },
+    ),
 
   // ---- conexões do projeto ----
   listAdapterConnections: (projectId: string) =>

@@ -67,6 +67,16 @@ export class GithubAdapter implements Adapter {
     };
   }
 
+  /**
+   * Comenta numa PR existente — usado pelo PR Security Reviews automático
+   * (acionado por webhook, ver pr-review.service.ts). GitHub trata PRs como
+   * Issues para fins de comentário, por isso é o endpoint `/issues/:number/comments`
+   * mesmo sendo uma pull request.
+   */
+  async commentOnPullRequest(prNumber: number, body: string): Promise<void> {
+    await this.post(`/repos/${this.owner}/${this.repo}/issues/${prNumber}/comments`, { body });
+  }
+
   private async ensureBranch(branch: string, baseSha: string): Promise<void> {
     const res = await fetch(`${API_BASE}/repos/${this.owner}/${this.repo}/git/refs`, {
       method: "POST",

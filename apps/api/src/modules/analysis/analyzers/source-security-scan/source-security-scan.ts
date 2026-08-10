@@ -73,7 +73,7 @@ const CODE_EXTENSIONS = [
   ".toml",
 ];
 
-const MANIFEST_FILE_NAMES = new Set([
+export const MANIFEST_FILE_NAMES = new Set([
   "package.json",
   "requirements.txt",
   "pipfile",
@@ -325,7 +325,7 @@ async function fetchFileContent(
   }
 }
 
-function scanForSecrets(
+export function scanForSecrets(
   path: string,
   content: string,
   hits: Map<string, { count: number; sampleFile: string }>,
@@ -344,7 +344,7 @@ function scanForSecrets(
   }
 }
 
-function scanDockerfile(
+export function scanDockerfile(
   path: string,
   content: string,
   out: DetectedIssue[],
@@ -370,7 +370,7 @@ function scanDockerfile(
   }
 }
 
-function scanForInsecurePatterns(
+export function scanForInsecurePatterns(
   path: string,
   content: string,
   out: DetectedIssue[],

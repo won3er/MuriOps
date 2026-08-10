@@ -107,8 +107,8 @@ export function GithubConnectionPanel({ projectId }: { projectId: string }) {
             {justConnected && (
               <div className="space-y-2 rounded-md border bg-muted/30 p-3">
                 <p className="text-xs font-medium">
-                  Configure o webhook no GitHub (Settings → Webhooks → Add
-                  webhook):
+                  Opcional — ative PR Security Reviews automático: configure
+                  este webhook no GitHub (Settings → Webhooks → Add webhook):
                 </p>
                 <div className="flex min-w-0 items-center gap-2 font-mono text-xs">
                   <span className="min-w-0 flex-1 break-all">
@@ -140,8 +140,11 @@ export function GithubConnectionPanel({ projectId }: { projectId: string }) {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Esse secret só aparece agora — se perder, gere a conexão de
-                  novo. Evento a marcar: "Pull requests".
+                  Marque o evento "Pull requests". Uma vez configurado, toda
+                  PR aberta ou atualizada recebe um comentário automático do
+                  MuriOps com achados de segurança dos arquivos alterados.
+                  Esse secret só aparece agora — se perder, atualize a
+                  conexão de novo.
                 </p>
               </div>
             )}

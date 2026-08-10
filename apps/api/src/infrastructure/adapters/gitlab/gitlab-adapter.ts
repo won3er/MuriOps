@@ -69,6 +69,15 @@ export class GitlabAdapter implements Adapter {
     };
   }
 
+  /**
+   * Comenta num MR existente — usado pelo PR Security Reviews automático
+   * (acionado por webhook, ver pr-review.service.ts). API de "notes" do
+   * GitLab é o equivalente ao comentário de PR do GitHub.
+   */
+  async commentOnMergeRequest(mrIid: number, body: string): Promise<void> {
+    await this.post(`/projects/${this.encodedPath}/merge_requests/${mrIid}/notes`, { body });
+  }
+
   private async ensureBranch(branch: string, ref: string): Promise<void> {
     const res = await fetch(
       `${API_BASE}/projects/${this.encodedPath}/repository/branches`,
