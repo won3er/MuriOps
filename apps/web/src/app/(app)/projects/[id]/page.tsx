@@ -292,6 +292,10 @@ export default function ProjectDetailPage() {
             label: "Conexões",
             href: `/aplicacao?projectId=${id}&view=connections`,
           },
+          {
+            label: "Relatório de compliance",
+            href: `/projects/${id}/compliance`,
+          },
         ]}
       />
 

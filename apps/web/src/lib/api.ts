@@ -14,6 +14,7 @@ import type {
   AnalysisSchedule,
   CreateAnalysisScheduleRequest,
   UpdateAnalysisScheduleRequest,
+  ComplianceReport,
   DashboardStats,
   IssueFilters,
   LoginRequest,
@@ -349,6 +350,10 @@ export const api = {
     }),
   deleteAnalysisSchedule: (id: string) =>
     request<void>(`/analysis-schedules/${id}`, { method: "DELETE" }),
+
+  // ---- relatório de compliance (autoavaliação, não certificação) ----
+  getComplianceReport: (projectId: string) =>
+    request<ComplianceReport>(`/projects/${projectId}/compliance-report`),
 
   // ---- aplicação (RemediationPlan) ----
   listRemediationPlans: () =>

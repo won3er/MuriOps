@@ -49,6 +49,7 @@ export const qk = {
   criticalFlow: (id: string) => ["critical-flow", id] as const,
   flowRuns: (id: string) => ["flow-runs", id] as const,
   analysisSchedules: (projectId: string) => ["analysis-schedules", projectId] as const,
+  complianceReport: (projectId: string) => ["compliance-report", projectId] as const,
 };
 
 // ---------- Projeção (tarefas rastreáveis a partir de um plano de Aplicação) ----------
@@ -614,6 +615,14 @@ export function useUpdateAnalysisSchedule(id: string, projectId: string) {
     },
     onError: (err) =>
       toast.error(err instanceof Error ? err.message : "Falha ao atualizar agendamento"),
+  });
+}
+
+export function useComplianceReport(projectId: string) {
+  return useQuery({
+    queryKey: qk.complianceReport(projectId),
+    queryFn: () => api.getComplianceReport(projectId),
+    enabled: !!projectId,
   });
 }
 

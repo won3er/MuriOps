@@ -8,6 +8,7 @@ export * from "./types/auth.js";
 export * from "./types/projection.js";
 export * from "./types/critical-flow.js";
 export * from "./types/analysis-schedule.js";
+export * from "./types/compliance-report.js";
 export * from "./types/remediation.js";
 export * from "./types/upgrade.js";
 export * from "./types/orchestration.js";

@@ -1941,6 +1941,37 @@ Depois do `db push`, `git add` só dos arquivos específicos (nunca `-A`):
 `apps/web/src/lib/queries.ts`,
 `CLAUDE.md`.
 
+## Sessão 10/08/2026 (continuação, 15min) — Relatório de compliance
+
+Primeiro item da ordem sugerida na seção anterior. `compliance-report.service.ts`
+(novo) monta um documento a partir de dado real (última Análise + issues por
+severidade/categoria, Fluxos Críticos ativos/falhando, agendamentos de
+Continuous Coverage) — rota `GET /projects/:id/compliance-report`, tipo
+`ComplianceReport` em `packages/shared`. Frontend:
+`/projects/[id]/compliance` (link novo no `LocalNav` da página do projeto),
+com aviso destacado no topo: **autoavaliação, não certificação** — mesma
+cautela da decisão de recusar selos ISO/SOC falsos. Botão "Imprimir/Salvar
+como PDF" usa `window.print()` — sem biblioteca de PDF nova, zero
+dependência adicional. **Não validado por build** (sessão de 15min, sem
+tempo pra rodar `tsc`/`next build`) — revisão manual seguindo os padrões
+exatos de `reconciliation.service.ts`/`analysis-schedule.service.ts`.
+Arquivos: `apps/api/src/application/compliance-report.service.ts` (novo),
+`apps/api/src/presentation/routes/compliance-report.routes.ts` (novo),
+`packages/shared/src/types/compliance-report.ts` (novo),
+`packages/shared/src/index.ts`, `apps/api/src/presentation/app.ts`,
+`apps/web/src/lib/api.ts`, `apps/web/src/lib/queries.ts`,
+`apps/web/src/app/(app)/projects/[id]/compliance/page.tsx` (novo),
+`apps/web/src/app/(app)/projects/[id]/page.tsx`.
+
+**Validar antes do próximo passo (PR Reviews automático):**
+```
+cd "C:\Users\woner\Desktop\Atlas QA"
+pnpm --filter @qa-ai/shared build
+pnpm --filter @qa-ai/api exec tsc --noEmit
+pnpm --filter @qa-ai/web build
+```
+Sem mudança de schema — não precisa de `db push`.
+
 ## Pendências conhecidas / próximos passos
 
 1. **[Fase 2] Testar de ponta a ponta o que foi construído recentemente** —
