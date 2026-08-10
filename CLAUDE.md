@@ -52,6 +52,14 @@ pasta, como se eu já soubesse ou tivesse o cmd aberto").
   Continua valendo, independente disso: sempre usar `git add <arquivos específicos>`,
   nunca `git add -A`/`.`, porque pode haver mudanças em andamento no working tree que
   não devem ser commitadas por engano.
+  **10/08/2026, o GPT do usuário voltou.** Ele está usando o GPT de novo pra fazer um
+  redesign visual inspirado no Strix. **Reinstaurada a cautela original:** este agente
+  volta a não mexer em `apps/web` por motivo puramente visual/de design (cores, layout,
+  componentes visuais, rebrand) — só trabalha em funcionalidade/backend/operações,
+  igual era antes de 05/08. Mudanças funcionais que tocam JSX (novos botões, estados,
+  campos) continuam normais; o limite é especificamente sobre decisões de aparência.
+  `git add` continua sempre por arquivo específico, nunca `-A`, porque o working tree
+  volta a ter mudanças de design do GPT em andamento a qualquer momento.
 
 ## Estado atual (27/07/2026) — arquitetura das funcionalidades
 
